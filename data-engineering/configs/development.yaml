@@ -1,0 +1,5 @@
+environment: development
+telemetry:
+  timestamp_timezone: UTC
+  invalid_record_policy: quarantine
+  duplicate_record_policy: ignore
