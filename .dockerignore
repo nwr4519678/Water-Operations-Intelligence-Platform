@@ -1,0 +1,10 @@
+.git
+.github
+**/bin
+**/obj
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+frontend/dist
+docs
+*.user

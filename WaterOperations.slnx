@@ -1,0 +1,13 @@
+<Solution>
+  <Project Path="backend/src/WaterOperations.Domain/WaterOperations.Domain.csproj" />
+  <Project Path="backend/src/WaterOperations.Application/WaterOperations.Application.csproj" />
+  <Project Path="backend/src/WaterOperations.Infrastructure/WaterOperations.Infrastructure.csproj" />
+  <Folder Name="/backend/" />
+  <Folder Name="/backend/src/" />
+  <Folder Name="/backend/tests/">
+    <Project Path="backend/tests/WaterOperations.ArchitectureTests/WaterOperations.ArchitectureTests.csproj" />
+    <Project Path="backend/tests/WaterOperations.IntegrationTests/WaterOperations.IntegrationTests.csproj" />
+    <Project Path="backend/tests/WaterOperations.UnitTests/WaterOperations.UnitTests.csproj" />
+  </Folder>
+  <Project Path="backend/src/WaterOperations.Api/WaterOperations.Api.csproj" />
+</Solution>

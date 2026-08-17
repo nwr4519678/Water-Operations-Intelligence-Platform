@@ -1,0 +1,5 @@
+environment: development
+api:
+  replicas: 1
+ai_service:
+  replicas: 1
