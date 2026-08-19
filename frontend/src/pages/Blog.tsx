@@ -1,0 +1,4 @@
+import { BookOpen, ChevronRight } from 'lucide-react'
+import { PageHeading } from '../components/ui/PageHeading'
+const articles = [{ title: 'Interpreting tide-gauge quality flags', category: 'Operations guide', time: '6 min read' }, { title: 'MERI field station maintenance windows', category: 'Institute update', time: '4 min read' }, { title: 'Why viewer-only access protects water operations', category: 'Security', time: '5 min read' }]
+export function Blog() { return <><PageHeading eyebrow="KNOWLEDGE / BLOG" title="Water operations notes" description="Published guidance and institute updates available to EchoCloud viewers." /><div className="article-grid">{articles.map((article) => <article className="article-card panel" key={article.title}><span><BookOpen size={19} /></span><p>{article.category}</p><h2>{article.title}</h2><small>{article.time}</small><button type="button">Read article <ChevronRight size={17} /></button></article>)}</div></> }
