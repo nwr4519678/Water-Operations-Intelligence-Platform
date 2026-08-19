@@ -12,3 +12,7 @@ __pycache__/
 .env
 *.db
 TestResults/
+
+.vs/
+bin/
+obj/

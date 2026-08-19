@@ -13,13 +13,57 @@ Foundation for a real-time water telemetry and operations intelligence platform.
 
 ## Run locally
 
-1. Start infrastructure: `docker compose up -d`
-2. Run the API: `dotnet run --project backend/src/WaterOperations.Api`
-3. Open Scalar: `https://localhost:5001/scalar` (port may vary by launch profile).
-4. Run the frontend: `cd frontend; npm install; npm run dev`
-5. Run the AI service: `python -m uvicorn app.main:app --app-dir ai-service --reload --port 8000`
+### Prerequisites
 
-The current implementation is the Phase 0 foundation. Feature modules are added behind the Application CQRS boundaries.
+- Docker Desktop with Compose v2.
+- .NET 10 SDK.
+- Node.js 20 or newer.
+- Python 3.12 only when running the AI service outside Docker.
+
+### Quick start
+
+1. Copy `.env.example` to `.env`. The committed example contains local development values only; never put real credentials in either file.
+2. Run the bootstrap command from the repository root:
+
+   ```powershell
+   .\scripts\dev.ps1
+   ```
+
+   On macOS/Linux, use `./scripts/dev.sh`. Add `-WithAi` or `--with-ai` to start the optional AI container.
+3. In a second terminal, start the API:
+
+   ```powershell
+   dotnet run --project backend/src/WaterOperations.Api --launch-profile http
+   ```
+
+4. In a third terminal, install and start the viewer shell:
+
+   ```powershell
+   npm --prefix frontend install
+   npm --prefix frontend run dev
+   ```
+
+The normal local URLs are the frontend at `http://localhost:5173`, API at `http://localhost:5102`, API liveness at `/health/live`, API readiness at `/health/ready`, Scalar at `/scalar`, and the optional AI service at `http://localhost:8000/health`.
+
+Startup order is: PostgreSQL/TimescaleDB and Redis, database migrations/seed when they are introduced, API, optional AI service, then React. The current Phase 0 foundation has no migrations or seed data yet, so the migration step is intentionally a no-op.
+
+### Configuration
+
+The API reads standard ASP.NET Core environment variables. `.env.example` documents the supported local values, including `ConnectionStrings__Default`, `ConnectionStrings__Redis`, `Cors__AllowedOrigins__0`, `VITE_API_BASE_URL`, and `AI_SERVICE_URL`. CORS is restricted to the local viewer origin by default.
+
+### Troubleshooting
+
+- **Docker is unavailable:** start Docker Desktop, then rerun `docker compose up -d postgres redis`.
+- **Port already in use:** change `POSTGRES_PORT`, `REDIS_PORT`, or `AI_SERVICE_PORT` in `.env`; update the matching connection string and service URL as well.
+- **API fails on startup:** confirm `.env` was copied and that `ConnectionStrings__Default` and `ConnectionStrings__Redis` are exported in the API terminal. The API fails fast when either value is missing.
+- **`/health/ready` is unhealthy:** run `docker compose ps` and `docker compose logs postgres redis`; both required services must report healthy before the API is ready.
+- **Frontend cannot call the API:** verify the API is running on port 5102 and that `Cors__AllowedOrigins__0` matches the browser origin exactly.
+- **AI features are unavailable:** AI is optional. Start it with `docker compose --profile ai up -d --build ai-service`, or run `python -m uvicorn app.main:app --app-dir ai-service --reload --port 8000`.
+- **Login/overview is not available yet:** the repository currently contains the viewer shell and platform foundation; product feature modules are added behind the Application CQRS boundaries.
+
+## Local viewer authentication
+
+The API exposes `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, and authenticated `POST /api/v1/auth/logout`. Configure `DevelopmentViewer__Email` and `DevelopmentViewer__Password` through local environment variables; do not commit values. Optional `DevelopmentViewer__Organization` and `DevelopmentViewer__Region` define the viewer scope. These settings are for local testing only.
 
 ## Architecture structure
 

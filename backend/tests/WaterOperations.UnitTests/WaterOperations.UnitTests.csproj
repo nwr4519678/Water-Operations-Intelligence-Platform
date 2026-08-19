@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <ProjectReference Include="../../src/WaterOperations.Infrastructure/WaterOperations.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

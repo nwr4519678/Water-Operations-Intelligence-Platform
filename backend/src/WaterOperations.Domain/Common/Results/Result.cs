@@ -9,4 +9,5 @@ public readonly record struct Result(bool IsSuccess, string? Error = null)
 }
 
 public readonly record struct Result<T>(bool IsSuccess, T? Value = default, string? Error = null)
-{ }
+{
+}
