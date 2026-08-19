@@ -1,4 +1,5 @@
 using Scalar.AspNetCore;
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using WaterOperations.Application;
@@ -7,7 +8,7 @@ using WaterOperations.Infrastructure.Persistence;
 using WaterOperations.Infrastructure.Seeding;
 using WaterOperations.Api.Middleware;
 
-Log.Logger = new LoggerConfiguration().WriteTo.Console().CreateBootstrapLogger();
+Log.Logger = new LoggerConfiguration().WriteTo.Console(formatProvider: CultureInfo.InvariantCulture).CreateBootstrapLogger();
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((context, logger) => logger.ReadFrom.Configuration(context.Configuration).Enrich.FromLogContext());
 builder.Services.AddApplication();

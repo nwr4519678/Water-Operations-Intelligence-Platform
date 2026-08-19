@@ -16,7 +16,7 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, IHostEnvir
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
             context.Response.ContentType = "application/json";
             var message = environment.IsDevelopment() ? "An unexpected error occurred." : "An unexpected server error occurred.";
-            await context.Response.WriteAsync(JsonSerializer.Serialize(ApiEnvelope<object>.Fail("INTERNAL_ERROR", message, context.TraceIdentifier), JsonOptions));
+            await context.Response.WriteAsync(JsonSerializer.Serialize(ApiEnvelope.Fail<object>("INTERNAL_ERROR", message, context.TraceIdentifier), JsonOptions));
         }
     }
 }
