@@ -1,0 +1,21 @@
+using WaterOperations.Infrastructure.Security;
+
+namespace WaterOperations.UnitTests;
+
+public sealed class ScopeTests
+{
+    [Fact]
+    public void TelemetryStore_ReturnsOnlyOrganizationAndRegionScope()
+    {
+        var records = new TelemetryStore().ForScope("A", "1").ToList();
+        Assert.Single(records);
+        Assert.All(records, record => { Assert.Equal("A", record.Organization); Assert.Equal("1", record.Region); });
+    }
+
+    [Fact]
+    public void TelemetryStore_ReturnsNothingOutsideRegionOrOrganization()
+    {
+        Assert.Empty(new TelemetryStore().ForScope("A", "9"));
+        Assert.Empty(new TelemetryStore().ForScope("B", "1"));
+    }
+}
