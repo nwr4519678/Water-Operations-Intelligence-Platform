@@ -13,13 +13,17 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("Default") ?? "Host=localhost;Port=5432;Database=water_operations;Username=postgres;Password=postgres";
-        services.AddDbContext<WaterOperationsDbContext>(options => options.UseNpgsql(connectionString));
+        if (configuration["Testing"] == "true") services.AddDbContext<WaterOperationsDbContext>(options => options.UseInMemoryDatabase("water-operations-tests"));
+        else services.AddDbContext<WaterOperationsDbContext>(options => options.UseNpgsql(connectionString));
         services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
         services.AddScoped<IUnitOfWork>(serviceProvider => serviceProvider.GetRequiredService<WaterOperationsDbContext>());
-        services.AddStackExchangeRedisCache(options => options.Configuration = configuration.GetConnectionString("Redis") ?? "localhost:6379");
-        services.AddHybridCache();
-        services.AddHangfire(config => config.UseSimpleAssemblyNameTypeSerializer().UseRecommendedSerializerSettings().UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
-        services.AddHangfireServer();
+        if (configuration["Testing"] != "true")
+        {
+            services.AddStackExchangeRedisCache(options => options.Configuration = configuration.GetConnectionString("Redis") ?? "localhost:6379");
+            services.AddHybridCache();
+            services.AddHangfire(config => config.UseSimpleAssemblyNameTypeSerializer().UseRecommendedSerializerSettings().UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
+            services.AddHangfireServer();
+        }
         return services;
     }
 }

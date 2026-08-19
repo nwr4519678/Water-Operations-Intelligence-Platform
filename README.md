@@ -21,6 +21,10 @@ Foundation for a real-time water telemetry and operations intelligence platform.
 
 The current implementation is the Phase 0 foundation. Feature modules are added behind the Application CQRS boundaries.
 
+## Local viewer authentication
+
+The API exposes `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, and authenticated `POST /api/v1/auth/logout`. Configure `DevelopmentViewer__Email` and `DevelopmentViewer__Password` through local environment variables; do not commit values. Optional `DevelopmentViewer__Organization` and `DevelopmentViewer__Region` define the viewer scope. These settings are for local testing only.
+
 ## Architecture structure
 
 ```text
