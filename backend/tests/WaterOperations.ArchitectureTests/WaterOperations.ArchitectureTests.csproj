@@ -21,7 +21,6 @@
   <ItemGroup>
     <ProjectReference Include="../../src/WaterOperations.Application/WaterOperations.Application.csproj" />
     <ProjectReference Include="../../src/WaterOperations.Domain/WaterOperations.Domain.csproj" />
-    <ProjectReference Include="../../src/WaterOperations.Infrastructure/WaterOperations.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

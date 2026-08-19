@@ -19,7 +19,7 @@ Foundation for a real-time water telemetry and operations intelligence platform.
 4. Run the frontend: `cd frontend; npm install; npm run dev`
 5. Run the AI service: `python -m uvicorn app.main:app --app-dir ai-service --reload --port 8000`
 
-The current implementation is the Phase 0 foundation. Feature modules are added behind the Application CQRS boundaries.
+The current implementation is the Phase 0 foundation. The Viewer read feature is the first vertical slice and is implemented behind the Application CQRS boundaries.
 
 ## Architecture structure
 
@@ -65,4 +65,4 @@ docs/                                  # architecture, api, development, deploym
 
 ## Architecture rules
 
-Domain contains business rules only. Application owns use cases, DTOs, validation, and interfaces. Features are vertical slices and own their internal contracts. Infrastructure owns EF Core, PostgreSQL, Redis, and Hangfire. API owns transport concerns and never accesses the database directly. The foundation intentionally contains no product feature implementation.
+Domain contains business rules only. Application owns use cases, DTOs, validation, and interfaces. Features are vertical slices and own their internal contracts. Infrastructure owns EF Core, PostgreSQL, Redis, and Hangfire. API owns transport concerns and never accesses the database directly. The Viewer feature demonstrates this boundary with Application DTOs and Infrastructure projections.
