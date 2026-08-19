@@ -5,7 +5,7 @@ namespace WaterOperations.UnitTests;
 public sealed class ScopeTests
 {
     [Fact]
-    public void TelemetryStore_ReturnsOnlyOrganizationAndRegionScope()
+    public void TelemetryStoreReturnsOnlyOrganizationAndRegionScope()
     {
         var records = new TelemetryStore().ForScope("A", "1").ToList();
         Assert.Single(records);
@@ -13,7 +13,7 @@ public sealed class ScopeTests
     }
 
     [Fact]
-    public void TelemetryStore_ReturnsNothingOutsideRegionOrOrganization()
+    public void TelemetryStoreReturnsNothingOutsideRegionOrOrganization()
     {
         Assert.Empty(new TelemetryStore().ForScope("A", "9"));
         Assert.Empty(new TelemetryStore().ForScope("B", "1"));

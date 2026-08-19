@@ -7,7 +7,7 @@ namespace WaterOperations.UnitTests;
 public sealed class AuthorizationPolicyTests
 {
     [Fact]
-    public void ViewerPolicy_AllowsViewerAndRejectsOtherRoles()
+    public void ViewerPolicyAllowsViewerAndRejectsOtherRoles()
     {
         var policy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().RequireRole(AuthorizationPolicies.ViewerRole).Build();
         Assert.True(IsAuthorized(policy, new ClaimsPrincipal(new ClaimsIdentity([new Claim("role", "VIEWER")], "test", "name", "role"))));

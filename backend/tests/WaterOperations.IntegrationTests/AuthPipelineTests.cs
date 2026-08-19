@@ -18,7 +18,7 @@ public sealed class AuthPipelineTests : IClassFixture<WebApplicationFactory<Prog
     }
 
     [Fact]
-    public async Task AnonymousTelemetryIs401_ViewerIsScoped_AndMutationIs403()
+    public async Task AnonymousTelemetryReturnsUnauthorizedViewerIsScopedAndMutationIsForbidden()
     {
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/v1/telemetry")).StatusCode);
         var login = await client.PostAsJsonAsync("/api/v1/auth/login", new { email = "viewer@test.local", password = "local-only-password" });
