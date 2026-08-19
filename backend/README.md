@@ -18,3 +18,5 @@ Application cross-cutting responsibilities are organized as follows:
 - `Features/<Capability>` — feature-specific DTOs, commands, queries, handlers, validators, and mapping profiles.
 
 Infrastructure implements `IRepository<TEntity>` and `IUnitOfWork` with EF Core in `Infrastructure/Persistence`. Controllers never access EF Core directly.
+
+The Viewer foundation uses PostgreSQL-compatible EF Core persistence and stores migrations in `Infrastructure/Persistence/Migrations`. Set `ConnectionStrings__Default` before running `dotnet ef database update`. Local seed execution is controlled by `Seed__Enabled=true` and is restricted to the Development environment. The API requires `Cors__AllowedOrigins__0` (and additional indexed values as needed) for browser access.

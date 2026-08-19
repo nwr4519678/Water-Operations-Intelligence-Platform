@@ -67,6 +67,30 @@ The API exposes `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, and auth
 
 ## Architecture structure
 
+## Viewer backend foundation
+
+The API uses the dependency direction `Api -> Application -> Domain` and `Infrastructure -> Application + Domain`. Viewer read contracts are exposed under `/api/v1/viewer` and return the common `{ success, data, error, traceId }` envelope. No Admin or Operator module is included.
+
+### Local setup
+
+Requirements: .NET SDK 10 and Docker Desktop. From the repository root:
+
+```powershell
+docker compose up -d postgres redis
+$env:ConnectionStrings__Default = "Host=localhost;Port=5432;Database=water_operations;Username=postgres;Password=postgres"
+$env:ConnectionStrings__Redis = "localhost:6379"
+$env:Cors__AllowedOrigins__0 = "http://localhost:5173"
+dotnet restore WaterOperations.slnx
+dotnet ef database update --project backend/src/WaterOperations.Infrastructure --startup-project backend/src/WaterOperations.Api
+$env:ASPNETCORE_ENVIRONMENT = "Development"
+$env:Seed__Enabled = "true"
+dotnet run --project backend/src/WaterOperations.Api
+```
+
+The development seed is deterministic and idempotent: one synthetic organization, two regions, four stations, twelve measurements, and four alarms. It only runs when `Seed__Enabled=true` in Development. Re-running it does not add duplicates.
+
+The API is available at `/health`, Scalar at `/scalar`, and the OpenAPI document at `/openapi/v1.json`. Configure production database and approved origins with environment variables; no production credentials are stored in the repository. Run verification with `dotnet build WaterOperations.slnx` and `dotnet test WaterOperations.slnx`.
+
 ```text
 backend/
   src/
