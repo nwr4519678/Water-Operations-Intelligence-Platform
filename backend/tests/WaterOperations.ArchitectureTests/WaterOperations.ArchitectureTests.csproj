@@ -18,4 +18,9 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../../src/WaterOperations.Application/WaterOperations.Application.csproj" />
+    <ProjectReference Include="../../src/WaterOperations.Domain/WaterOperations.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
