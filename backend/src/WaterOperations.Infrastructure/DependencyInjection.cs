@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using WaterOperations.Application.Common.Abstractions;
 using WaterOperations.Infrastructure.Persistence;
-using WaterOperations.Application.Viewer;
+using WaterOperations.Application.Features.Viewer.Interfaces;
 using WaterOperations.Infrastructure.Viewer;
 
 namespace WaterOperations.Infrastructure;

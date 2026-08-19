@@ -6,7 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
-using WaterOperations.Application.Viewer;
+using WaterOperations.Application.Features.Viewer.DTOs;
+using WaterOperations.Application.Features.Viewer.Interfaces;
 using WaterOperations.Domain.Entities;
 using WaterOperations.Infrastructure.Persistence;
 using WaterOperations.Infrastructure.Seeding;
@@ -73,10 +74,10 @@ public sealed class ViewerFoundationTests : IClassFixture<WebApplicationFactory<
 
     private sealed class ThrowingViewerReadService : IViewerReadService
     {
-        public Task<IReadOnlyList<Organization>> GetOrganizationsAsync(CancellationToken cancellationToken) => throw new InvalidOperationException("boom");
-        public Task<IReadOnlyList<Region>> GetRegionsAsync(Guid organizationId, CancellationToken cancellationToken) => throw new NotImplementedException();
-        public Task<IReadOnlyList<Station>> GetStationsAsync(Guid regionId, CancellationToken cancellationToken) => throw new NotImplementedException();
-        public Task<IReadOnlyList<Measurement>> GetMeasurementsAsync(Guid stationId, CancellationToken cancellationToken) => throw new NotImplementedException();
-        public Task<IReadOnlyList<Alarm>> GetAlarmsAsync(Guid stationId, CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task<IReadOnlyList<OrganizationDto>> GetOrganizationsAsync(CancellationToken cancellationToken) => throw new InvalidOperationException("boom");
+        public Task<IReadOnlyList<RegionDto>> GetRegionsAsync(Guid organizationId, CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task<IReadOnlyList<StationDto>> GetStationsAsync(Guid regionId, CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task<IReadOnlyList<MeasurementDto>> GetMeasurementsAsync(Guid stationId, CancellationToken cancellationToken) => throw new NotImplementedException();
+        public Task<IReadOnlyList<AlarmDto>> GetAlarmsAsync(Guid stationId, CancellationToken cancellationToken) => throw new NotImplementedException();
     }
 }
