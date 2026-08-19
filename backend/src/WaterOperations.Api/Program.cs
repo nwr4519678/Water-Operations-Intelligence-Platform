@@ -46,6 +46,9 @@ builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
+builder.Services.AddHealthChecks()
+    .AddCheck<WaterOperations.Infrastructure.HealthChecks.DatabaseReadinessCheck>("database")
+    .AddCheck<WaterOperations.Infrastructure.HealthChecks.RedisReadinessCheck>("redis");
 
 var app = builder.Build();
 app.UseCors("Web");
@@ -53,6 +56,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapOpenApi();
 app.MapScalarApiReference(options => options.WithTitle("Water Operations API"));
+app.MapGet("/health/live", () => Results.Ok(new { status = "healthy", service = "api" }));
+app.MapHealthChecks("/health/ready");
 app.MapControllers();
 app.MapHub<TelemetryHub>("/hubs/telemetry");
 app.Run();
