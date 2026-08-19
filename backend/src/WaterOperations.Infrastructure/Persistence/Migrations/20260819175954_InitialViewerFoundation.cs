@@ -8,6 +8,11 @@ namespace WaterOperations.Infrastructure.Persistence.Migrations
     /// <inheritdoc />
     public partial class InitialViewerFoundation : Migration
     {
+        private static readonly string[] AlarmStationRaisedAtColumns = ["StationId", "RaisedAt"];
+        private static readonly string[] MeasurementStationRecordedAtColumns = ["StationId", "RecordedAt"];
+        private static readonly string[] RegionOrganizationNameColumns = ["OrganizationId", "Name"];
+        private static readonly string[] StationRegionNameColumns = ["RegionId", "Name"];
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -106,12 +111,12 @@ namespace WaterOperations.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Alarms_StationId_RaisedAt",
                 table: "Alarms",
-                columns: new[] { "StationId", "RaisedAt" });
+                columns: AlarmStationRaisedAtColumns);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Measurements_StationId_RecordedAt",
                 table: "Measurements",
-                columns: new[] { "StationId", "RecordedAt" });
+                columns: MeasurementStationRecordedAtColumns);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Organizations_Name",
@@ -122,13 +127,13 @@ namespace WaterOperations.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Regions_OrganizationId_Name",
                 table: "Regions",
-                columns: new[] { "OrganizationId", "Name" },
+                columns: RegionOrganizationNameColumns,
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Stations_RegionId_Name",
                 table: "Stations",
-                columns: new[] { "RegionId", "Name" },
+                columns: StationRegionNameColumns,
                 unique: true);
         }
 
