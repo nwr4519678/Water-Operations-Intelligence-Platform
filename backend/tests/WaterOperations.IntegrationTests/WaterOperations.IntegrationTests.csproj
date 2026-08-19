@@ -16,6 +16,8 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
+    <ProjectReference Include="../../src/WaterOperations.Api/WaterOperations.Api.csproj" />
   </ItemGroup>
 
 </Project>

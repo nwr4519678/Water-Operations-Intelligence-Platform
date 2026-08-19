@@ -12,6 +12,6 @@ public sealed class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidat
         var failures = (await Task.WhenAll(validators.Select(v => v.ValidateAsync(context, cancellationToken))))
             .SelectMany(result => result.Errors).Where(error => error is not null).ToArray();
         if (failures.Length > 0) throw new ValidationException(failures);
-        return await next();
+        return await next(cancellationToken);
     }
 }

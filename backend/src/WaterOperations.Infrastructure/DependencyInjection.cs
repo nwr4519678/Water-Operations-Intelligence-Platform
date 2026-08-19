@@ -15,16 +15,26 @@ public static class DependencyInjection
     {
         var connectionString = configuration.GetConnectionString("Default")
             ?? throw new InvalidOperationException("ConnectionStrings:Default must be configured before starting the API.");
-        services.AddDbContext<WaterOperationsDbContext>(options => options.UseNpgsql(connectionString));
+        if (configuration["Testing"] == "true")
+        {
+            services.AddDbContext<WaterOperationsDbContext>(options => options.UseInMemoryDatabase("water-operations-tests"));
+        }
+        else
+        {
+            services.AddDbContext<WaterOperationsDbContext>(options => options.UseNpgsql(connectionString));
+        }
         services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
         services.AddScoped<IUnitOfWork>(serviceProvider => serviceProvider.GetRequiredService<WaterOperationsDbContext>());
-        var redisConnection = configuration.GetConnectionString("Redis")
-            ?? throw new InvalidOperationException("ConnectionStrings:Redis must be configured before starting the API.");
-        services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnection));
-        services.AddStackExchangeRedisCache(options => options.Configuration = redisConnection);
-        services.AddHybridCache();
-        services.AddHangfire(config => config.UseSimpleAssemblyNameTypeSerializer().UseRecommendedSerializerSettings().UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
-        services.AddHangfireServer();
+        if (configuration["Testing"] != "true")
+        {
+            var redisConnection = configuration.GetConnectionString("Redis")
+                ?? throw new InvalidOperationException("ConnectionStrings:Redis must be configured before starting the API.");
+            services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnection));
+            services.AddStackExchangeRedisCache(options => options.Configuration = redisConnection);
+            services.AddHybridCache();
+            services.AddHangfire(config => config.UseSimpleAssemblyNameTypeSerializer().UseRecommendedSerializerSettings().UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
+            services.AddHangfireServer();
+        }
         return services;
     }
 }

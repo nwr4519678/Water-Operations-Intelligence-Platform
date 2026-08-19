@@ -61,6 +61,10 @@ The API reads standard ASP.NET Core environment variables. `.env.example` docume
 - **AI features are unavailable:** AI is optional. Start it with `docker compose --profile ai up -d --build ai-service`, or run `python -m uvicorn app.main:app --app-dir ai-service --reload --port 8000`.
 - **Login/overview is not available yet:** the repository currently contains the viewer shell and platform foundation; product feature modules are added behind the Application CQRS boundaries.
 
+## Local viewer authentication
+
+The API exposes `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, and authenticated `POST /api/v1/auth/logout`. Configure `DevelopmentViewer__Email` and `DevelopmentViewer__Password` through local environment variables; do not commit values. Optional `DevelopmentViewer__Organization` and `DevelopmentViewer__Region` define the viewer scope. These settings are for local testing only.
+
 ## Architecture structure
 
 ```text
