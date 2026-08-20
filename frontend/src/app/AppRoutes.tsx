@@ -3,6 +3,7 @@ import { AppShell } from '../components/AppShell';
 import { can } from '../lib/permissions';
 import { viewerSession } from '../mocks/auth/session';
 import type { Capability } from '../types/auth';
+import { OverviewPage } from '../features/viewer/OverviewPage';
 
 const pages: Array<{ path: string; label: string; capability: Capability }> = [
   { path: '', label: 'Overview', capability: 'overview.read' },
@@ -34,7 +35,7 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route element={<AppShell nav={pages} session={viewerSession} />}>
-        <Route index element={<ViewerPage label="Overview" capability="overview.read" />} />
+        <Route index element={<OverviewPage />} />
         {pages
           .filter((page) => page.path)
           .map((page) => (
