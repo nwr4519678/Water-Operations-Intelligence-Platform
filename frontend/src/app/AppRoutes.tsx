@@ -10,6 +10,7 @@ import { AnalyticsPage } from '../features/viewer/AnalyticsPage';
 import { AlarmsPage } from '../features/viewer/AlarmsPage';
 import { ReportsPage } from '../features/viewer/ReportsPage';
 import { AiInsightsPage } from '../features/viewer/AiInsightsPage';
+import { SettingsPage } from '../features/viewer/SettingsPage';
 
 const pages: Array<{ path: string; label: string; capability: Capability }> = [
   { path: '', label: 'Overview', capability: 'overview.read' },
@@ -44,6 +45,7 @@ export function AppRoutes() {
       <Route element={<AppShell nav={pages} session={viewerSession} />}>
         <Route index element={<OverviewPage />} />
         <Route path="charts" element={<AnalyticsPage />} />
+        <Route path="settings" element={<SettingsPage />} />
         {pages
           .filter((page) => page.path)
           .map((page) => (
