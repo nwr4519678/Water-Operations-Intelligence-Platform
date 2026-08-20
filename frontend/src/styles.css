@@ -28,16 +28,70 @@
   --shadow-raised: 0 0.75rem 2rem rgb(0 0 0 / 18%);
 }
 
-* { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; }
-button, input, select { font: inherit; }
-:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
-.shell { max-width: 960px; margin: 12vh auto; padding: var(--space-8); }
-.eyebrow { color: var(--color-accent); letter-spacing: .14em; font-size: .75rem; }
-h1 { font-size: clamp(2.5rem, 7vw, 5rem); line-height: .98; max-width: 700px; margin: var(--space-4) 0; }
-p { color: var(--color-text-secondary); font-size: 1.15rem; max-width: 620px; }
-.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); margin-top: 3rem; }
-section { border: 1px solid var(--color-border-default); background: var(--color-surface-raised); border-radius: var(--radius-lg); padding: 1.2rem; box-shadow: var(--shadow-raised); }
-section strong, section span { display: block; }
-section span { color: var(--color-text-secondary); margin-top: var(--space-2); }
-@media (max-width: 767px) { .shell { margin: 8vh auto; padding: var(--space-6); } .grid { grid-template-columns: 1fr; } }
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+}
+button,
+input,
+select {
+  font: inherit;
+}
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+.shell {
+  max-width: 960px;
+  margin: 12vh auto;
+  padding: var(--space-8);
+}
+.eyebrow {
+  color: var(--color-accent);
+  letter-spacing: 0.14em;
+  font-size: 0.75rem;
+}
+h1 {
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  line-height: 0.98;
+  max-width: 700px;
+  margin: var(--space-4) 0;
+}
+p {
+  color: var(--color-text-secondary);
+  font-size: 1.15rem;
+  max-width: 620px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-top: 3rem;
+}
+section {
+  border: 1px solid var(--color-border-default);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-lg);
+  padding: 1.2rem;
+  box-shadow: var(--shadow-raised);
+}
+section strong,
+section span {
+  display: block;
+}
+section span {
+  color: var(--color-text-secondary);
+  margin-top: var(--space-2);
+}
+@media (max-width: 767px) {
+  .shell {
+    margin: 8vh auto;
+    padding: var(--space-6);
+  }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
