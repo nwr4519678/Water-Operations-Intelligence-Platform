@@ -1,0 +1,6 @@
+{
+  "appName": "WaterTelemetry",
+  "viewerWorkspace": "Viewer workspace",
+  "offline": "You are offline. Showing the latest available data.",
+  "readOnly": "Read-only"
+}
