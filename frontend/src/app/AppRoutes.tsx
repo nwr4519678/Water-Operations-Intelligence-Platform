@@ -6,6 +6,7 @@ import type { Capability } from '../types/auth';
 import { OverviewPage } from '../features/viewer/OverviewPage';
 import { NetworkMapPage } from '../features/viewer/NetworkMapPage';
 import { StationsPage } from '../features/viewer/StationsPage';
+import { AnalyticsPage } from '../features/viewer/AnalyticsPage';
 
 const pages: Array<{ path: string; label: string; capability: Capability }> = [
   { path: '', label: 'Overview', capability: 'overview.read' },
@@ -39,6 +40,7 @@ export function AppRoutes() {
     <Routes>
       <Route element={<AppShell nav={pages} session={viewerSession} />}>
         <Route index element={<OverviewPage />} />
+        <Route path="charts" element={<AnalyticsPage />} />
         {pages
           .filter((page) => page.path)
           .map((page) => (
