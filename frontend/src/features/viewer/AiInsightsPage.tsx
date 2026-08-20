@@ -1,5 +1,75 @@
-const factors = [{ label: 'High water level', value: 72, tone: 'critical' }, { label: 'Aging infrastructure', value: 65, tone: 'warning' }, { label: 'Flow variability', value: 58, tone: 'warning' }, { label: 'Water quality trend', value: 45, tone: 'healthy' }];
+const factors = [
+  { label: 'High water level', value: 72, tone: 'critical' },
+  { label: 'Aging infrastructure', value: 65, tone: 'warning' },
+  { label: 'Flow variability', value: 58, tone: 'warning' },
+  { label: 'Water quality trend', value: 45, tone: 'healthy' },
+];
 
 export function AiInsightsPage() {
-  return <div className="feature-page"><div className="page-heading"><div><span className="eyebrow">DECISION SUPPORT</span><h1>AI insights</h1><p>Read-only risk, anomaly, forecast, confidence, and model health signals.</p></div><span className="status-badge status-badge--healthy">Model healthy</span></div><div className="ai-grid"><section className="panel ai-score-panel"><h2>Network risk score</h2><div className="ai-score">68<span>/100</span></div><strong>Medium risk</strong><p className="muted">Calculated from current telemetry and infrastructure signals.</p></section><section className="panel"><div className="panel-heading"><h2>Top risk factors</h2><span className="muted">Confidence 86%</span></div><div className="factor-list">{factors.map((factor) => <div className="factor" key={factor.label}><span><i className={`factor-dot factor-dot--${factor.tone}`} />{factor.label}</span><b>{factor.value}</b><meter min="0" max="100" value={factor.value} /></div>)}</div></section></div><div className="feature-grid"><section className="panel"><h2>48-hour forecast</h2><div className="forecast-line"><span>Now</span><b>2.8 m</b><span>+12h</span><b>3.4 m</b><span>+24h</span><b>3.8 m</b><span>+48h</span><b>3.1 m</b></div><p className="muted">Confidence interval is displayed with the prediction in the viewer.</p></section><section className="panel"><h2>Model freshness</h2><div className="model-status"><span className="status-badge status-badge--healthy">Available</span><b>Updated 10:30 AM</b><p className="muted">No stale or degraded model inputs detected.</p></div></section></div></div>;
+  return (
+    <div className="feature-page">
+      <div className="page-heading">
+        <div>
+          <span className="eyebrow">DECISION SUPPORT</span>
+          <h1>AI insights</h1>
+          <p>Read-only risk, anomaly, forecast, confidence, and model health signals.</p>
+        </div>
+        <span className="status-badge status-badge--healthy">Model healthy</span>
+      </div>
+      <div className="ai-grid">
+        <section className="panel ai-score-panel">
+          <h2>Network risk score</h2>
+          <div className="ai-score">
+            68<span>/100</span>
+          </div>
+          <strong>Medium risk</strong>
+          <p className="muted">Calculated from current telemetry and infrastructure signals.</p>
+        </section>
+        <section className="panel">
+          <div className="panel-heading">
+            <h2>Top risk factors</h2>
+            <span className="muted">Confidence 86%</span>
+          </div>
+          <div className="factor-list">
+            {factors.map((factor) => (
+              <div className="factor" key={factor.label}>
+                <span>
+                  <i className={`factor-dot factor-dot--${factor.tone}`} />
+                  {factor.label}
+                </span>
+                <b>{factor.value}</b>
+                <meter min="0" max="100" value={factor.value} />
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+      <div className="feature-grid">
+        <section className="panel">
+          <h2>48-hour forecast</h2>
+          <div className="forecast-line">
+            <span>Now</span>
+            <b>2.8 m</b>
+            <span>+12h</span>
+            <b>3.4 m</b>
+            <span>+24h</span>
+            <b>3.8 m</b>
+            <span>+48h</span>
+            <b>3.1 m</b>
+          </div>
+          <p className="muted">
+            Confidence interval is displayed with the prediction in the viewer.
+          </p>
+        </section>
+        <section className="panel">
+          <h2>Model freshness</h2>
+          <div className="model-status">
+            <span className="status-badge status-badge--healthy">Available</span>
+            <b>Updated 10:30 AM</b>
+            <p className="muted">No stale or degraded model inputs detected.</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
 }

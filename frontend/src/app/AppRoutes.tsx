@@ -52,7 +52,21 @@ export function AppRoutes() {
             <Route
               key={page.path}
               path={page.path}
-              element={page.path === 'map' ? <NetworkMapPage /> : page.path === 'stations' ? <StationsPage /> : page.path === 'alarms' ? <AlarmsPage /> : page.path === 'reports' ? <ReportsPage /> : page.path === 'ai-insights' ? <AiInsightsPage /> : <ViewerPage label={page.label} capability={page.capability} />}
+              element={
+                page.path === 'map' ? (
+                  <NetworkMapPage />
+                ) : page.path === 'stations' ? (
+                  <StationsPage />
+                ) : page.path === 'alarms' ? (
+                  <AlarmsPage />
+                ) : page.path === 'reports' ? (
+                  <ReportsPage />
+                ) : page.path === 'ai-insights' ? (
+                  <AiInsightsPage />
+                ) : (
+                  <ViewerPage label={page.label} capability={page.capability} />
+                )
+              }
             />
           ))}
       </Route>
