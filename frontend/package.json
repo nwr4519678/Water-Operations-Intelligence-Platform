@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "tokens:build": "node design-tokens/build.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "format:check": "prettier --check .",
     "format:write": "prettier --write .",
     "test:unit": "vitest run",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "test": "vitest run"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.0",

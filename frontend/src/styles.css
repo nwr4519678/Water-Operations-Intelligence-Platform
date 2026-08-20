@@ -1,3 +1,5 @@
+@import './tokens/generated.css';
+
 :root {
   color-scheme: dark;
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
@@ -95,3 +97,7 @@ section span {
     grid-template-columns: 1fr;
   }
 }
+ .state-view { display: grid; gap: var(--space-2); padding: var(--space-6); border: 1px solid var(--color-border-default); border-radius: var(--radius-md); background: var(--color-surface-raised); }
+ .state-view p { margin: 0; font-size: 0.95rem; }
+ .state-view--error { border-color: var(--color-status-offline); }
+ .state-view--offline, .state-view--stale { border-color: var(--color-status-attention); }
