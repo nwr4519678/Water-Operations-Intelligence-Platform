@@ -3,10 +3,19 @@ import { AppShell } from '../components/AppShell';
 import { can } from '../lib/permissions';
 import { viewerSession } from '../mocks/auth/session';
 import type { Capability } from '../types/auth';
+import { OverviewPage } from '../features/viewer/OverviewPage';
+import { NetworkMapPage } from '../features/viewer/NetworkMapPage';
+import { StationsPage } from '../features/viewer/StationsPage';
+import { AnalyticsPage } from '../features/viewer/AnalyticsPage';
+import { AlarmsPage } from '../features/viewer/AlarmsPage';
+import { ReportsPage } from '../features/viewer/ReportsPage';
+import { AiInsightsPage } from '../features/viewer/AiInsightsPage';
+import { SettingsPage } from '../features/viewer/SettingsPage';
 
 const pages: Array<{ path: string; label: string; capability: Capability }> = [
   { path: '', label: 'Overview', capability: 'overview.read' },
   { path: 'map', label: 'Map & Stations', capability: 'stations.read' },
+  { path: 'stations', label: 'Stations', capability: 'stations.read' },
   { path: 'alarms', label: 'Alarms', capability: 'alarms.read' },
   { path: 'reports', label: 'Reports', capability: 'reports.read' },
   { path: 'ai-insights', label: 'AI Insights', capability: 'insights.read' },
@@ -34,14 +43,30 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route element={<AppShell nav={pages} session={viewerSession} />}>
-        <Route index element={<ViewerPage label="Overview" capability="overview.read" />} />
+        <Route index element={<OverviewPage />} />
+        <Route path="charts" element={<AnalyticsPage />} />
+        <Route path="settings" element={<SettingsPage />} />
         {pages
           .filter((page) => page.path)
           .map((page) => (
             <Route
               key={page.path}
               path={page.path}
-              element={<ViewerPage label={page.label} capability={page.capability} />}
+              element={
+                page.path === 'map' ? (
+                  <NetworkMapPage />
+                ) : page.path === 'stations' ? (
+                  <StationsPage />
+                ) : page.path === 'alarms' ? (
+                  <AlarmsPage />
+                ) : page.path === 'reports' ? (
+                  <ReportsPage />
+                ) : page.path === 'ai-insights' ? (
+                  <AiInsightsPage />
+                ) : (
+                  <ViewerPage label={page.label} capability={page.capability} />
+                )
+              }
             />
           ))}
       </Route>
