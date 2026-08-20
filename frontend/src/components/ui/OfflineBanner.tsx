@@ -8,7 +8,14 @@ export function OfflineBanner({ locale = 'en' }: { locale?: 'en' | 'ar' }) {
     const off = () => setOnline(false);
     window.addEventListener('online', on);
     window.addEventListener('offline', off);
-    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
+    return () => {
+      window.removeEventListener('online', on);
+      window.removeEventListener('offline', off);
+    };
   }, []);
-  return online ? null : <aside className="offline-banner" role="status">{translate(locale, 'offline')}</aside>;
+  return online ? null : (
+    <aside className="offline-banner" role="status">
+      {translate(locale, 'offline')}
+    </aside>
+  );
 }

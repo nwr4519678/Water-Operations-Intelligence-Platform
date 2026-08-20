@@ -1,11 +1,7 @@
 export type Role = 'viewer' | 'admin' | 'operator';
 
 export type Capability =
-  | 'overview.read'
-  | 'stations.read'
-  | 'alarms.read'
-  | 'reports.read'
-  | 'insights.read';
+  'overview.read' | 'stations.read' | 'alarms.read' | 'reports.read' | 'insights.read';
 
 export type Session = {
   userId: string;
