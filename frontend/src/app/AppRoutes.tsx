@@ -4,6 +4,7 @@ import { can } from '../lib/permissions';
 import { viewerSession } from '../mocks/auth/session';
 import type { Capability } from '../types/auth';
 import { OverviewPage } from '../features/viewer/OverviewPage';
+import { NetworkMapPage } from '../features/viewer/NetworkMapPage';
 
 const pages: Array<{ path: string; label: string; capability: Capability }> = [
   { path: '', label: 'Overview', capability: 'overview.read' },
@@ -42,7 +43,7 @@ export function AppRoutes() {
             <Route
               key={page.path}
               path={page.path}
-              element={<ViewerPage label={page.label} capability={page.capability} />}
+              element={page.path === 'map' ? <NetworkMapPage /> : <ViewerPage label={page.label} capability={page.capability} />}
             />
           ))}
       </Route>
