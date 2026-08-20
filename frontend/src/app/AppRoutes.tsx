@@ -5,10 +5,12 @@ import { viewerSession } from '../mocks/auth/session';
 import type { Capability } from '../types/auth';
 import { OverviewPage } from '../features/viewer/OverviewPage';
 import { NetworkMapPage } from '../features/viewer/NetworkMapPage';
+import { StationsPage } from '../features/viewer/StationsPage';
 
 const pages: Array<{ path: string; label: string; capability: Capability }> = [
   { path: '', label: 'Overview', capability: 'overview.read' },
   { path: 'map', label: 'Map & Stations', capability: 'stations.read' },
+  { path: 'stations', label: 'Stations', capability: 'stations.read' },
   { path: 'alarms', label: 'Alarms', capability: 'alarms.read' },
   { path: 'reports', label: 'Reports', capability: 'reports.read' },
   { path: 'ai-insights', label: 'AI Insights', capability: 'insights.read' },
@@ -43,7 +45,7 @@ export function AppRoutes() {
             <Route
               key={page.path}
               path={page.path}
-              element={page.path === 'map' ? <NetworkMapPage /> : <ViewerPage label={page.label} capability={page.capability} />}
+              element={page.path === 'map' ? <NetworkMapPage /> : page.path === 'stations' ? <StationsPage /> : <ViewerPage label={page.label} capability={page.capability} />}
             />
           ))}
       </Route>
