@@ -101,6 +101,19 @@ section span {
  .state-view p { margin: 0; font-size: 0.95rem; }
  .state-view--error { border-color: var(--color-status-offline); }
  .state-view--offline, .state-view--stale { border-color: var(--color-status-attention); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.button { border: 1px solid var(--color-border-default); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); cursor: pointer; color: var(--color-text-primary); background: var(--color-surface-subtle); }
+.button--primary { color: var(--color-surface-canvas); background: var(--color-accent-primary); }
+.button--quiet { border-color: transparent; background: transparent; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; text-align: start; }
+th, td { padding: var(--space-3); border-bottom: 1px solid var(--color-border-default); text-align: start; }
+th { color: var(--color-text-secondary); font-size: .8rem; }
+.status-badge { display: inline-flex; padding: var(--space-1) var(--space-2); border-radius: 999px; font-size: .75rem; text-transform: capitalize; }
+.status-badge--healthy { color: var(--color-status-healthy); background: color-mix(in srgb, var(--color-status-healthy) 15%, transparent); }
+.status-badge--attention { color: var(--color-status-attention); background: color-mix(in srgb, var(--color-status-attention) 15%, transparent); }
+.status-badge--offline { color: var(--color-status-offline); background: color-mix(in srgb, var(--color-status-offline) 15%, transparent); }
+.status-badge--unknown { color: var(--color-status-unknown); background: color-mix(in srgb, var(--color-status-unknown) 15%, transparent); }
 .app-shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
 .sidebar { display: flex; flex-direction: column; gap: var(--space-8); padding: var(--space-6); border-inline-end: 1px solid var(--color-border-default); background: var(--color-surface-raised); }
 .brand { display: grid; gap: var(--space-1); }
