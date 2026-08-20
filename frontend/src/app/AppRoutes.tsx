@@ -8,6 +8,7 @@ import { NetworkMapPage } from '../features/viewer/NetworkMapPage';
 import { StationsPage } from '../features/viewer/StationsPage';
 import { AnalyticsPage } from '../features/viewer/AnalyticsPage';
 import { AlarmsPage } from '../features/viewer/AlarmsPage';
+import { ReportsPage } from '../features/viewer/ReportsPage';
 
 const pages: Array<{ path: string; label: string; capability: Capability }> = [
   { path: '', label: 'Overview', capability: 'overview.read' },
@@ -48,7 +49,7 @@ export function AppRoutes() {
             <Route
               key={page.path}
               path={page.path}
-              element={page.path === 'map' ? <NetworkMapPage /> : page.path === 'stations' ? <StationsPage /> : page.path === 'alarms' ? <AlarmsPage /> : <ViewerPage label={page.label} capability={page.capability} />}
+              element={page.path === 'map' ? <NetworkMapPage /> : page.path === 'stations' ? <StationsPage /> : page.path === 'alarms' ? <AlarmsPage /> : page.path === 'reports' ? <ReportsPage /> : <ViewerPage label={page.label} capability={page.capability} />}
             />
           ))}
       </Route>
