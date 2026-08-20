@@ -1,3 +1,3 @@
 # Services
 
-Generated or hand-written API clients belong here. Components do not call `fetch` directly.
+Typed transport adapters belong here. Services translate API responses into contracts consumed by pages and hooks; they do not render UI or own persistence.
