@@ -1,3 +1,4 @@
+/* global URL */
 import { readFile, writeFile } from 'node:fs/promises';
 
 const input = new URL('./tokens.json', import.meta.url);
