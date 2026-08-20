@@ -1,5 +1,5 @@
-import en from '../../public/locales/en/common.json';
-import ar from '../../public/locales/ar/common.json';
+import en from '../locales/en/common.json';
+import ar from '../locales/ar/common.json';
 
 export type Locale = 'en' | 'ar';
 export const dictionaries = { en, ar } as const;
