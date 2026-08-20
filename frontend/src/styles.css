@@ -254,6 +254,7 @@ th {
   display: grid;
   gap: var(--space-1);
 }
+.global-search { position: relative; display: flex !important; align-items: center; flex: 1; max-width: 420px; }.global-search input { width: 100%; padding: .7rem 3rem .7rem .9rem; border: 1px solid var(--color-border-default); border-radius: var(--radius-sm); color: var(--color-text-primary); background: var(--color-surface-raised); }.global-search kbd { position: absolute; right: .6rem; color: var(--color-text-muted); font-size: .7rem; }.search-results { position: absolute; z-index: 5; top: calc(100% + .4rem); width: 100%; padding: .4rem; border: 1px solid var(--color-border-default); border-radius: var(--radius-sm); background: var(--color-surface-raised); box-shadow: var(--shadow-raised); }.search-results div { padding: .6rem; color: var(--color-text-secondary); }.search-results div:hover { color: var(--color-text-primary); background: var(--color-surface-subtle); }
 .topbar strong {
   color: var(--color-text-primary);
 }
