@@ -48,7 +48,7 @@ export function AlarmsPage() {
             return (
               <article className={`alarm-card alarm-card--${alarm.severity}`} key={alarm.id}>
                 <div>
-                  <span className="status-badge status-badge--${alarm.severity}">
+                  <span className={`status-badge status-badge--${alarm.severity}`}>
                     {alarm.severity}
                   </span>
                   <h2>{alarm.title}</h2>
