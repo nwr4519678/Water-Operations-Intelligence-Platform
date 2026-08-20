@@ -18,6 +18,7 @@ export function AppShell({ nav, session }: { nav: NavItem[]; session: Session })
   const [search, setSearch] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const results =
     search.length > 1
       ? [
@@ -28,7 +29,11 @@ export function AppShell({ nav, session }: { nav: NavItem[]; session: Session })
           .slice(0, 5)
       : [];
   return (
-    <div className="app-shell" dir={directionFor(session.locale)} lang={session.locale}>
+    <div
+      className={`app-shell theme-${theme}`}
+      dir={directionFor(session.locale)}
+      lang={session.locale}
+    >
       {sidebarOpen && (
         <button
           className="sidebar-scrim"
@@ -132,8 +137,12 @@ export function AppShell({ nav, session }: { nav: NavItem[]; session: Session })
             >
               ♧<span>7</span>
             </button>
-            <button className="icon-button" aria-label="Toggle theme">
-              ☼
+            <button
+              className="icon-button"
+              aria-label="Toggle theme"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            >
+              {theme === 'dark' ? '☼' : '☾'}
             </button>
             <div className="profile-chip">
               <span className="avatar">V</span>
