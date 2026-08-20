@@ -30,3 +30,5 @@ Safe local defaults are used when the variables are not set. Staging and product
 ## CI gates
 
 Pull requests and viewer-sprint branches run lint, formatting, unit tests, browser smoke tests, and a production build. CI uploads the production bundle, Playwright report, and test results for diagnosis. No private secrets are required for these baseline checks.
+
+The formatting gate is deterministic: `.prettierrc.json` pins two-space indentation and LF line endings, and the checked-in files are formatted with that configuration. Run `npm run format:check` before pushing frontend changes.
