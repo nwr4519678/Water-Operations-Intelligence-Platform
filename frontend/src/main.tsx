@@ -6,7 +6,7 @@ import './styles.css';
 
 const queryClient = new QueryClient();
 createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-        <App queryClient={queryClient} />
-    </StrictMode>,
+  <StrictMode>
+    <App queryClient={queryClient} />
+  </StrictMode>,
 );

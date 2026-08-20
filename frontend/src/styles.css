@@ -1,97 +1,97 @@
 :root {
-    color-scheme: dark;
-    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-    color: var(--color-text-primary);
-    background: var(--color-surface-canvas);
-    --color-surface-canvas: #07151d;
-    --color-surface-raised: #0d242d;
-    --color-surface-subtle: #12333d;
-    --color-border-default: #21414b;
-    --color-text-primary: #e8f4f6;
-    --color-text-secondary: #9bb6be;
-    --color-text-muted: #6f8d96;
-    --color-accent: #55d6c2;
-    --color-focus: #f6c85f;
-    --color-status-healthy: #55d6c2;
-    --color-status-attention: #f6c85f;
-    --color-status-offline: #f28b82;
-    --color-status-unknown: #b7a8d8;
-    --space-1: 0.25rem;
-    --space-2: 0.5rem;
-    --space-3: 0.75rem;
-    --space-4: 1rem;
-    --space-6: 1.5rem;
-    --space-8: 2rem;
-    --radius-sm: 0.375rem;
-    --radius-md: 0.75rem;
-    --radius-lg: 1rem;
-    --shadow-raised: 0 0.75rem 2rem rgb(0 0 0 / 18%);
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color: var(--color-text-primary);
+  background: var(--color-surface-canvas);
+  --color-surface-canvas: #07151d;
+  --color-surface-raised: #0d242d;
+  --color-surface-subtle: #12333d;
+  --color-border-default: #21414b;
+  --color-text-primary: #e8f4f6;
+  --color-text-secondary: #9bb6be;
+  --color-text-muted: #6f8d96;
+  --color-accent: #55d6c2;
+  --color-focus: #f6c85f;
+  --color-status-healthy: #55d6c2;
+  --color-status-attention: #f6c85f;
+  --color-status-offline: #f28b82;
+  --color-status-unknown: #b7a8d8;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --shadow-raised: 0 0.75rem 2rem rgb(0 0 0 / 18%);
 }
 
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 body {
-    margin: 0;
-    min-width: 320px;
+  margin: 0;
+  min-width: 320px;
 }
 button,
 input,
 select {
-    font: inherit;
+  font: inherit;
 }
 :focus-visible {
-    outline: 3px solid var(--color-focus);
-    outline-offset: 3px;
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
 }
 .shell {
-    max-width: 960px;
-    margin: 12vh auto;
-    padding: var(--space-8);
+  max-width: 960px;
+  margin: 12vh auto;
+  padding: var(--space-8);
 }
 .eyebrow {
-    color: var(--color-accent);
-    letter-spacing: 0.14em;
-    font-size: 0.75rem;
+  color: var(--color-accent);
+  letter-spacing: 0.14em;
+  font-size: 0.75rem;
 }
 h1 {
-    font-size: clamp(2.5rem, 7vw, 5rem);
-    line-height: 0.98;
-    max-width: 700px;
-    margin: var(--space-4) 0;
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  line-height: 0.98;
+  max-width: 700px;
+  margin: var(--space-4) 0;
 }
 p {
-    color: var(--color-text-secondary);
-    font-size: 1.15rem;
-    max-width: 620px;
+  color: var(--color-text-secondary);
+  font-size: 1.15rem;
+  max-width: 620px;
 }
 .grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-4);
-    margin-top: 3rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-top: 3rem;
 }
 section {
-    border: 1px solid var(--color-border-default);
-    background: var(--color-surface-raised);
-    border-radius: var(--radius-lg);
-    padding: 1.2rem;
-    box-shadow: var(--shadow-raised);
+  border: 1px solid var(--color-border-default);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-lg);
+  padding: 1.2rem;
+  box-shadow: var(--shadow-raised);
 }
 section strong,
 section span {
-    display: block;
+  display: block;
 }
 section span {
-    color: var(--color-text-secondary);
-    margin-top: var(--space-2);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-2);
 }
 @media (max-width: 767px) {
-    .shell {
-        margin: 8vh auto;
-        padding: var(--space-6);
-    }
-    .grid {
-        grid-template-columns: 1fr;
-    }
+  .shell {
+    margin: 8vh auto;
+    padding: var(--space-6);
+  }
+  .grid {
+    grid-template-columns: 1fr;
+  }
 }
