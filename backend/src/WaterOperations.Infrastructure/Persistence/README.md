@@ -11,6 +11,10 @@ pooled `NpgsqlDataSource` from `ConnectionStrings:Default` and supplies it to EF
 the same canonical connection string is used by Hangfire. Tests explicitly use the EF Core
 InMemory provider and never affect the production registration.
 
+The generated model is extended by `WaterOperationsDbContext.PostgreSqlConfiguration.cs`:
+JSON documents use PostgreSQL `jsonb`, UTC values use `timestamp with time zone`, and user
+concurrency uses an explicit `bytea` token rather than SQL Server `rowversion` semantics.
+
 Apply the checked-in migrations with:
 
 ```powershell
