@@ -34,10 +34,10 @@
 
 | UI Field / Metric | Source Column | Transformation Rule | Unit | Test / Seed Value |
 | :--- | :--- | :--- | :--- | :--- |
-| **Water Level** | `Gage height` | `.resample('1h').mean()` | ft | `1.97` |
-| **Flow Rate** | `Streamflow` | `.resample('1h').mean()` | ft³/s | `23.40` |
+| **Water Level** | `Gage height` | `.resample('1h').mean()` | m | `0.60` |
+| **Flow Rate** | `Streamflow` | `.resample('1h').mean()` | m³/s | `0.66` |
 | **Water Temp** | `Temperature` | `.resample('1h').mean()` | °C | *Varies by station* |
-| **Rainfall Total** | `Precipitation` | `.resample('1h').sum(min_count=1)` | inches | `0.00` |
+| **Rainfall Total** | `Precipitation` | `.resample('1h').sum(min_count=1)` | mm | `0.0` |
 | **Station Health**| `Station_State` | `evaluate_station_health()` | string | `Online` |
 | **Active Alarms** | `Active_Alarms` | `evaluate_station_health()` | string | `Resolved: Operating normally` |
 | **Last Updated** | `timestamp_utc` | `pd.to_datetime(utc=True)` | UTC | `2026-07-01 07:00:00+00:00` |
@@ -46,6 +46,6 @@
 
 | timestamp_utc | Gage height | Streamflow | Precipitation | Station_State | Active_Alarms |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **2026-07-01 07:00:00+00:00** | 1.9700 | 23.400 | 0.0 | Online | Resolved: Operating normally |
-| **2026-07-01 08:00:00+00:00** | 1.9725 | 600.50 | 2.5 | Warning | WARN: High flow rate detected (Flood risk) |
+| **2026-07-01 07:00:00+00:00** | 0.600 | 0.662 | 0.0 | Online | Resolved: Operating normally |
+| **2026-07-01 08:00:00+00:00** | 0.601 | 17.004 | 63.5 | Warning | WARN: High flow rate detected (Flood risk) |
 | **2026-07-01 09:00:00+00:00** | NaN | NaN | NaN | Critical | CRITICAL_ALARM: Sensor data missing or invalid |
