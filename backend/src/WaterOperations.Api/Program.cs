@@ -85,7 +85,8 @@ if (app.Configuration["Testing"] == "true" || (app.Environment.IsDevelopment() &
     }
     else
     {
-        await db.Database.MigrateAsync();
+        var migrationRunner = scope.ServiceProvider.GetRequiredService<IPostgreSqlMigrationRunner>();
+        await migrationRunner.ApplyAsync();
     }
 
     if (app.Configuration.GetValue<bool>("Seed:Enabled"))

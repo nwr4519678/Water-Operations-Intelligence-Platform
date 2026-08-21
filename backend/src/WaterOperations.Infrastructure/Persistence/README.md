@@ -11,6 +11,12 @@ pooled `NpgsqlDataSource` from `ConnectionStrings:Default` and supplies it to EF
 the same canonical connection string is used by Hangfire. Tests explicitly use the EF Core
 InMemory provider and never affect the production registration.
 
+Production startup applies migrations through `IPostgreSqlMigrationRunner`, which takes a
+PostgreSQL session advisory lock before running the ordered chain. This prevents multiple
+API replicas from racing migrations. If a migration fails, startup fails and the lock is
+released; operators should fix the migration or restore the previous application version
+before retrying.
+
 The generated model is extended by `WaterOperationsDbContext.PostgreSqlConfiguration.cs`:
 JSON documents use PostgreSQL `jsonb`, UTC values use `timestamp with time zone`, and user
 concurrency uses an explicit `bytea` token rather than SQL Server `rowversion` semantics.

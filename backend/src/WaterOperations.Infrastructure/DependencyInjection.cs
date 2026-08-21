@@ -29,6 +29,7 @@ public static class DependencyInjection
                 options.UseNpgsql(provider.GetRequiredService<NpgsqlDataSource>()));
         }
         services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
+        services.AddScoped<IPostgreSqlMigrationRunner, PostgreSqlMigrationRunner>();
         services.AddScoped<IUnitOfWork>(serviceProvider => serviceProvider.GetRequiredService<WaterOperationsDbContext>());
         services.AddScoped<IViewerReadService, EfViewerReadService>();
         if (configuration["Testing"] != "true")
