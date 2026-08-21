@@ -1,0 +1,6 @@
+--- VALIDATION REPORT: COLORADO RIVER AT LEES FERRY, AZ ---
+Total Hourly Records Processed: 5573
+Clean Records: 2882
+Quarantined Records: 2691
+Data Completeness: 51.71%
+Sensors Tracked: ['Temperature', 'Precipitation', 'Streamflow', 'Gage height', 'Station_State', 'Active_Alarms']

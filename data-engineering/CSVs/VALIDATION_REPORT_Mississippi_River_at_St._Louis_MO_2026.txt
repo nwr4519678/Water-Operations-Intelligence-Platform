@@ -1,0 +1,6 @@
+--- VALIDATION REPORT: Mississippi River at St. Louis, MO ---
+Total Hourly Records Processed: 5574
+Clean Records: 5464
+Quarantined Records: 110
+Data Completeness: 98.03%
+Sensors Tracked: ['Streamflow', 'Gage height', 'Station_State', 'Active_Alarms']

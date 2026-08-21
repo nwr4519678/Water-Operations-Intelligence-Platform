@@ -1,0 +1,53 @@
+{
+    "name": "ns1:timeSeriesResponseType",
+    "declaredType": "org.cuahsi.waterml.TimeSeriesResponseType",
+    "scope": "javax.xml.bind.JAXBElement$GlobalScope",
+    "value": {
+        "queryInfo": {
+            "queryURL": "http://nwis.waterservices.usgs.gov/nwis/iv/format=json&sites=99999999&startDT=2026-01-01&endDT=2026-08-21&parameterCd=00065,00060,00010,00045,70969",
+            "criteria": {
+                "locationParam": "[ALL:99999999]",
+                "variableParam": "[00065, 00060, 00010, 00045, 70969]",
+                "timeParam": {
+                    "beginDateTime": "2026-01-01T00:00:00.000",
+                    "endDateTime": "2026-08-21T23:59:59.000"
+                },
+                "parameter": []
+            },
+            "note": [
+                {
+                    "value": "[ALL:99999999]",
+                    "title": "filter:sites"
+                },
+                {
+                    "value": "[mode=RANGE, modifiedSince=null] interval={INTERVAL[2026-01-01T00:00:00.000-05:00/2026-08-21T23:59:59.000Z]}",
+                    "title": "filter:timeRange"
+                },
+                {
+                    "value": "methodIds=[ALL]",
+                    "title": "filter:methodId"
+                },
+                {
+                    "value": "2026-08-21T11:25:08.629Z",
+                    "title": "requestDT"
+                },
+                {
+                    "value": "f7406e30-9d52-11f1-a980-4cd98f8df011",
+                    "title": "requestId"
+                },
+                {
+                    "value": "Provisional data are subject to revision. Go to http://waterdata.usgs.gov/nwis/help/?provisional for more information.",
+                    "title": "disclaimer"
+                },
+                {
+                    "value": "nadww01",
+                    "title": "server"
+                }
+            ]
+        },
+        "timeSeries": []
+    },
+    "nil": false,
+    "globalScope": true,
+    "typeSubstituted": false
+}
