@@ -12,6 +12,9 @@ __pycache__/
 .env
 *.db
 TestResults/
+coverage/
+playwright-report/
+test-results/
 
 .vs/
 bin/
