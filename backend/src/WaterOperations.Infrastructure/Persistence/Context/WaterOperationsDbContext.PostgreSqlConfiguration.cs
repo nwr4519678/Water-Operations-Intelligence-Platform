@@ -8,8 +8,20 @@ namespace WaterOperations.Infrastructure.Persistence;
 /// </summary>
 public partial class WaterOperationsDbContext
 {
+    public DbSet<OutboxMessage> OutboxMessages { get; set; } = null!;
+
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<OutboxMessage>(entity =>
+        {
+            entity.ToTable("OutboxMessage", "Integration");
+            entity.HasKey(message => message.OutboxMessageId);
+            entity.HasIndex(message => new { message.Status, message.AvailableAtUtc });
+            entity.Property(message => message.OutboxMessageId).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(message => message.EventType).HasMaxLength(200).IsRequired();
+            entity.Property(message => message.PayloadJson).HasColumnType("jsonb").IsRequired();
+            entity.Property(message => message.Status).HasMaxLength(20).IsRequired();
+        });
         modelBuilder.Entity<AuditLog>(entity =>
         {
             entity.Property(e => e.BeforeJson).HasColumnType("jsonb");

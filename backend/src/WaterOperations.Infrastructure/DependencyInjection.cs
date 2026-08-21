@@ -36,6 +36,7 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
         services.AddScoped<IPostgreSqlMigrationRunner, PostgreSqlMigrationRunner>();
         services.AddScoped<IUnitOfWork>(serviceProvider => serviceProvider.GetRequiredService<WaterOperationsDbContext>());
+        services.AddScoped<IOutboxWriter, OutboxWriter>();
         services.AddScoped<IViewerReadService, EfViewerReadService>();
         services.AddScoped<IOverviewService, EfOverviewService>();
         services.AddScoped<IMeasurementIngestionService, EfMeasurementIngestionService>();
