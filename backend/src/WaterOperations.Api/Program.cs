@@ -19,14 +19,20 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((context, logger) => logger.ReadFrom.Configuration(context.Configuration).Enrich.FromLogContext(), preserveStaticLogger: true);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddSingleton<SessionStore>();
+builder.Services.AddScoped<SessionStore>();
 builder.Services.AddScoped<ViewerUserStore>();
 builder.Services.AddSingleton<TelemetryStore>();
 builder.Services.AddSingleton<AuthTokenService>();
+var signingKey = builder.Configuration["Authentication:SigningKey"];
+if (builder.Configuration["Testing"] != "true" && !builder.Environment.IsDevelopment() &&
+    (string.IsNullOrWhiteSpace(signingKey) || signingKey.StartsWith("development-only-", StringComparison.Ordinal)))
+{
+    throw new InvalidOperationException("Authentication:SigningKey must be supplied from production secret storage.");
+}
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     options.MapInboundClaims = false;
-    var key = builder.Configuration["Authentication:SigningKey"] ?? "development-only-signing-key-change-me-please";
+    var key = signingKey ?? "development-only-signing-key-change-me-please";
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true, ValidIssuer = builder.Configuration["Authentication:Issuer"] ?? "water-operations",

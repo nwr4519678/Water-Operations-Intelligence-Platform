@@ -14,18 +14,24 @@ public sealed class AuthController(ViewerUserStore users, SessionStore sessions,
     public async Task<IActionResult> Login(LoginRequest request, CancellationToken cancellationToken)
     {
         var user = await users.FindAsync(request.Email, request.Password, cancellationToken);
-        return user is null ? Unauthorized(new { error = "invalid_credentials" }) : Ok(Issue(user));
+        return user is null ? Unauthorized(new { error = "invalid_credentials" }) : Ok(await IssueAsync(user, cancellationToken));
     }
     [Authorize]
     [HttpPost("logout")]
-    public IActionResult Logout(RefreshRequest request) => sessions.Revoke(request.RefreshToken) ? NoContent() : NoContent();
+    public async Task<IActionResult> Logout(RefreshRequest request, CancellationToken cancellationToken)
+    {
+        await sessions.RevokeAsync(request.RefreshToken, cancellationToken);
+        return NoContent();
+    }
     [AllowAnonymous]
     [HttpPost("refresh")]
-    public IActionResult Refresh(RefreshRequest request)
+    public async Task<IActionResult> Refresh(RefreshRequest request, CancellationToken cancellationToken)
     {
-        if (!sessions.TryConsume(request.RefreshToken, out var session)) return Unauthorized(new { error = "invalid_refresh_session" });
-        var user = new ViewerUser(session.Email, string.Empty, session.Organization, session.Region, AuthorizationPolicies.ViewerRole);
-        return Ok(Issue(user));
+        var consumed = await sessions.TryConsumeAsync(request.RefreshToken, cancellationToken);
+        if (!consumed.Success || consumed.Value is null) return Unauthorized(new { error = "invalid_refresh_session" });
+        var session = consumed.Value;
+        var user = new ViewerUser(session.Email, string.Empty, session.Organization, session.Region, session.Role);
+        return Ok(await IssueAsync(user, cancellationToken));
     }
-    private object Issue(ViewerUser user) => new { accessToken = tokens.Create(user), refreshToken = sessions.Create(user.Email, user.Organization, user.Region), expiresIn = 900 };
+    private async Task<object> IssueAsync(ViewerUser user, CancellationToken cancellationToken) => new { accessToken = tokens.Create(user), refreshToken = await sessions.CreateAsync(user, cancellationToken), expiresIn = 900 };
 }
