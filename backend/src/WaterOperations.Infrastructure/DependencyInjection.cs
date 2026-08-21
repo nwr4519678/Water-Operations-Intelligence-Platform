@@ -44,6 +44,7 @@ public static class DependencyInjection
         services.AddScoped<IMeasurementIngestionService, EfMeasurementIngestionService>();
         services.AddScoped<IAlarmLifecycleService, EfAlarmLifecycleService>();
         services.AddScoped<IThresholdService, EfThresholdService>();
+        services.AddScoped<IDataQualityService, EfDataQualityService>();
         if (configuration["Testing"] != "true")
         {
             var redisConnection = configuration.GetConnectionString("Redis")
