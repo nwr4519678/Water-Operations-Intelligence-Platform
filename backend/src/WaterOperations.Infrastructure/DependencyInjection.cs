@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<IPostgreSqlMigrationRunner, PostgreSqlMigrationRunner>();
         services.AddScoped<IUnitOfWork>(serviceProvider => serviceProvider.GetRequiredService<WaterOperationsDbContext>());
         services.AddScoped<IViewerReadService, EfViewerReadService>();
+        services.AddScoped<IOverviewService, EfOverviewService>();
         if (configuration["Testing"] != "true")
         {
             var redisConnection = configuration.GetConnectionString("Redis")
