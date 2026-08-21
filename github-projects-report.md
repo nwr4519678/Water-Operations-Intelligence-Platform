@@ -153,7 +153,7 @@ Backend لمنصة سفر وحجز تغطي الرحلات السياحية وا
 
 - .NET 10 و C#.
 - ASP.NET Core Web API.
-- EF Core 10 و SQL Server/LocalDB.
+- EF Core 10 و PostgreSQL/TimescaleDB عبر Npgsql.
 - JWT Bearer و refresh-token rotation.
 - MediatR و CQRS و FluentValidation.
 - Clean Architecture و Modular Monolith.
