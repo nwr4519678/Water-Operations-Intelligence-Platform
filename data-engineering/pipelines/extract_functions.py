@@ -20,7 +20,7 @@ def extract_telemetry_readings(site_id: str, start_dt: str, end_dt: str):
 
     data_year = start_dt.split("-")[0]
 
-    output_dir = Path(__file__).parent.parent / "CSVs"
+    output_dir = Path(__file__).parent.parent / "Output_Data"
     output_dir.mkdir(parents=True, exist_ok=True)
     
     file_path = output_dir / f"RAW_{site_id}_{data_year}_payload.json"
