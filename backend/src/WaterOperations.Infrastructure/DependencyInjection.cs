@@ -52,7 +52,7 @@ public static class DependencyInjection
             services.AddStackExchangeRedisCache(options => options.Configuration = redisConnection);
             services.AddHybridCache();
             services.AddHangfire(config => config.UseSimpleAssemblyNameTypeSerializer().UseRecommendedSerializerSettings().UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString!)));
-            services.AddHangfireServer();
+            if (configuration["Worker:Enabled"] == "true") services.AddHangfireServer();
         }
         return services;
     }
