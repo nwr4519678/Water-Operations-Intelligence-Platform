@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WaterOperations.Infrastructure.Persistence;
@@ -11,15 +12,16 @@ using WaterOperations.Infrastructure.Persistence;
 namespace WaterOperations.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(WaterOperationsDbContext))]
-    partial class WaterOperationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260821140720_InitialPostgreSqlSchema")]
+    partial class InitialPostgreSqlSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "10.0.11")
-                .HasAnnotation("Relational:MaxIdentifierLength", 63)
-                .HasAnnotation("WaterOperations:ReportingObjectsVersion", "1");
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pgcrypto");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
