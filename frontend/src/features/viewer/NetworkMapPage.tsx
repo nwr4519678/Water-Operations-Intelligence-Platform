@@ -1,0 +1,127 @@
+import { useState } from 'react';
+import { stations } from './data';
+
+export function NetworkMapPage() {
+  const [mode, setMode] = useState<'schematic' | 'list'>('schematic');
+  const [showOffline, setShowOffline] = useState(true);
+  const visible = showOffline
+    ? stations
+    : stations.filter((station) => station.status !== 'offline');
+  return (
+    <div className="feature-page">
+      <div className="page-heading">
+        <div>
+          <span className="eyebrow">NETWORK EXPLORER</span>
+          <h1>Map & stations</h1>
+          <p>Explore station health and network relationships without operational controls.</p>
+        </div>
+        <div className="segmented-control" role="group" aria-label="Map view">
+          <button
+            className={mode === 'schematic' ? 'is-selected' : ''}
+            onClick={() => setMode('schematic')}
+          >
+            Map
+          </button>
+          <button className={mode === 'list' ? 'is-selected' : ''} onClick={() => setMode('list')}>
+            List
+          </button>
+        </div>
+      </div>
+      <section className="panel map-panel">
+        <div className="panel-heading">
+          <h2>Station network</h2>
+          <label className="switch-label">
+            <input
+              type="checkbox"
+              checked={showOffline}
+              onChange={(event) => setShowOffline(event.target.checked)}
+            />{' '}
+            Show offline
+          </label>
+        </div>
+        {mode === 'schematic' ? (
+          <div
+            className="network-map network-map--large"
+            role="img"
+            aria-label="Interactive read-only station network map"
+          >
+            {visible.map((station, index) => (
+              <button
+                className={`map-node map-node--${station.status}`}
+                style={{ left: `${12 + ((index * 18) % 78)}%`, top: `${20 + (index % 4) * 17}%` }}
+                key={station.id}
+                title={`${station.name}, ${station.status}`}
+              >
+                {station.id}
+              </button>
+            ))}
+            <div className="map-line map-line--one" />
+            <div className="map-line map-line--two" />
+            <div className="map-legend">
+              <span>● Normal</span>
+              <span>● Warning</span>
+              <span>● Offline</span>
+            </div>
+          </div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Station</th>
+                  <th>District</th>
+                  <th>Status</th>
+                  <th>Updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((station) => (
+                  <tr key={station.id}>
+                    <td>
+                      <b>{station.id}</b>
+                      <small>{station.name}</small>
+                    </td>
+                    <td>{station.district}</td>
+                    <td>
+                      <span className={`status-badge status-badge--${station.status}`}>
+                        {station.status}
+                      </span>
+                    </td>
+                    <td>{new Date(station.updatedAt).toLocaleTimeString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+      <div className="feature-grid">
+        <section className="panel">
+          <h2>Layers</h2>
+          <div className="layer-list">
+            <label>
+              <input type="checkbox" defaultChecked /> Stations
+            </label>
+            <label>
+              <input type="checkbox" defaultChecked /> Pipelines
+            </label>
+            <label>
+              <input type="checkbox" defaultChecked /> Reservoirs
+            </label>
+            <label>
+              <input type="checkbox" /> District boundaries
+            </label>
+          </div>
+        </section>
+        <section className="panel">
+          <h2>Map status</h2>
+          <p className="muted">
+            Base tiles are represented by the deterministic schematic fallback. Offline mode keeps
+            station metadata available.
+          </p>
+          <span className="status-badge status-badge--healthy">Read-only map</span>
+        </section>
+      </div>
+    </div>
+  );
+}
