@@ -3,7 +3,7 @@ services:
     image: timescale/timescaledb:2.17.2-pg16
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-water_operations}
+      POSTGRES_DB: ${POSTGRES_DB:-water_operations_intelligence_platform}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:

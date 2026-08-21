@@ -78,7 +78,7 @@ Requirements: .NET SDK 10 and Docker Desktop. From the repository root:
 
 ```powershell
 docker compose up -d postgres redis
-$env:ConnectionStrings__Default = "Host=localhost;Port=5432;Database=water_operations;Username=postgres;Password=postgres"
+$env:ConnectionStrings__Default = "Host=localhost;Port=5432;Database=water_operations_intelligence_platform;Username=postgres;Password=postgres"
 $env:ConnectionStrings__Redis = "localhost:6379"
 $env:Cors__AllowedOrigins__0 = "http://localhost:5173"
 dotnet restore WaterOperations.slnx
