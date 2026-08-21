@@ -11,9 +11,9 @@ public sealed class AuthController(ViewerUserStore users, SessionStore sessions,
     public sealed record LoginRequest(string Email, string Password);
     public sealed record RefreshRequest(string RefreshToken);
     [HttpPost("login")]
-    public IActionResult Login(LoginRequest request)
+    public async Task<IActionResult> Login(LoginRequest request, CancellationToken cancellationToken)
     {
-        var user = users.Find(request.Email, request.Password);
+        var user = await users.FindAsync(request.Email, request.Password, cancellationToken);
         return user is null ? Unauthorized(new { error = "invalid_credentials" }) : Ok(Issue(user));
     }
     [Authorize]

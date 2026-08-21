@@ -20,7 +20,7 @@ builder.Host.UseSerilog((context, logger) => logger.ReadFrom.Configuration(conte
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddSingleton<SessionStore>();
-builder.Services.AddSingleton<ViewerUserStore>();
+builder.Services.AddScoped<ViewerUserStore>();
 builder.Services.AddSingleton<TelemetryStore>();
 builder.Services.AddSingleton<AuthTokenService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
