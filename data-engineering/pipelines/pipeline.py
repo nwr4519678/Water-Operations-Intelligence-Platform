@@ -13,7 +13,7 @@ STATION_IDS = [
 START_DATE = "2026-01-01"
 END_DATE = "2026-08-21"
 current_script_dir = Path(__file__).parent
-RAW_RUL_FILE = current_script_dir.parent / "CSVs" / "raw_rul_hrs.csv"
+RAW_RUL_FILE = current_script_dir.parent / "Output_Data" / "raw_rul_hrs.csv"
 
 def run_pipeline():
     for STATION_ID in STATION_IDS:

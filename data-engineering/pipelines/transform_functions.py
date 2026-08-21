@@ -38,10 +38,6 @@ def transform_telemtry_readings(telemetry_readings):
 
     return readings_dict
 
-import pandas as pd
-
-import pandas as pd
-
 def transform_pump_rul_data(df: pd.DataFrame):
     df.columns = df.columns.str.strip()
 

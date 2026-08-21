@@ -54,7 +54,7 @@ def export_station_readings(station_name, station_readings):
     safe_name = station_name.replace(" ", "_").replace(",", "").replace("/", "_")
     
     current_script_dir = Path(__file__).parent
-    output_dir = current_script_dir.parent / "CSVs"
+    output_dir = current_script_dir.parent / "Output_Data"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     flag_cols = [c for c in hourly_df.columns if c.endswith("_qa_flag")]
@@ -89,7 +89,7 @@ def export_station_readings(station_name, station_readings):
 
 def export_pump_rul_data(hourly_df: pd.DataFrame):
     current_script_dir = Path(__file__).parent
-    output_dir = current_script_dir.parent / "CSVs"
+    output_dir = current_script_dir.parent / "Output_Data"
     output_dir.mkdir(parents=True, exist_ok=True)
     
     output_path = output_dir / "AI_READY_Hourly_Pump_RUL.csv"

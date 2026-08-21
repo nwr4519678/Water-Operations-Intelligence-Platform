@@ -26,7 +26,7 @@ def run_batch_quality_audit():
     print(f"Starting Dynamic Batch Data Quality Audit (Version {VERSION})...")
     
     current_script_dir = Path(__file__).parent
-    csv_dir = current_script_dir.parent / "CSVs"
+    csv_dir = current_script_dir.parent / "Output_Data"
     
     clean_files = list(csv_dir.glob("CLEAN_*.csv"))
     
