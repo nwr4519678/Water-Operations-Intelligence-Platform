@@ -1,0 +1,258 @@
+﻿{
+   "CodeGenerationMode": 6,
+   "ContextClassName": "AppDbContext",
+   "ContextNamespace": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": false,
+   "IrregularWords": null,
+   "MinimumProductVersion": "2.6.1604",
+   "ModelNamespace": null,
+   "OutputContextPath": null,
+   "OutputPath": "Entities",
+   "PluralRules": null,
+   "PreserveCasingWithRegex": true,
+   "ProjectRootNamespace": "WaterOperations.Domain",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 2,
+   "SelectedToBeGenerated": 0,
+   "SingularRules": null,
+   "T4TemplatePath": null,
+   "Tables": [
+      {
+         "Name": "[AI].[AnomalyEvent]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[AI].[FocusStationScore]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[AI].[MlModel]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[AI].[MlTrainingRun]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[AI].[RiskScore]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[AI].[StationCluster]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Core].[Parameter]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Core].[Region]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Core].[Station]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Core].[StationConnection]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Core].[StationLink]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Core].[StationParameter]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Core].[Threshold]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Operations].[Alarm]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Operations].[AlarmLabel]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Operations].[AlarmType]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Operations].[ChartAnnotation]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Operations].[Notification]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Operations].[NotificationPreference]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Operations].[StationCollaborationNote]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Platform].[DashboardLayout]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Platform].[Organization]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Platform].[ShareSnapshot]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Platform].[SystemSetting]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Reporting].[Report]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Reporting].[ReportSchedule]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Security].[AuditLog]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Security].[Permission]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Security].[Role]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Security].[RolePermission]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Security].[Session]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Security].[User]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Security].[UserRole]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Telemetry].[DataQualityLog]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Telemetry].[FeatureSet]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Telemetry].[FeatureStoreEntry]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Telemetry].[IngestionBatch]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Telemetry].[MeasurementClean]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Telemetry].[MeasurementRaw]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[Reporting].[vw_ActiveAlarms]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[Reporting].[vw_CurrentTelemetry]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[Reporting].[vw_DataQualityLatest]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[Reporting].[vw_ModelHealth]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[Reporting].[vw_OrganizationKpis]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[Reporting].[vw_StationDirectory]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[Reporting].[vw_StationRiskLatest]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[Operations].[usp_AcknowledgeAlarm]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[Operations].[usp_ResolveAlarm]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[Reporting].[usp_GetStationReportStats]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[Security].[usp_GetUserPermissions]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[Telemetry].[usp_IngestMeasurementRaw]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[Reporting].[ufn_StationMeasurements]",
+         "ObjectType": 2
+      }
+   ],
+   "UiHint": null,
+   "UncountableWords": null,
+   "UseAsyncStoredProcedureCalls": true,
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": false,
+   "UseDatabaseNamesForRoutines": true,
+   "UseDateOnlyTimeOnly": true,
+   "UseDbContextSplitting": false,
+   "UseDecimalDataAnnotationForSprocResult": true,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseHierarchyId": false,
+   "UseInflector": true,
+   "UseInternalAccessModifiersForSprocsAndFunctions": false,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": false,
+   "UseNoDefaultConstructor": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UsePrefixNavigationNaming": false,
+   "UseSchemaFolders": false,
+   "UseSchemaNamespaces": false,
+   "UseSpatial": false,
+   "UseT4": false,
+   "UseT4Split": false,
+   "UseTypedTvpParameters": true
+}
