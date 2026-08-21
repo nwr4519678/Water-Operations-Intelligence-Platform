@@ -9,6 +9,7 @@ using WaterOperations.Application.Common.Abstractions;
 using WaterOperations.Infrastructure.Persistence;
 using WaterOperations.Application.Features.Viewer.Interfaces;
 using WaterOperations.Infrastructure.Viewer;
+using WaterOperations.Infrastructure.Security;
 
 namespace WaterOperations.Infrastructure;
 
@@ -18,6 +19,8 @@ public static class DependencyInjection
     {
         var connectionString = configuration.GetConnectionString("Default")
             ?? throw new InvalidOperationException("ConnectionStrings:Default must be configured before starting the API.");
+        services.AddHttpContextAccessor();
+        services.AddScoped<ITenantContext, HttpTenantContext>();
         if (configuration["Testing"] == "true")
         {
             services.AddDbContext<WaterOperationsDbContext>(options => options.UseInMemoryDatabase("water-operations-tests"));
