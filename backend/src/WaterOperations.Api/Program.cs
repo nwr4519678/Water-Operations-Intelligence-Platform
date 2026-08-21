@@ -8,6 +8,7 @@ using WaterOperations.Infrastructure.Persistence;
 using WaterOperations.Infrastructure.Seeding;
 using WaterOperations.Api.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using WaterOperations.Infrastructure.Security;
@@ -21,6 +22,7 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<SessionStore>();
 builder.Services.AddScoped<ViewerUserStore>();
+builder.Services.AddSingleton<IAuthorizationHandler, OrganizationScopeHandler>();
 builder.Services.AddSingleton<TelemetryStore>();
 builder.Services.AddSingleton<AuthTokenService>();
 var signingKey = builder.Configuration["Authentication:SigningKey"];
@@ -51,8 +53,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         }
     };
 });
-builder.Services.AddAuthorization(options => options.AddPolicy(AuthorizationPolicies.ViewerOnly,
-    policy => policy.RequireAuthenticatedUser().RequireRole(AuthorizationPolicies.ViewerRole)));
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AuthorizationPolicies.ViewerOnly, policy => policy
+        .RequireAuthenticatedUser().RequireRole(AuthorizationPolicies.ViewerRole)
+        .AddRequirements(new OrganizationScopeRequirement()));
+    options.AddPolicy(AuthorizationPolicies.OperatorOnly, policy => policy
+        .RequireAuthenticatedUser().RequireRole(AuthorizationPolicies.OperatorRole, AuthorizationPolicies.AdminRole)
+        .AddRequirements(new OrganizationScopeRequirement()));
+    options.AddPolicy(AuthorizationPolicies.AdminOnly, policy => policy
+        .RequireAuthenticatedUser().RequireRole(AuthorizationPolicies.AdminRole)
+        .AddRequirements(new OrganizationScopeRequirement()));
+});
 builder.Services.AddCors(options => options.AddPolicy("Web", policy => policy
     .WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? ["http://localhost:5173"])
     .AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
