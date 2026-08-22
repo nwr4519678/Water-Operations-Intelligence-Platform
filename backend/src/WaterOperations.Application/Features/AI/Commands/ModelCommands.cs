@@ -17,11 +17,11 @@ public sealed class RetrainModelCommandValidator : AbstractValidator<RetrainMode
 { public RetrainModelCommandValidator() => RuleFor(x => x.ModelId).NotEmpty(); }
 public sealed class RetireModelCommandValidator : AbstractValidator<RetireModelCommand>
 { public RetireModelCommandValidator() => RuleFor(x => x.ModelId).NotEmpty(); }
-public sealed class PromoteModelCommandHandler(IProductCapabilityRepository repository, ICurrentUser user) : ICommandHandler<PromoteModelCommand, ScopeResult<ModelMutationResult>>
+public sealed class PromoteModelCommandHandler(IAiModelRepository repository, ICurrentUser user) : ICommandHandler<PromoteModelCommand, ScopeResult<ModelMutationResult>>
 { public async Task<ScopeResult<ModelMutationResult>> Handle(PromoteModelCommand r, CancellationToken ct) => ScopeResult.Authorized(await repository.PromoteModelAsync(user.OrganizationId!.Value, user.UserId!.Value, r.ModelId, ct)); }
-public sealed class RetrainModelCommandHandler(IProductCapabilityRepository repository, ICurrentUser user) : ICommandHandler<RetrainModelCommand, ScopeResult<ModelMutationResult>>
+public sealed class RetrainModelCommandHandler(IAiModelRepository repository, ICurrentUser user) : ICommandHandler<RetrainModelCommand, ScopeResult<ModelMutationResult>>
 { public async Task<ScopeResult<ModelMutationResult>> Handle(RetrainModelCommand r, CancellationToken ct) => ScopeResult.Authorized(await repository.StartModelRetrainingAsync(user.OrganizationId!.Value, user.UserId!.Value, r.ModelId, ct)); }
-public sealed class RetireModelCommandHandler(IProductCapabilityRepository repository, ICurrentUser user) : ICommandHandler<RetireModelCommand, ScopeResult<ModelMutationResult>>
+public sealed class RetireModelCommandHandler(IAiModelRepository repository, ICurrentUser user) : ICommandHandler<RetireModelCommand, ScopeResult<ModelMutationResult>>
 { public async Task<ScopeResult<ModelMutationResult>> Handle(RetireModelCommand r, CancellationToken ct) => ScopeResult.Authorized(await repository.RetireModelAsync(user.OrganizationId!.Value, user.UserId!.Value, r.ModelId, ct)); }
 
 #pragma warning restore CA1725

@@ -5,6 +5,7 @@ using WaterOperations.Api.Extensions;
 using WaterOperations.Application.Common.Pagination;
 using WaterOperations.Application.Features.ProductCapabilities.Commands;
 using WaterOperations.Application.Features.ProductCapabilities.DTOs;
+using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
 using WaterOperations.Application.Features.ProductCapabilities.AI;
 using WaterOperations.Application.Features.ProductCapabilities.Queries;
 using WaterOperations.Application.Features.Ingestion.Commands;
@@ -99,8 +100,8 @@ public sealed class ProductCapabilitiesController(ISender sender) : ControllerBa
         (await sender.Send(new GetDataQualityQuery(from, to, pagination), cancellationToken)).ToActionResult(this);
 
     [HttpGet("reports")]
-    public async Task<IActionResult> Reports([FromQuery] PaginationRequest pagination, CancellationToken cancellationToken) =>
-        (await sender.Send(new GetReportsQuery(pagination), cancellationToken)).ToActionResult(this);
+    public async Task<IActionResult> Reports([FromQuery] ReportFilter filter, [FromQuery] PaginationRequest pagination, CancellationToken cancellationToken) =>
+        (await sender.Send(new GetReportsQuery(filter, pagination), cancellationToken)).ToActionResult(this);
 
     [HttpPost("reports")]
     public async Task<IActionResult> CreateReport([FromBody] CreateReportCommand command, CancellationToken cancellationToken) =>
@@ -109,6 +110,13 @@ public sealed class ProductCapabilitiesController(ISender sender) : ControllerBa
     [HttpGet("reports/{reportId:guid}")]
     public async Task<IActionResult> Report(Guid reportId, CancellationToken cancellationToken) =>
         (await sender.Send(new GetReportQuery(reportId), cancellationToken)).ToActionResult(this);
+
+    [HttpGet("reports/{reportId:guid}/download")]
+    public async Task<IActionResult> DownloadReport(Guid reportId, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new DownloadReportQuery(reportId), cancellationToken);
+        return !result.IsAuthorized ? (result.IsNotFound ? NotFound() : Forbid()) : File(result.Value!.Content, result.Value.ContentType, result.Value.FileName);
+    }
 
     [HttpGet("notifications")]
     public async Task<IActionResult> Notifications([FromQuery] bool unreadOnly, [FromQuery] PaginationRequest pagination, CancellationToken cancellationToken) =>
@@ -124,8 +132,8 @@ public sealed class ProductCapabilitiesController(ISender sender) : ControllerBa
 
     [HttpGet("admin/audit")]
     [Authorize(Roles = "ADMIN")]
-    public async Task<IActionResult> Audit([FromQuery] PaginationRequest pagination, CancellationToken cancellationToken) =>
-        (await sender.Send(new GetAuditQuery(pagination), cancellationToken)).ToActionResult(this);
+    public async Task<IActionResult> Audit([FromQuery] AuditFilter filter, [FromQuery] PaginationRequest pagination, CancellationToken cancellationToken) =>
+        (await sender.Send(new GetAuditQuery(filter, pagination), cancellationToken)).ToActionResult(this);
 
     [HttpGet("admin/users")]
     [Authorize(Roles = "ADMIN")]
@@ -181,11 +189,24 @@ public sealed class ProductCapabilitiesController(ISender sender) : ControllerBa
 
     [HttpPost("stations/{stationId:guid}/collaboration-notes")]
     public async Task<IActionResult> AddNote(Guid stationId, [FromBody] AddCollaborationNoteRequest request, CancellationToken cancellationToken) =>
-        (await sender.Send(new AddCollaborationNoteCommand(stationId, request.NoteText), cancellationToken)).ToActionResult(this);
+        (await sender.Send(new AddCollaborationNoteCommand(stationId, request.ParentNoteId, request.NoteText), cancellationToken)).ToActionResult(this);
+
+    [HttpPut("collaboration-notes/{noteId:long}")]
+    public async Task<IActionResult> UpdateNote(long noteId, [FromBody] UpdateCollaborationNoteCommand command, CancellationToken cancellationToken) =>
+        (await sender.Send(command with { NoteId = noteId }, cancellationToken)).ToActionResult(this);
 
     [HttpPost("sharing/snapshots")]
     public async Task<IActionResult> CreateSnapshot([FromBody] CreateShareSnapshotCommand command, CancellationToken cancellationToken) =>
         (await sender.Send(command, cancellationToken)).ToActionResult(this);
+
+    [HttpGet("sharing/snapshots/{token}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> SharedSnapshot(string token, CancellationToken cancellationToken) =>
+        (await sender.Send(new GetSharedSnapshotQuery(token), cancellationToken)).ToActionResult(this);
+
+    [HttpDelete("sharing/snapshots/{snapshotId:guid}")]
+    public async Task<IActionResult> RevokeSnapshot(Guid snapshotId, CancellationToken cancellationToken) =>
+        (await sender.Send(new RevokeShareSnapshotCommand(snapshotId), cancellationToken)).ToActionResult(this);
 
     [HttpPost("reports/schedules")]
     public async Task<IActionResult> CreateReportSchedule([FromBody] CreateReportScheduleCommand command, CancellationToken cancellationToken) =>

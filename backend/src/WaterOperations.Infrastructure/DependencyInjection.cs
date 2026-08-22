@@ -34,7 +34,7 @@ using WaterOperations.Infrastructure.Storage;
 using WaterOperations.Infrastructure.Telemetry;
 using WaterOperations.Infrastructure.Time;
 using WaterOperations.Infrastructure.Viewer;
-using WaterOperations.Infrastructure.ProductCapabilities;
+using WaterOperations.Infrastructure.ProductCapabilities.Persistence;
 using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
 using WaterOperations.Application.Features.ProductCapabilities.AI;
 using WaterOperations.Infrastructure.ProductCapabilities.AI;
@@ -134,7 +134,13 @@ public static class DependencyInjection
         services.AddScoped<IPipelineRepository, EfPipelineRepository>();
         services.AddScoped<IRetentionRepository, EfRetentionRepository>();
         services.AddScoped<IMfaRepository, EfMfaRepository>();
-        services.AddScoped<IProductCapabilityRepository, EfProductCapabilityRepository>();
+        services.AddScoped<IAiModelRepository, EfAiModelRepository>();
+        services.AddScoped<IReportRepository, EfReportRepository>();
+        services.AddScoped<INotificationRepository, EfNotificationRepository>();
+        services.AddScoped<IAuditRepository, EfAuditRepository>();
+        services.AddScoped<ICollaborationRepository, EfCollaborationRepository>();
+        services.AddScoped<IAdministrationRepository, EfAdministrationRepository>();
+        services.AddScoped<ISearchRepository, EfSearchRepository>();
         services.AddHttpClient<IAiModelClient, HttpAiModelClient>((provider, client) =>
         {
             var options = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<AiModelClientOptions>>().Value;

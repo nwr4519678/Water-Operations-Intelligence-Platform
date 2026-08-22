@@ -19,7 +19,7 @@ public sealed class CreateReportCommandValidator : AbstractValidator<CreateRepor
     }
 }
 
-public sealed class CreateReportCommandHandler(IProductCapabilityRepository repository, IReportJobScheduler scheduler, ICurrentUser currentUser) : ICommandHandler<CreateReportCommand, ScopeResult<ReportDto>>
+public sealed class CreateReportCommandHandler(IReportRepository repository, IReportJobScheduler scheduler, ICurrentUser currentUser) : ICommandHandler<CreateReportCommand, ScopeResult<ReportDto>>
 {
     public async Task<ScopeResult<ReportDto>> Handle(CreateReportCommand request, CancellationToken cancellationToken)
     {
