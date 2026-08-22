@@ -31,4 +31,5 @@ public interface IProductCapabilityRepository
     Task<ReportDto?> GetReportAsync(Guid organizationId, Guid userId, Guid reportId, CancellationToken cancellationToken);
     Task<ModelMutationResult> PromoteModelAsync(Guid organizationId, Guid userId, Guid modelId, CancellationToken cancellationToken);
     Task<ModelMutationResult> StartModelRetrainingAsync(Guid organizationId, Guid userId, Guid modelId, CancellationToken cancellationToken);
+    Task<ModelMutationResult> RetireModelAsync(Guid organizationId, Guid userId, Guid modelId, CancellationToken cancellationToken);
 }

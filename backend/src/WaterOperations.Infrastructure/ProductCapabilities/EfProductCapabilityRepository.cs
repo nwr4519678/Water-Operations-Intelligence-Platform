@@ -216,6 +216,17 @@ public sealed class EfProductCapabilityRepository(WaterOperationsDbContext db) :
         return new(true, null);
     }
 
+    public async Task<ModelMutationResult> RetireModelAsync(Guid organizationId, Guid userId, Guid modelId, CancellationToken ct)
+    {
+        var model = await db.MlModels.SingleOrDefaultAsync(x => x.OrganizationId == organizationId && x.ModelId == modelId, ct);
+        if (model is null) return new(false, "MODEL_NOT_FOUND");
+        if (model.Status is "RETIRED" or "TRAINING") return new(false, "INVALID_MODEL_STATE");
+        model.Status = "RETIRED";
+        db.AuditLogs.Add(new AuditLog { OrganizationId = organizationId, ActorUserId = userId, ActionCode = "AI_MODEL_RETIRED", EntityType = "MlModel", EntityId = modelId.ToString(), Success = true, OccurredAtUtc = DateTime.UtcNow, BeforeJson = model.MetricsJson });
+        await db.SaveChangesAsync(ct);
+        return new(true, null);
+    }
+
     private static decimal ReadScore(string? json)
     {
         if (string.IsNullOrWhiteSpace(json)) return 0;

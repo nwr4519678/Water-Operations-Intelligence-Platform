@@ -38,6 +38,11 @@ public sealed class ProductCapabilitiesController(ISender sender) : ControllerBa
     public async Task<IActionResult> Promote(Guid modelId, CancellationToken cancellationToken) =>
         (await sender.Send(new PromoteModelCommand(modelId), cancellationToken)).ToActionResult(this);
 
+    [HttpPost("ai/models/{modelId:guid}/retire")]
+    [Authorize(Roles = "ADMIN")]
+    public async Task<IActionResult> Retire(Guid modelId, CancellationToken cancellationToken) =>
+        (await sender.Send(new RetireModelCommand(modelId), cancellationToken)).ToActionResult(this);
+
     [HttpGet("ai/insights/{stationId:guid}")]
     public async Task<IActionResult> Insight(Guid stationId, [FromQuery] string insightType, [FromQuery] DateTimeOffset? asOfUtc, CancellationToken cancellationToken) =>
         (await sender.Send(new GetAiInsightQuery(stationId, insightType, asOfUtc), cancellationToken)).ToActionResult(this);
