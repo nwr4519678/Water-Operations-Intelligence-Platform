@@ -32,6 +32,14 @@ public sealed class ProductCapabilitiesController(ISender sender) : ControllerBa
     public async Task<IActionResult> Reports([FromQuery] PaginationRequest pagination, CancellationToken cancellationToken) =>
         (await sender.Send(new GetReportsQuery(pagination), cancellationToken)).ToActionResult(this);
 
+    [HttpPost("reports")]
+    public async Task<IActionResult> CreateReport([FromBody] CreateReportCommand command, CancellationToken cancellationToken) =>
+        (await sender.Send(command, cancellationToken)).ToActionResult(this);
+
+    [HttpGet("reports/{reportId:guid}")]
+    public async Task<IActionResult> Report(Guid reportId, CancellationToken cancellationToken) =>
+        (await sender.Send(new GetReportQuery(reportId), cancellationToken)).ToActionResult(this);
+
     [HttpGet("notifications")]
     public async Task<IActionResult> Notifications([FromQuery] bool unreadOnly, [FromQuery] PaginationRequest pagination, CancellationToken cancellationToken) =>
         (await sender.Send(new GetNotificationsQuery(unreadOnly, pagination), cancellationToken)).ToActionResult(this);

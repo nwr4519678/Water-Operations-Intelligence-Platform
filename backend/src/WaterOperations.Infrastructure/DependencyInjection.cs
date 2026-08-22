@@ -38,6 +38,8 @@ using WaterOperations.Infrastructure.ProductCapabilities;
 using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
 using WaterOperations.Application.Features.ProductCapabilities.AI;
 using WaterOperations.Infrastructure.ProductCapabilities.AI;
+using WaterOperations.Application.Features.ProductCapabilities.Reports;
+using WaterOperations.Infrastructure.ProductCapabilities.Reports;
 
 namespace WaterOperations.Infrastructure;
 
@@ -104,6 +106,7 @@ public static class DependencyInjection
     {
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IFileStorage, LocalFileStorage>();
+        services.AddScoped<IReportJobScheduler, NoOpReportJobScheduler>();
         if (configuration["Testing"] == "true")
         {
             services.AddSingleton<WaterOperations.Infrastructure.Telemetry.TelemetryStore>();
@@ -177,6 +180,7 @@ public static class DependencyInjection
             .UsePostgreSqlStorage(options => options
                 .UseNpgsqlConnection(connectionString)));
         services.AddHangfireServer();
+        services.AddScoped<IReportJobScheduler, HangfireReportJobScheduler>();
         return services;
     }
 }

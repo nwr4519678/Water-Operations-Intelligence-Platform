@@ -162,6 +162,25 @@ public sealed class EfProductCapabilityRepository(WaterOperationsDbContext db) :
         return true;
     }
 
+    public async Task<ReportDto> CreateReportAsync(Guid organizationId, Guid userId, CreateReportRequest request, CancellationToken ct)
+    {
+        var report = new Report
+        {
+            ReportId = Guid.NewGuid(), OrganizationId = organizationId, RequestedByUserId = userId,
+            StationId = request.StationId, ParameterId = request.ParameterId,
+            PeriodStartUtc = DateTime.SpecifyKind(request.PeriodStartUtc, DateTimeKind.Utc),
+            PeriodEndUtc = DateTime.SpecifyKind(request.PeriodEndUtc, DateTimeKind.Utc),
+            Format = request.Format.ToUpperInvariant(), Status = "QUEUED", CreatedAtUtc = DateTime.UtcNow
+        };
+        db.Reports.Add(report);
+        await db.SaveChangesAsync(ct);
+        return new ReportDto(report.ReportId, report.StationId, report.Format, report.Status, report.PeriodStartUtc, report.PeriodEndUtc, report.CreatedAtUtc, report.FilePath);
+    }
+
+    public Task<ReportDto?> GetReportAsync(Guid organizationId, Guid userId, Guid reportId, CancellationToken ct) =>
+        db.Reports.AsNoTracking().Where(x => x.OrganizationId == organizationId && x.RequestedByUserId == userId && x.ReportId == reportId)
+            .Select(x => new ReportDto(x.ReportId, x.StationId, x.Format, x.Status, x.PeriodStartUtc, x.PeriodEndUtc, x.CreatedAtUtc, x.FilePath)).SingleOrDefaultAsync(ct);
+
     private static async Task<PagedResult<T>> PageAsync<T>(IQueryable<T> query, PaginationRequest request, CancellationToken ct)
     {
         var page = Math.Max(1, request.Page);

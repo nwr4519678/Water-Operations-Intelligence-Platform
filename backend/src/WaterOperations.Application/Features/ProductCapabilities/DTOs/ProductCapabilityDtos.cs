@@ -15,6 +15,7 @@ public sealed record CollaborationNoteDto(long NoteId, Guid StationId, Guid Auth
 public sealed record SharedSnapshotDto(Guid ShareSnapshotId, Guid? StationId, DateTime ExpiresAtUtc, DateTime CreatedAtUtc);
 public sealed record AddCollaborationNoteRequest(string NoteText);
 public sealed record ReportScheduleDto(long Id, string Frequency, string Format, string RecipientJson, DateTime NextRunAtUtc, DateTime? LastRunAtUtc, bool IsActive);
+public sealed record CreateReportRequest(Guid? StationId, int? ParameterId, DateTime PeriodStartUtc, DateTime PeriodEndUtc, string Format);
 public sealed record SetUserActiveRequest(bool IsActive);
 public sealed record UserPreferencesDto(string Theme, string Locale, string TimeZone, byte DecimalPrecision);
 public sealed record NotificationPreferenceDto(string Severity, bool InAppEnabled, bool EmailEnabled, bool PushEnabled, bool DesktopEnabled, bool DailyDigestEnabled);
