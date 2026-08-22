@@ -24,4 +24,14 @@ public sealed class DataLifecycleController(DataLifecycleService lifecycle) : Co
             return BadRequest(new { error = "invalid_purge_request", reason = exception.Message });
         }
     }
+
+    [HttpPost("legal-holds")]
+    public async Task<IActionResult> CreateHold(LegalHoldRequest request, CancellationToken cancellationToken)
+    {
+        var actor = Guid.TryParse(User.FindFirstValue("sub"), out var actorId) ? actorId : (Guid?)null;
+        try { return Ok(new { id = await lifecycle.CreateLegalHoldAsync(request.FromUtc, request.ToUtc, request.Reason, actor, cancellationToken) }); }
+        catch (ArgumentException exception) { return BadRequest(new { error = "invalid_legal_hold", reason = exception.Message }); }
+    }
+
+    public sealed record LegalHoldRequest(DateTime FromUtc, DateTime? ToUtc, string Reason);
 }

@@ -10,6 +10,7 @@ public partial class WaterOperationsDbContext
 {
     public DbSet<OutboxMessage> OutboxMessages { get; set; } = null!;
     public DbSet<ImportJob> ImportJobs { get; set; } = null!;
+    public DbSet<DataLegalHold> DataLegalHolds { get; set; } = null!;
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
     {
@@ -32,6 +33,13 @@ public partial class WaterOperationsDbContext
             entity.Property(job => job.Status).HasMaxLength(20).IsRequired();
             entity.Property(job => job.ProgressPercent).IsRequired();
             entity.Property(job => job.LastError).HasMaxLength(4000);
+        });
+        modelBuilder.Entity<DataLegalHold>(entity =>
+        {
+            entity.ToTable("DataLegalHold", "Integration");
+            entity.HasKey(hold => hold.DataLegalHoldId);
+            entity.HasIndex(hold => new { hold.OrganizationId, hold.IsActive, hold.FromUtc, hold.ToUtc });
+            entity.Property(hold => hold.Reason).HasMaxLength(1000).IsRequired();
         });
         modelBuilder.Entity<JobExecution>(entity =>
         {
