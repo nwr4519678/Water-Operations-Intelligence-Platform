@@ -31,6 +31,7 @@ builder.Services.AddSingleton<IAuthorizationHandler, OrganizationScopeHandler>()
 if (builder.Configuration["Testing"] == "true") builder.Services.AddSingleton<TelemetryStore>();
 builder.Services.AddScoped<ITelemetryReadService, EfTelemetryReadService>();
 builder.Services.AddSingleton<AuthTokenService>();
+builder.Services.AddSingleton<MfaChallengeTokenService>();
 var signingKey = builder.Configuration["Authentication:SigningKey"];
 if (builder.Configuration["Testing"] != "true" && !builder.Environment.IsDevelopment() &&
     (string.IsNullOrWhiteSpace(signingKey) || signingKey.StartsWith("development-only-", StringComparison.Ordinal)))

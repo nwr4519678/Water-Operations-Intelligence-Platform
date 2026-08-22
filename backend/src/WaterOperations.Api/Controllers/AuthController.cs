@@ -7,7 +7,7 @@ using WaterOperations.Infrastructure.Security;
 namespace WaterOperations.Api.Controllers;
 
 [ApiController, Route("api/v1/auth")]
-public sealed class AuthController(ViewerUserStore users, SessionStore sessions, AuthTokenService tokens) : ControllerBase
+public sealed class AuthController(ViewerUserStore users, SessionStore sessions, AuthTokenService tokens, MfaChallengeTokenService challenges) : ControllerBase
 {
     public sealed record LoginRequest(string Email, string Password);
     public sealed record RefreshRequest(string RefreshToken);
@@ -16,7 +16,10 @@ public sealed class AuthController(ViewerUserStore users, SessionStore sessions,
     public async Task<IActionResult> Login(LoginRequest request, CancellationToken cancellationToken)
     {
         var user = await users.FindAsync(request.Email, request.Password, cancellationToken);
-        return user is null ? Unauthorized(new { error = "invalid_credentials" }) : Ok(await IssueAsync(user, cancellationToken));
+        if (user is null) return Unauthorized(new { error = "invalid_credentials" });
+        if (user.MfaEnabled && user.UserId is Guid userId)
+            return Ok(new { mfaRequired = true, challengeToken = challenges.Create(userId), expiresIn = 300 });
+        return Ok(await IssueAsync(user, cancellationToken));
     }
     [Authorize]
     [HttpPost("logout")]

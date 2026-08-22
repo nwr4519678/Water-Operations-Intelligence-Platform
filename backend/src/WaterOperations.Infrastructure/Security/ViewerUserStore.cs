@@ -5,7 +5,7 @@ using WaterOperations.Infrastructure.Persistence;
 
 namespace WaterOperations.Infrastructure.Security;
 
-public sealed record ViewerUser(string Email, string Password, string Organization, string Region, string Role, Guid? UserId = null);
+public sealed record ViewerUser(string Email, string Password, string Organization, string Region, string Role, Guid? UserId = null, bool MfaEnabled = false);
 
 public sealed class ViewerUserStore(WaterOperationsDbContext db, IConfiguration configuration)
 {
@@ -31,7 +31,16 @@ public sealed class ViewerUserStore(WaterOperationsDbContext db, IConfiguration 
         if (user is null || !VerifyPassword(password, user.PasswordHash)) return null;
 
         var role = user.UserRoleUsers.Select(userRole => userRole.Role.Code).FirstOrDefault() ?? AuthorizationPolicies.ViewerRole;
-        return new ViewerUser(user.Email, string.Empty, user.OrganizationId.ToString(), string.Empty, role, user.UserId);
+        return new ViewerUser(user.Email, string.Empty, user.OrganizationId.ToString(), string.Empty, role, user.UserId, user.IsMfaEnabled);
+    }
+
+    public async Task<ViewerUser?> FindByIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await db.Users.AsNoTracking().Include(candidate => candidate.UserRoleUsers).ThenInclude(userRole => userRole.Role)
+            .SingleOrDefaultAsync(candidate => candidate.IsActive && candidate.UserId == userId, cancellationToken);
+        if (user is null) return null;
+        var role = user.UserRoleUsers.Select(userRole => userRole.Role.Code).FirstOrDefault() ?? AuthorizationPolicies.ViewerRole;
+        return new ViewerUser(user.Email, string.Empty, user.OrganizationId.ToString(), string.Empty, role, user.UserId, user.IsMfaEnabled);
     }
 
     private static bool VerifyPassword(string password, string encodedHash)
