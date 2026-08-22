@@ -1,7 +1,7 @@
+﻿using AutoMapper;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
-using AutoMapper;
 using WaterOperations.Application.Common.Behaviors;
 
 namespace WaterOperations.Application;
@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));
         services.AddAutoMapper(_ => { }, typeof(DependencyInjection).Assembly);
         return services;
     }

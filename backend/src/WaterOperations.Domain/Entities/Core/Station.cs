@@ -67,7 +67,11 @@ public partial class Station
 
     public virtual ICollection<StationCluster> StationClusters { get; set; } = new List<StationCluster>();
 
-    public virtual ICollection<StationCollaborationNote> StationCollaborationNotes { get; set; } = new List<StationCollaborationNote>();
+    public virtual ICollection<StationCollaborationNote> StationCollaborationNotes
+    {
+        get;
+        set;
+    } = new List<StationCollaborationNote>();
 
     public virtual ICollection<StationConnection> StationConnections { get; set; } = new List<StationConnection>();
 

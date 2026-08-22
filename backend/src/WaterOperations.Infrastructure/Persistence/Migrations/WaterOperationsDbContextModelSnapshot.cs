@@ -840,6 +840,37 @@ namespace WaterOperations.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("WaterOperations.Domain.Entities.MfaRecoveryCode", b =>
+                {
+                    b.Property<Guid>("MfaRecoveryCodeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<DateTime?>("UsedAtUtc")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("MfaRecoveryCodeId");
+
+                    b.HasIndex("UserId", "CodeHash")
+                        .IsUnique();
+
+                    b.ToTable("MfaRecoveryCode", "Security");
+                });
+
             modelBuilder.Entity("WaterOperations.Domain.Entities.MlModel", b =>
                 {
                     b.Property<Guid>("ModelId")
@@ -1176,6 +1207,52 @@ namespace WaterOperations.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Organization", "Platform");
+                });
+
+            modelBuilder.Entity("WaterOperations.Domain.Entities.OutboxMessage", b =>
+                {
+                    b.Property<Guid>("OutboxMessageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("FailedAtUtc")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<string>("LastError")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime?>("ProcessedAtUtc")
+                        .HasPrecision(3)
+                        .HasColumnType("timestamp(3) with time zone");
+
+                    b.HasKey("OutboxMessageId");
+
+                    b.HasIndex("ProcessedAtUtc", "OccurredAtUtc");
+
+                    b.ToTable("OutboxMessage", "Platform");
                 });
 
             modelBuilder.Entity("WaterOperations.Domain.Entities.Parameter", b =>
@@ -2987,6 +3064,17 @@ namespace WaterOperations.Infrastructure.Persistence.Migrations
                     b.Navigation("Organization");
 
                     b.Navigation("StationParameter");
+                });
+
+            modelBuilder.Entity("WaterOperations.Domain.Entities.MfaRecoveryCode", b =>
+                {
+                    b.HasOne("WaterOperations.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("WaterOperations.Domain.Entities.MlModel", b =>

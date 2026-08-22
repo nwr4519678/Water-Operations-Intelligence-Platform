@@ -1,4 +1,4 @@
-using WaterOperations.Application.Features.Viewer.DTOs;
+﻿using WaterOperations.Application.Features.Viewer.DTOs;
 using WaterOperations.Application.Features.Viewer.Interfaces;
 using WaterOperations.Application.Features.Viewer.Queries;
 
@@ -22,7 +22,7 @@ public sealed class ViewerQueryHandlerTests
         Assert.Equal(cancellationSource.Token, readService.CancellationToken);
     }
 
-    private sealed class RecordingViewerReadService(IReadOnlyList<RegionDto> regions) : IViewerReadService
+    private sealed class RecordingViewerReadService(IReadOnlyList<RegionDto> regions) : IViewerQueryRepository
     {
         public Guid OrganizationId { get; private set; }
         public CancellationToken CancellationToken { get; private set; }

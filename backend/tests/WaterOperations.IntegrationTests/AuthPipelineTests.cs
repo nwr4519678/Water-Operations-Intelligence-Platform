@@ -1,7 +1,8 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
+using WaterOperations.Api;
 
 namespace WaterOperations.IntegrationTests;
 
@@ -12,8 +13,11 @@ public sealed class AuthPipelineTests : IClassFixture<WebApplicationFactory<Prog
     {
         client = factory.WithWebHostBuilder(builder => builder.UseSetting("Testing", "true").ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["Testing"] = "true", ["DevelopmentViewer:Email"] = "viewer@test.local", ["DevelopmentViewer:Password"] = "local-only-password",
-            ["DevelopmentViewer:Organization"] = "A", ["DevelopmentViewer:Region"] = "1"
+            ["Testing"] = "true",
+            ["DevelopmentViewer:Email"] = "viewer@test.local",
+            ["DevelopmentViewer:Password"] = "local-only-password",
+            ["DevelopmentViewer:Organization"] = "A",
+            ["DevelopmentViewer:Region"] = "1"
         }))).CreateClient();
     }
 

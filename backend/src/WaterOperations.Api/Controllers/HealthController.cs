@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace WaterOperations.Api.Controllers;
 
@@ -8,5 +8,8 @@ public sealed class HealthController : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public IActionResult Get() => Ok(new { status = "healthy", service = "api" });
+    public IActionResult Get()
+    {
+        return Ok(new { status = "healthy", service = "api" });
+    }
 }

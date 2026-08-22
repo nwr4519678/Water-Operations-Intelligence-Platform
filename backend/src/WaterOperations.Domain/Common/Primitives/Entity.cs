@@ -1,4 +1,4 @@
-namespace WaterOperations.Domain.Common.Primitives;
+﻿namespace WaterOperations.Domain.Common.Primitives;
 
 public abstract class Entity
 {

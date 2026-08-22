@@ -1,13 +1,14 @@
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.EntityFrameworkCore;
 using WaterOperations.Application.Features.Viewer.DTOs;
 using WaterOperations.Application.Features.Viewer.Interfaces;
+using WaterOperations.Api;
 using WaterOperations.Domain.Entities;
 using WaterOperations.Infrastructure.Persistence;
 using WaterOperations.Infrastructure.Seeding;
@@ -56,8 +57,8 @@ public sealed class ViewerFoundationTests : IClassFixture<WebApplicationFactory<
             .ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?> { ["Testing"] = "true", ["Seed:Enabled"] = "false" }))
             .ConfigureTestServices(services =>
             {
-                services.RemoveAll<IViewerReadService>();
-                services.AddScoped<IViewerReadService, ThrowingViewerReadService>();
+                services.RemoveAll<IViewerQueryRepository>();
+                services.AddScoped<IViewerQueryRepository, ThrowingViewerReadService>();
             })).CreateClient();
         using var response = await client.GetAsync("/api/v1/viewer/organizations");
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
@@ -72,7 +73,7 @@ public sealed class ViewerFoundationTests : IClassFixture<WebApplicationFactory<
         .UseSetting("Testing", "true")
         .ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?> { ["Testing"] = "true", ["Seed:Enabled"] = "false" }));
 
-    private sealed class ThrowingViewerReadService : IViewerReadService
+    private sealed class ThrowingViewerReadService : IViewerQueryRepository
     {
         public Task<IReadOnlyList<OrganizationDto>> GetOrganizationsAsync(CancellationToken cancellationToken) => throw new InvalidOperationException("boom");
         public Task<IReadOnlyList<RegionDto>> GetRegionsAsync(Guid organizationId, CancellationToken cancellationToken) => throw new NotImplementedException();

@@ -1,4 +1,4 @@
-namespace WaterOperations.Api.Middleware;
+﻿namespace WaterOperations.Api.Middleware;
 
 public sealed class TraceIdMiddleware(RequestDelegate next)
 {
