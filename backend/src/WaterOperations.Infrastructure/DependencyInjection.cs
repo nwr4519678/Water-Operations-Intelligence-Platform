@@ -15,6 +15,7 @@ using WaterOperations.Infrastructure.Telemetry;
 using WaterOperations.Application.Features.Operations.Interfaces;
 using WaterOperations.Infrastructure.Operations;
 using WaterOperations.Infrastructure.Jobs;
+using WaterOperations.Infrastructure.Privacy;
 
 namespace WaterOperations.Infrastructure;
 
@@ -47,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<IThresholdService, EfThresholdService>();
         services.AddScoped<IDataQualityService, EfDataQualityService>();
         services.AddScoped<IJobExecutionStore, EfJobExecutionStore>();
+        services.AddScoped<DataLifecycleService>();
         if (configuration["Testing"] != "true")
         {
             var redisConnection = configuration.GetConnectionString("Redis")

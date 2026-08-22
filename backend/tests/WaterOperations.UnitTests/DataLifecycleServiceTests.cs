@@ -1,0 +1,44 @@
+using Microsoft.EntityFrameworkCore;
+using WaterOperations.Application.Common.Abstractions;
+using WaterOperations.Domain.Entities;
+using WaterOperations.Infrastructure.Persistence;
+using WaterOperations.Infrastructure.Privacy;
+
+namespace WaterOperations.UnitTests;
+
+public sealed class DataLifecycleServiceTests
+{
+    [Fact]
+    public async Task PurgeIsDryRunFirstTenantScopedAndIdempotent()
+    {
+        var organization = Guid.NewGuid();
+        var otherOrganization = Guid.NewGuid();
+        await using var db = new WaterOperationsDbContext(new DbContextOptionsBuilder<WaterOperationsDbContext>().UseInMemoryDatabase($"privacy-{Guid.NewGuid():N}").Options);
+        db.MeasurementCleans.AddRange(
+            new MeasurementClean { MeasurementCleanId = 1, OrganizationId = organization, StationId = Guid.NewGuid(), ParameterId = 1, TimestampUtc = DateTime.UtcNow.AddYears(-2), QualityFlag = "VALID", CanonicalUnit = "m", CleaningRulesetVersion = "test" },
+            new MeasurementClean { MeasurementCleanId = 2, OrganizationId = otherOrganization, StationId = Guid.NewGuid(), ParameterId = 1, TimestampUtc = DateTime.UtcNow.AddYears(-2), QualityFlag = "VALID", CanonicalUnit = "m", CleaningRulesetVersion = "test" });
+        await db.SaveChangesAsync();
+        var service = new DataLifecycleService(db, new TenantContext(organization));
+        var cutoff = DateTime.UtcNow.AddYears(-1);
+
+        var preview = await service.PurgeAsync(cutoff, "purge-1", true, null, CancellationToken.None);
+        Assert.True(preview.DryRun);
+        Assert.Equal(1, preview.CleanMeasurements);
+        Assert.Equal(2, await db.MeasurementCleans.CountAsync());
+
+        var applied = await service.PurgeAsync(cutoff, "purge-1", false, null, CancellationToken.None);
+        Assert.True(applied.Applied);
+        Assert.Equal(1, await db.MeasurementCleans.CountAsync());
+        Assert.Single(await db.AuditLogs.Where(x => x.ActionCode == "DATA_PURGE").ToListAsync());
+
+        var replay = await service.PurgeAsync(cutoff, "purge-1", false, null, CancellationToken.None);
+        Assert.False(replay.Applied);
+        Assert.Equal(1, await db.MeasurementCleans.CountAsync());
+    }
+
+    private sealed class TenantContext(Guid organizationId) : ITenantContext
+    {
+        public Guid? OrganizationId => organizationId;
+        public string? Region => null;
+    }
+}
