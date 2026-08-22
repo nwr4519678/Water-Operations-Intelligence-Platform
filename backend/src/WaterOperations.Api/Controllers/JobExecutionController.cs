@@ -18,7 +18,7 @@ public sealed class JobExecutionController(WaterOperationsDbContext db, IJobExec
         if (jobKey.StartsWith("import:", StringComparison.OrdinalIgnoreCase) && Guid.TryParse(jobKey[7..], out var importId))
         {
             var import = await db.ImportJobs.AsNoTracking().SingleOrDefaultAsync(x => x.ImportJobId == importId, cancellationToken);
-            if (import is not null) return Ok(new { JobKey = jobKey, JobType = "BULK_IMPORT", import.Status, AttemptCount = 0, import.CreatedAtUtc, import.StartedAtUtc, import.CompletedAtUtc, LastError = import.LastError });
+            if (import is not null) return Ok(new { JobKey = jobKey, JobType = "BULK_IMPORT", import.Status, import.ProgressPercent, AttemptCount = 0, import.CreatedAtUtc, import.StartedAtUtc, import.CompletedAtUtc, LastError = import.LastError });
         }
         return NotFound();
     }
@@ -27,6 +27,11 @@ public sealed class JobExecutionController(WaterOperationsDbContext db, IJobExec
     public async Task<IActionResult> Cancel(string jobKey, [FromBody] CancelRequest request, CancellationToken cancellationToken)
     {
         await jobs.CancelAsync(jobKey, string.IsNullOrWhiteSpace(request.Reason) ? "cancelled_by_admin" : request.Reason, cancellationToken);
+        if (jobKey.StartsWith("import:", StringComparison.OrdinalIgnoreCase) && Guid.TryParse(jobKey[7..], out var importId))
+        {
+            var import = await db.ImportJobs.SingleOrDefaultAsync(x => x.ImportJobId == importId && x.Status == "QUEUED", cancellationToken);
+            if (import is not null) { import.Status = "CANCELLED"; import.LastError = request.Reason ?? "cancelled_by_admin"; await db.SaveChangesAsync(cancellationToken); }
+        }
         return NoContent();
     }
 

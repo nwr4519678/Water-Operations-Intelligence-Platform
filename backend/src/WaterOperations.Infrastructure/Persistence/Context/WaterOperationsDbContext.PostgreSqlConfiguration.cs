@@ -30,6 +30,7 @@ public partial class WaterOperationsDbContext
             entity.HasIndex(job => new { job.Status, job.CreatedAtUtc });
             entity.Property(job => job.RequestJson).HasColumnType("jsonb").IsRequired();
             entity.Property(job => job.Status).HasMaxLength(20).IsRequired();
+            entity.Property(job => job.ProgressPercent).IsRequired();
             entity.Property(job => job.LastError).HasMaxLength(4000);
         });
         modelBuilder.Entity<JobExecution>(entity =>

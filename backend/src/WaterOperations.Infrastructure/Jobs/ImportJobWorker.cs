@@ -16,9 +16,10 @@ public sealed class ImportJobWorker(IServiceScopeFactory scopeFactory, ILogger<I
         {
             await using var scope = scopeFactory.CreateAsyncScope();
             var db = scope.ServiceProvider.GetRequiredService<WaterOperationsDbContext>();
-            var stored = await db.ImportJobs.Where(x => x.Status == "QUEUED").OrderBy(x => x.CreatedAtUtc).FirstOrDefaultAsync(stoppingToken);
+            var staleBefore = DateTime.UtcNow.AddMinutes(-30);
+            var stored = await db.ImportJobs.Where(x => x.Status == "QUEUED" || (x.Status == "RUNNING" && x.StartedAtUtc < staleBefore)).OrderBy(x => x.CreatedAtUtc).FirstOrDefaultAsync(stoppingToken);
             if (stored is null) { await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken); continue; }
-            stored.Status = "RUNNING"; stored.StartedAtUtc = DateTime.UtcNow;
+            stored.Status = "RUNNING"; stored.ProgressPercent = 0; stored.StartedAtUtc = DateTime.UtcNow;
             await db.SaveChangesAsync(stoppingToken);
             var request = JsonSerializer.Deserialize<WaterOperations.Application.Features.Telemetry.DTOs.IngestionBatchRequest>(stored.RequestJson)
                 ?? throw new InvalidOperationException("Stored import request is invalid.");
@@ -29,14 +30,14 @@ public sealed class ImportJobWorker(IServiceScopeFactory scopeFactory, ILogger<I
             {
                 await scope.ServiceProvider.GetRequiredService<IMeasurementIngestionService>().IngestAsync(request, stoppingToken);
                 await jobs.CompleteAsync(jobKey, stoppingToken);
-                stored.Status = "COMPLETED"; stored.CompletedAtUtc = DateTime.UtcNow;
+                stored.Status = "COMPLETED"; stored.ProgressPercent = 100; stored.CompletedAtUtc = DateTime.UtcNow;
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { throw; }
             catch (Exception exception)
             {
                 logger.LogError(exception, "Bulk import job {JobKey} failed", jobKey);
                 await jobs.FailAsync(jobKey, exception.Message, TimeSpan.FromMinutes(5), false, stoppingToken);
-                stored.Status = "FAILED"; stored.LastError = exception.Message[..Math.Min(4000, exception.Message.Length)];
+                stored.Status = "FAILED"; stored.ProgressPercent = 0; stored.LastError = exception.Message[..Math.Min(4000, exception.Message.Length)];
             }
             await db.SaveChangesAsync(stoppingToken);
         }

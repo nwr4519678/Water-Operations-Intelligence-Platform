@@ -67,7 +67,7 @@ public sealed class BulkImportController(IMeasurementIngestionService ingestion,
             var request = IsJson(file) ? await ParseJsonAsync(stream, file.FileName, cancellationToken) : await ParseCsvAsync(stream, file.FileName, cancellationToken);
             var queued = request with { ConflictMode = conflictMode };
             if (tenant.OrganizationId is not Guid organizationId) return Unauthorized(new { error = "organization_scope_required" });
-            var job = new WaterOperations.Domain.Entities.ImportJob { ImportJobId = Guid.NewGuid(), OrganizationId = organizationId, RequestJson = JsonSerializer.Serialize(queued), CreatedAtUtc = DateTime.UtcNow };
+            var job = new WaterOperations.Domain.Entities.ImportJob { ImportJobId = Guid.NewGuid(), OrganizationId = organizationId, RequestJson = JsonSerializer.Serialize(queued), CreatedAtUtc = DateTime.UtcNow, ProgressPercent = 0 };
             db.ImportJobs.Add(job);
             await db.SaveChangesAsync(cancellationToken);
             var jobKey = $"import:{job.ImportJobId:N}";

@@ -6,6 +6,7 @@ public sealed class ImportJob
     public Guid OrganizationId { get; set; }
     public string RequestJson { get; set; } = string.Empty;
     public string Status { get; set; } = "QUEUED";
+    public int ProgressPercent { get; set; }
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? StartedAtUtc { get; set; }
     public DateTime? CompletedAtUtc { get; set; }
