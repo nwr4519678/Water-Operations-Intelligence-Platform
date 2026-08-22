@@ -32,6 +32,13 @@ public sealed class ViewerController(ISender sender) : ControllerBase
     }
 
     [HttpGet("stations/{stationId:guid}/measurements/query"), Tags("Core - Chart Measurements")]
-    public async Task<IActionResult> QueryMeasurements([FromServices] WaterOperations.Application.Features.Viewer.Interfaces.IViewerReadService viewer, Guid stationId, int? parameterId, DateTime? fromUtc, DateTime? toUtc, int page = 1, int pageSize = 500, CancellationToken ct = default) =>
-        Ok(ApiEnvelope.Ok(await viewer.QueryMeasurementsAsync(stationId, parameterId, fromUtc, toUtc, page, pageSize, ct), HttpContext.TraceIdentifier));
+    public async Task<IActionResult> QueryMeasurements([FromServices] WaterOperations.Application.Features.Viewer.Interfaces.IViewerReadService viewer, Guid stationId, int? parameterId, DateTime? fromUtc, DateTime? toUtc, int page = 1, int pageSize = 500, CancellationToken ct = default)
+    {
+        if (page < 1 || pageSize is < 1 or > 1000) return BadRequest(new { error = "invalid_pagination", page, pageSize, maxPageSize = 1000 });
+        if (fromUtc is DateTime from && from.Kind != DateTimeKind.Utc || toUtc is DateTime to && to.Kind != DateTimeKind.Utc)
+            return BadRequest(new { error = "timestamps_must_be_utc" });
+        if (fromUtc is DateTime start && toUtc is DateTime end && (start > end || end - start > TimeSpan.FromDays(366)))
+            return BadRequest(new { error = "invalid_time_range", maxDays = 366 });
+        return Ok(ApiEnvelope.Ok(await viewer.QueryMeasurementsAsync(stationId, parameterId, fromUtc, toUtc, page, pageSize, ct), HttpContext.TraceIdentifier));
+    }
 }
