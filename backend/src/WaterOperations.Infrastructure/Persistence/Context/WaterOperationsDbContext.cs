@@ -39,6 +39,8 @@ public partial class WaterOperationsDbContext : DbContext, IUnitOfWork
 
     public virtual DbSet<IngestionBatch> IngestionBatches { get; set; }
 
+    public virtual DbSet<JobExecution> JobExecutions { get; set; }
+
     public virtual DbSet<MeasurementClean> MeasurementCleans { get; set; }
 
     // Compatibility alias for the original viewer foundation tests/API terminology.

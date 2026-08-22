@@ -22,6 +22,18 @@ public partial class WaterOperationsDbContext
             entity.Property(message => message.PayloadJson).HasColumnType("jsonb").IsRequired();
             entity.Property(message => message.Status).HasMaxLength(20).IsRequired();
         });
+        modelBuilder.Entity<JobExecution>(entity =>
+        {
+            entity.ToTable("JobExecution", "Integration");
+            entity.HasKey(job => job.JobExecutionId);
+            entity.HasIndex(job => job.JobKey).IsUnique();
+            entity.HasIndex(job => new { job.Status, job.AvailableAtUtc });
+            entity.Property(job => job.JobExecutionId).HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(job => job.JobKey).HasMaxLength(300).IsRequired();
+            entity.Property(job => job.JobType).HasMaxLength(200).IsRequired();
+            entity.Property(job => job.Status).HasMaxLength(20).IsRequired();
+            entity.Property(job => job.LastError).HasMaxLength(4000);
+        });
         modelBuilder.Entity<AuditLog>(entity =>
         {
             entity.Property(e => e.BeforeJson).HasColumnType("jsonb");
