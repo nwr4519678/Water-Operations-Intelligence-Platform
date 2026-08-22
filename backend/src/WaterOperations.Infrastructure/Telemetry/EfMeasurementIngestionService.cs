@@ -13,6 +13,8 @@ public sealed class EfMeasurementIngestionService(WaterOperationsDbContext db, I
     {
         if (request.Rows.Count is 0 or > 1000) throw new ArgumentOutOfRangeException(nameof(request.Rows), "A batch must contain between 1 and 1000 rows.");
         if (tenant.OrganizationId is not Guid organizationId) throw new UnauthorizedAccessException("A valid organization scope is required.");
+        var overwrite = string.Equals(request.ConflictMode, "OVERWRITE", StringComparison.OrdinalIgnoreCase);
+        if (!overwrite && !string.Equals(request.ConflictMode, "SKIP", StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("ConflictMode must be SKIP or OVERWRITE.", nameof(request.ConflictMode));
         if (await db.IngestionBatches.AnyAsync(batch => batch.IngestionBatchId == request.BatchId, cancellationToken))
             return new IngestionBatchResult(request.BatchId, 0, request.Rows.Count, 0,
                 request.Rows.Select((_, index) => new IngestionRowOutcome(index, "DUPLICATE", "batch_already_processed", null)).ToList());
@@ -21,28 +23,49 @@ public sealed class EfMeasurementIngestionService(WaterOperationsDbContext db, I
         var now = DateTime.UtcNow;
         var valid = request.Rows.Select((row, index) => new { row, index, reason = Validate(row, ownedStations, bindings, now) })
             .Where(x => x.reason is null).ToList();
+        var selected = new Dictionary<(Guid StationId, int ParameterId, DateTime TimestampUtc), (IngestionRowRequest Row, int Index)>();
+        var duplicateOutcomes = new Dictionary<int, IngestionRowOutcome>();
+        foreach (var item in valid)
+        {
+            var key = (item.row.StationId, item.row.ParameterId, DateTime.SpecifyKind(item.row.TimestampUtc, DateTimeKind.Utc));
+            if (!overwrite && selected.ContainsKey(key)) { duplicateOutcomes[item.index] = new IngestionRowOutcome(item.index, "DUPLICATE", "duplicate_in_batch", null); continue; }
+            selected[key] = (item.row, item.index);
+        }
+        var keys = selected.Keys.ToArray();
+        var stationIds = keys.Select(x => x.StationId).Distinct().ToArray();
+        var parameterIds = keys.Select(x => x.ParameterId).Distinct().ToArray();
+        var existingClean = await db.MeasurementCleans.Where(x => x.OrganizationId == organizationId && stationIds.Contains(x.StationId) && parameterIds.Contains(x.ParameterId)).Where(x => keys.Select(k => k.TimestampUtc).Contains(x.TimestampUtc)).ToListAsync(cancellationToken);
+        foreach (var existing in existingClean)
+        {
+            var key = (existing.StationId, existing.ParameterId, existing.TimestampUtc);
+            if (!selected.TryGetValue(key, out var item)) continue;
+            if (overwrite) db.MeasurementCleans.Remove(existing);
+            else { selected.Remove(key); duplicateOutcomes[item.Index] = new IngestionRowOutcome(item.Index, "DUPLICATE", "measurement_already_exists", null); }
+        }
+        var acceptedRows = selected.Values.OrderBy(x => x.Index).ToList();
         var batch = new IngestionBatch
         {
             IngestionBatchId = request.BatchId, OrganizationId = organizationId, SourceType = request.SourceType,
             SourceName = request.SourceName, SchemaVersion = request.SchemaVersion, StartedAtUtc = now,
-            CompletedAtUtc = now, TotalRows = request.Rows.Count, AcceptedRows = valid.Count,
-            RejectedRows = request.Rows.Count - valid.Count, Status = valid.Count == request.Rows.Count ? "COMPLETED" : "PARTIAL"
+            CompletedAtUtc = now, TotalRows = request.Rows.Count, AcceptedRows = acceptedRows.Count,
+            RejectedRows = request.Rows.Count - acceptedRows.Count, Status = acceptedRows.Count == request.Rows.Count ? "COMPLETED" : "PARTIAL"
         };
         db.IngestionBatches.Add(batch);
-        var rawRows = valid.Select(x => new MeasurementRaw
+        var rawRows = acceptedRows.Select(x => new MeasurementRaw
         {
-            OrganizationId = organizationId, StationId = x.row.StationId, ParameterId = x.row.ParameterId,
-            IngestionBatchId = request.BatchId, DeviceTimestampUtc = DateTime.SpecifyKind(x.row.TimestampUtc, DateTimeKind.Utc),
-            IngestionTimestampUtc = now, RawValue = x.row.Value, RawUnit = x.row.Unit, PayloadJson = x.row.PayloadJson,
-            DeviceSequence = x.row.DeviceSequence, IsDuplicate = false, CreatedAtUtc = now
+            OrganizationId = organizationId, StationId = x.Row.StationId, ParameterId = x.Row.ParameterId,
+            IngestionBatchId = request.BatchId, DeviceTimestampUtc = DateTime.SpecifyKind(x.Row.TimestampUtc, DateTimeKind.Utc),
+            IngestionTimestampUtc = now, RawValue = x.Row.Value, RawUnit = x.Row.Unit, PayloadJson = x.Row.PayloadJson,
+            DeviceSequence = x.Row.DeviceSequence, IsDuplicate = false, CreatedAtUtc = now
         }).ToList();
         db.MeasurementRaws.AddRange(rawRows);
         await db.SaveChangesAsync(cancellationToken);
-        var accepted = valid.ToDictionary(x => x.index, x => rawRows[valid.IndexOf(x)].MeasurementRawId);
+        var accepted = acceptedRows.ToDictionary(x => x.Index, x => rawRows[acceptedRows.IndexOf(x)].MeasurementRawId);
         var outcomes = request.Rows.Select((_, index) => accepted.TryGetValue(index, out var rawId)
             ? new IngestionRowOutcome(index, "ACCEPTED", null, rawId)
+            : duplicateOutcomes.TryGetValue(index, out var duplicate) ? duplicate
             : new IngestionRowOutcome(index, "QUARANTINED", "validation_failed", null)).ToList();
-        return new IngestionBatchResult(request.BatchId, valid.Count, 0, request.Rows.Count - valid.Count, outcomes);
+        return new IngestionBatchResult(request.BatchId, acceptedRows.Count, duplicateOutcomes.Count, request.Rows.Count - acceptedRows.Count - duplicateOutcomes.Count, outcomes);
     }
 
     public async Task<IngestionPreviewResult> PreviewAsync(IngestionBatchRequest request, CancellationToken cancellationToken)

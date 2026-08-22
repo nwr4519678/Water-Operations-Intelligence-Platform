@@ -18,7 +18,7 @@ public sealed class BulkImportController(IMeasurementIngestionService ingestion)
 
     [HttpPost("files"), RequestSizeLimit(MaxFileBytes)]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> Import(IFormFile file, CancellationToken cancellationToken)
+    public async Task<IActionResult> Import(IFormFile file, [FromQuery] string conflictMode = "SKIP", CancellationToken cancellationToken = default)
     {
         if (file is null || file.Length == 0) return BadRequest(new { error = "file_required" });
         if (file.Length > MaxFileBytes) return BadRequest(new { error = "file_too_large", maxBytes = MaxFileBytes });
@@ -27,7 +27,7 @@ public sealed class BulkImportController(IMeasurementIngestionService ingestion)
         {
             await using var stream = file.OpenReadStream();
             var request = IsJson(file) ? await ParseJsonAsync(stream, file.FileName, cancellationToken) : await ParseCsvAsync(stream, file.FileName, cancellationToken);
-            return Ok(await ingestion.IngestAsync(request, cancellationToken));
+            return Ok(await ingestion.IngestAsync(request with { ConflictMode = conflictMode }, cancellationToken));
         }
         catch (BulkImportFormatException exception)
         {
