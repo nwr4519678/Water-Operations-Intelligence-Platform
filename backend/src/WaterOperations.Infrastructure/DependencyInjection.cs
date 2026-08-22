@@ -106,6 +106,7 @@ public static class DependencyInjection
     {
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IFileStorage, LocalFileStorage>();
+        services.AddScoped<ICorrelationContext, HttpCorrelationContext>();
         services.AddScoped<IReportJobScheduler, NoOpReportJobScheduler>();
         if (configuration["Testing"] == "true")
         {
