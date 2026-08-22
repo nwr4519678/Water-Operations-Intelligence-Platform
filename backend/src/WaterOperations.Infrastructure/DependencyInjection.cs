@@ -34,6 +34,10 @@ using WaterOperations.Infrastructure.Storage;
 using WaterOperations.Infrastructure.Telemetry;
 using WaterOperations.Infrastructure.Time;
 using WaterOperations.Infrastructure.Viewer;
+using WaterOperations.Infrastructure.ProductCapabilities;
+using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
+using WaterOperations.Application.Features.ProductCapabilities.AI;
+using WaterOperations.Infrastructure.ProductCapabilities.AI;
 
 namespace WaterOperations.Infrastructure;
 
@@ -89,6 +93,8 @@ public static class DependencyInjection
             configuration.GetSection(InfrastructureOptions.SectionName));
         services.Configure<JwtAuthenticationOptions>(
             configuration.GetSection(JwtAuthenticationOptions.SectionName));
+        services.Configure<AiModelClientOptions>(
+            configuration.GetSection(AiModelClientOptions.SectionName));
         return services;
     }
 
@@ -124,6 +130,17 @@ public static class DependencyInjection
         services.AddScoped<IPipelineRepository, EfPipelineRepository>();
         services.AddScoped<IRetentionRepository, EfRetentionRepository>();
         services.AddScoped<IMfaRepository, EfMfaRepository>();
+        services.AddScoped<IProductCapabilityRepository, EfProductCapabilityRepository>();
+        services.AddHttpClient<IAiModelClient, HttpAiModelClient>((provider, client) =>
+        {
+            var options = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<AiModelClientOptions>>().Value;
+            client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(Math.Clamp(options.TimeoutSeconds, 1, 120));
+            if (!string.IsNullOrWhiteSpace(options.ApiKey))
+            {
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", options.ApiKey);
+            }
+        });
         return services;
     }
 
