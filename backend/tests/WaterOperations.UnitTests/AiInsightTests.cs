@@ -31,7 +31,7 @@ public sealed class AiInsightTests
 
         var result = await handler.Handle(new GetAiInsightQuery(Guid.NewGuid(), "forecast", null), CancellationToken.None);
 
-        Assert.Equal("AVAILABLE", result.Value!.Status);
+        Assert.Equal("READY", result.Value!.Status);
         Assert.Equal(response, result.Value.Data);
         Assert.Equal("trace-456", client.CorrelationId);
     }
