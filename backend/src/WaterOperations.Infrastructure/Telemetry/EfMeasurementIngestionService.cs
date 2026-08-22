@@ -21,8 +21,11 @@ public sealed class EfMeasurementIngestionService(WaterOperationsDbContext db, I
         var ownedStations = await db.Stations.AsNoTracking()
             .Where(station => station.OrganizationId == organizationId && stationIds.Contains(station.StationId))
             .Select(station => station.StationId).ToHashSetAsync(cancellationToken);
+        var bindings = await db.StationParameters.AsNoTracking().Include(x => x.Parameter)
+            .Where(x => ownedStations.Contains(x.StationId) && x.IsEnabled)
+            .ToDictionaryAsync(x => (x.StationId, x.ParameterId), cancellationToken);
         var now = DateTime.UtcNow;
-        var valid = request.Rows.Select((row, index) => new { row, index, reason = Validate(row, ownedStations, now) })
+        var valid = request.Rows.Select((row, index) => new { row, index, reason = Validate(row, ownedStations, bindings, now) })
             .Where(x => x.reason is null).ToList();
         var batch = new IngestionBatch
         {
@@ -48,9 +51,11 @@ public sealed class EfMeasurementIngestionService(WaterOperationsDbContext db, I
         return new IngestionBatchResult(request.BatchId, valid.Count, 0, request.Rows.Count - valid.Count, outcomes);
     }
 
-    private static string? Validate(IngestionRowRequest row, ISet<Guid> ownedStations, DateTime now)
+    private static string? Validate(IngestionRowRequest row, ISet<Guid> ownedStations, IReadOnlyDictionary<(Guid StationId, int ParameterId), Domain.Entities.StationParameter> bindings, DateTime now)
     {
         if (!ownedStations.Contains(row.StationId)) return "station_not_in_tenant";
+        if (!bindings.TryGetValue((row.StationId, row.ParameterId), out var binding)) return "station_parameter_not_configured";
+        if (!string.Equals(row.Unit, binding.SourceUnit, StringComparison.OrdinalIgnoreCase)) return "unit_mismatch";
         if (row.TimestampUtc.Kind == DateTimeKind.Local) return "timestamp_must_be_utc";
         if (row.TimestampUtc > now.AddMinutes(5)) return "timestamp_too_far_in_future";
         if (row.TimestampUtc < now.AddYears(-10)) return "timestamp_out_of_retention_window";
