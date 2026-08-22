@@ -7,12 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 using WaterOperations.Application.Features.Telemetry.DTOs;
 using WaterOperations.Application.Features.Telemetry.Interfaces;
 using WaterOperations.Infrastructure.Security;
-using WaterOperations.Infrastructure.Jobs;
+using WaterOperations.Infrastructure.Persistence;
+using WaterOperations.Application.Common.Abstractions;
 
 namespace WaterOperations.Api.Controllers;
 
 [ApiController, Route("api/v1/ingestion"), Authorize(Policy = AuthorizationPolicies.AdminOnly)]
-public sealed class BulkImportController(IMeasurementIngestionService ingestion, ImportJobQueue queue) : ControllerBase
+public sealed class BulkImportController(IMeasurementIngestionService ingestion, WaterOperationsDbContext db, ITenantContext tenant) : ControllerBase
 {
     private const long MaxFileBytes = 5 * 1024 * 1024;
     private const int MaxRows = 1000;
@@ -65,8 +66,11 @@ public sealed class BulkImportController(IMeasurementIngestionService ingestion,
             await using var stream = file.OpenReadStream();
             var request = IsJson(file) ? await ParseJsonAsync(stream, file.FileName, cancellationToken) : await ParseCsvAsync(stream, file.FileName, cancellationToken);
             var queued = request with { ConflictMode = conflictMode };
-            var jobKey = $"import:{queued.BatchId:N}";
-            await queue.EnqueueAsync(new ImportJobWorkItem(jobKey, queued), cancellationToken);
+            if (tenant.OrganizationId is not Guid organizationId) return Unauthorized(new { error = "organization_scope_required" });
+            var job = new WaterOperations.Domain.Entities.ImportJob { ImportJobId = Guid.NewGuid(), OrganizationId = organizationId, RequestJson = JsonSerializer.Serialize(queued), CreatedAtUtc = DateTime.UtcNow };
+            db.ImportJobs.Add(job);
+            await db.SaveChangesAsync(cancellationToken);
+            var jobKey = $"import:{job.ImportJobId:N}";
             return Accepted($"/api/v1/admin/jobs/{jobKey}", new { jobKey, batchId = queued.BatchId, status = "QUEUED" });
         }
         catch (BulkImportFormatException exception)

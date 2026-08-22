@@ -9,6 +9,7 @@ namespace WaterOperations.Infrastructure.Persistence;
 public partial class WaterOperationsDbContext
 {
     public DbSet<OutboxMessage> OutboxMessages { get; set; } = null!;
+    public DbSet<ImportJob> ImportJobs { get; set; } = null!;
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
     {
@@ -21,6 +22,15 @@ public partial class WaterOperationsDbContext
             entity.Property(message => message.EventType).HasMaxLength(200).IsRequired();
             entity.Property(message => message.PayloadJson).HasColumnType("jsonb").IsRequired();
             entity.Property(message => message.Status).HasMaxLength(20).IsRequired();
+        });
+        modelBuilder.Entity<ImportJob>(entity =>
+        {
+            entity.ToTable("ImportJob", "Integration");
+            entity.HasKey(job => job.ImportJobId);
+            entity.HasIndex(job => new { job.Status, job.CreatedAtUtc });
+            entity.Property(job => job.RequestJson).HasColumnType("jsonb").IsRequired();
+            entity.Property(job => job.Status).HasMaxLength(20).IsRequired();
+            entity.Property(job => job.LastError).HasMaxLength(4000);
         });
         modelBuilder.Entity<JobExecution>(entity =>
         {
