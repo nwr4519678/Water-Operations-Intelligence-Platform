@@ -34,7 +34,6 @@ using WaterOperations.Infrastructure.Storage;
 using WaterOperations.Infrastructure.Telemetry;
 using WaterOperations.Infrastructure.Time;
 using WaterOperations.Infrastructure.Viewer;
-using WaterOperations.Infrastructure.ProductCapabilities.Persistence;
 using WaterOperations.Infrastructure.ProductCapabilities.AI;
 using WaterOperations.Infrastructure.ProductCapabilities.Reports;
 using WaterOperations.Infrastructure.ProductCapabilities.Notifications;
