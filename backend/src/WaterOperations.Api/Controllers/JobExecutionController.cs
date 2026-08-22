@@ -14,7 +14,13 @@ public sealed class JobExecutionController(WaterOperationsDbContext db, IJobExec
     public async Task<IActionResult> Get(string jobKey, CancellationToken cancellationToken)
     {
         var job = await db.JobExecutions.AsNoTracking().SingleOrDefaultAsync(x => x.JobKey == jobKey, cancellationToken);
-        return job is null ? NotFound() : Ok(new { job.JobKey, job.JobType, job.Status, job.AttemptCount, job.StartedAtUtc, job.CompletedAtUtc, job.AvailableAtUtc, job.ExpiresAtUtc, job.LastError });
+        if (job is not null) return Ok(new { job.JobKey, job.JobType, job.Status, job.AttemptCount, job.StartedAtUtc, job.CompletedAtUtc, job.AvailableAtUtc, job.ExpiresAtUtc, job.LastError });
+        if (jobKey.StartsWith("import:", StringComparison.OrdinalIgnoreCase) && Guid.TryParse(jobKey[7..], out var importId))
+        {
+            var import = await db.ImportJobs.AsNoTracking().SingleOrDefaultAsync(x => x.ImportJobId == importId, cancellationToken);
+            if (import is not null) return Ok(new { JobKey = jobKey, JobType = "BULK_IMPORT", import.Status, AttemptCount = 0, import.CreatedAtUtc, import.StartedAtUtc, import.CompletedAtUtc, LastError = import.LastError });
+        }
+        return NotFound();
     }
 
     [HttpPost("{jobKey}/cancel")]
