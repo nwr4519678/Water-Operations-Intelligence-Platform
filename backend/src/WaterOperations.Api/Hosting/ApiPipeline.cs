@@ -15,6 +15,7 @@ public static class ApiPipeline
         app.UseCors("Web");
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseMiddleware<ViewerCacheHeadersMiddleware>();
         app.UseRateLimiter();
         app.UseSwagger();
         app.UseSwaggerUI(options =>
