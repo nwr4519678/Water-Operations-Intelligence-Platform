@@ -1,0 +1,6 @@
+--- VALIDATION REPORT: COLUMBIA RIVER AT THE DALLES, OR ---
+Total Hourly Records Processed: 5572
+Clean Records: 5565
+Quarantined Records: 7
+Data Completeness: 99.87%
+Sensors Tracked: ['Temperature', 'Streamflow', 'Gage height', 'Station_State', 'Active_Alarms']
