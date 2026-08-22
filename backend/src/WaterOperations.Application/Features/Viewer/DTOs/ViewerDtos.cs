@@ -1,5 +1,7 @@
 namespace WaterOperations.Application.Features.Viewer.DTOs;
 
+using WaterOperations.Application.Features.Operations.DTOs;
+
 public sealed record OrganizationDto(Guid Id, string Name);
 
 public sealed record RegionDto(Guid Id, Guid OrganizationId, string Name);
@@ -13,7 +15,7 @@ public sealed record StationLinkDto(long Id, Guid FromStationId, Guid ToStationI
 public sealed record PagedResult<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount);
 public sealed record ChartMeasurementDto(long Id, Guid StationId, int ParameterId, DateTimeOffset RecordedAt, decimal Value, string Unit, string QualityFlag, bool IsInterpolated);
 public sealed record ChartSeriesDto(int ParameterId, string Unit, IReadOnlyList<ChartMeasurementDto> Items);
-public sealed record AdvancedChartResult(Guid StationId, IReadOnlyList<ChartSeriesDto> Series, bool Downsampled, int MaxRowsPerSeries);
+public sealed record AdvancedChartResult(Guid StationId, IReadOnlyList<ChartSeriesDto> Series, IReadOnlyList<ThresholdDto> Thresholds, bool Downsampled, int MaxRowsPerSeries);
 
 public sealed record MeasurementDto(long Id, Guid StationId, DateTimeOffset RecordedAt, decimal Value, string Unit);
 

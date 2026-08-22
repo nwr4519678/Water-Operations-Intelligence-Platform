@@ -3,6 +3,7 @@ using WaterOperations.Application.Features.Viewer.DTOs;
 using WaterOperations.Application.Features.Viewer.Interfaces;
 using WaterOperations.Application.Common.Abstractions;
 using WaterOperations.Infrastructure.Persistence;
+using WaterOperations.Application.Features.Operations.DTOs;
 
 namespace WaterOperations.Infrastructure.Viewer;
 
@@ -86,6 +87,8 @@ public sealed class EfViewerReadService(WaterOperationsDbContext db, ITenantCont
         if (toUtc is DateTime to) query = query.Where(x => x.TimestampUtc <= DateTime.SpecifyKind(to, DateTimeKind.Utc));
         var rows = await query.OrderBy(x => x.TimestampUtc).ThenBy(x => x.MeasurementCleanId).Take(10_000 * ids.Length).Select(x => new ChartMeasurementDto(x.MeasurementCleanId, x.StationId, x.ParameterId, new DateTimeOffset(DateTime.SpecifyKind(x.TimestampUtc, DateTimeKind.Utc)), x.Value ?? 0m, x.CanonicalUnit, x.QualityFlag, x.IsInterpolated)).ToListAsync(cancellationToken);
         var series = rows.GroupBy(x => x.ParameterId).OrderBy(x => x.Key).Select(group => new ChartSeriesDto(group.Key, group.First().Unit, resolutionSeconds is null ? group.ToList() : group.GroupBy(x => ((x.RecordedAt.ToUnixTimeSeconds()) / resolutionSeconds.Value) * resolutionSeconds.Value).Select(bucket => bucket.OrderBy(x => x.RecordedAt).First() with { Value = bucket.Average(x => x.Value), IsInterpolated = bucket.Any(x => x.IsInterpolated) }).ToList())).ToList();
-        return new AdvancedChartResult(stationId, series, resolutionSeconds is not null, 10_000);
+        var thresholds = await db.Thresholds.AsNoTracking().Where(x => x.StationId == stationId && ids.Contains(x.ParameterId) && (tenant.OrganizationId == null || x.OrganizationId == tenant.OrganizationId))
+            .OrderByDescending(x => x.EffectiveFromUtc).Select(x => new ThresholdDto(x.ThresholdId, x.StationId, x.ParameterId, x.WarningLow, x.WarningHigh, x.CriticalLow, x.CriticalHigh, x.EffectiveFromUtc, x.EffectiveToUtc, x.IsActive)).ToListAsync(cancellationToken);
+        return new AdvancedChartResult(stationId, series, thresholds, resolutionSeconds is not null, 10_000);
     }
 }
