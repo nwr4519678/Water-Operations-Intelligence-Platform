@@ -39,6 +39,19 @@ public sealed class JobExecutionStoreTests
         Assert.False(await store.TryStartAsync("done", "TEST", TimeSpan.FromMinutes(1), CancellationToken.None));
     }
 
+    [Fact]
+    public async Task CancelledJobsCannotBeRestarted()
+    {
+        await using var db = CreateContext();
+        var store = new EfJobExecutionStore(db);
+
+        Assert.True(await store.TryStartAsync("cancelled", "TEST", TimeSpan.FromMinutes(1), CancellationToken.None));
+        await store.CancelAsync("cancelled", "operator_requested", CancellationToken.None);
+
+        Assert.False(await store.TryStartAsync("cancelled", "TEST", TimeSpan.FromMinutes(1), CancellationToken.None));
+        Assert.Equal("CANCELLED", (await db.JobExecutions.SingleAsync(x => x.JobKey == "cancelled")).Status);
+    }
+
     private static WaterOperationsDbContext CreateContext() =>
         new(new DbContextOptionsBuilder<WaterOperationsDbContext>()
             .UseInMemoryDatabase($"job-tests-{Guid.NewGuid():N}")
