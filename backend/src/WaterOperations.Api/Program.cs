@@ -101,7 +101,8 @@ if (builder.Configuration["Testing"] != "true")
 {
     healthChecks
         .AddCheck<WaterOperations.Infrastructure.HealthChecks.DatabaseReadinessCheck>("database")
-        .AddCheck<WaterOperations.Infrastructure.HealthChecks.RedisReadinessCheck>("redis");
+        .AddCheck<WaterOperations.Infrastructure.HealthChecks.RedisReadinessCheck>("redis")
+        .AddCheck<WaterOperations.Infrastructure.HealthChecks.JobExecutionHealthCheck>("jobs");
 }
 
 var app = builder.Build();
