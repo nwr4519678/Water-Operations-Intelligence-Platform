@@ -49,6 +49,8 @@ public static class DependencyInjection
         services.AddScoped<IDataQualityService, EfDataQualityService>();
         services.AddScoped<IJobExecutionStore, EfJobExecutionStore>();
         services.AddScoped<DataLifecycleService>();
+        services.AddDataProtection();
+        services.AddScoped<MfaService>();
         if (configuration["Testing"] != "true")
         {
             var redisConnection = configuration.GetConnectionString("Redis")
