@@ -4,15 +4,24 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using WaterOperations.Application.Common.Pagination;
 using WaterOperations.Application.Features.ProductCapabilities.DTOs;
-using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
+using WaterOperations.Application.Features.Collaboration.Contracts;
 using WaterOperations.Domain.Entities;
 using WaterOperations.Infrastructure.Persistence;
-using WaterOperations.Infrastructure.ProductCapabilities.Persistence;
 
 namespace WaterOperations.Infrastructure.ProductCapabilities.Collaboration;
 
-public sealed class EfCollaborationRepository(WaterOperationsDbContext db) : EfProductCapabilityRepositoryBase(db), ICollaborationRepository
+public sealed class EfCollaborationRepository(WaterOperationsDbContext db) : ICollaborationRepository
 {
+    private WaterOperationsDbContext Db { get; } = db;
+
+    private static async Task<PagedResult<T>> PageAsync<T>(IQueryable<T> query, PaginationRequest request, CancellationToken cancellationToken)
+    {
+        var page = Math.Max(1, request.Page);
+        var size = Math.Clamp(request.PageSize, 1, 100);
+        var total = await query.CountAsync(cancellationToken);
+        var data = await query.Skip((page - 1) * size).Take(size).ToListAsync(cancellationToken);
+        return new PagedResult<T>(data, page, size, total);
+    }
     public Task<PagedResult<CollaborationNoteDto>> GetNotesAsync(Guid organizationId, Guid stationId, PaginationRequest pagination, CancellationToken cancellationToken) => PageAsync(Db.StationCollaborationNotes.AsNoTracking().Where(x => x.OrganizationId == organizationId && x.StationId == stationId).OrderByDescending(x => x.CreatedAtUtc).Select(x => new CollaborationNoteDto(x.NoteId, x.StationId, x.AuthorUserId, x.NoteText, x.IsResolved, x.CreatedAtUtc, x.UpdatedAtUtc)), pagination, cancellationToken);
 
     public async Task<CollaborationNoteDto> AddNoteAsync(Guid organizationId, Guid userId, Guid stationId, long? parentNoteId, string noteText, CancellationToken cancellationToken)

@@ -5,7 +5,11 @@ public sealed record StationSearchRequest(
     Guid? RegionId,
     string? Status,
     int Page = 1,
-    int PageSize = 50);
+    int PageSize = 50,
+    decimal? MinLatitude = null,
+    decimal? MinLongitude = null,
+    decimal? MaxLatitude = null,
+    decimal? MaxLongitude = null);
 
 public sealed record StationListItemDto(
     Guid StationId,

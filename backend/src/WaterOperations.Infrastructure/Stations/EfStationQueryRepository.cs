@@ -36,6 +36,26 @@ public sealed class EfStationQueryRepository(IRepositoryContext repository) : IS
             query = query.Where(x => x.Status == request.Status);
         }
 
+        if (request.MinLatitude.HasValue)
+        {
+            query = query.Where(x => x.Latitude >= request.MinLatitude.Value);
+        }
+
+        if (request.MaxLatitude.HasValue)
+        {
+            query = query.Where(x => x.Latitude <= request.MaxLatitude.Value);
+        }
+
+        if (request.MinLongitude.HasValue)
+        {
+            query = query.Where(x => x.Longitude >= request.MinLongitude.Value);
+        }
+
+        if (request.MaxLongitude.HasValue)
+        {
+            query = query.Where(x => x.Longitude <= request.MaxLongitude.Value);
+        }
+
         var total = await query.CountAsync(cancellationToken);
         var rows = await query
             .OrderBy(x => x.StationCode)

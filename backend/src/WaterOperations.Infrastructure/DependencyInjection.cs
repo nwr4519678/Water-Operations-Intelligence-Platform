@@ -42,7 +42,13 @@ using WaterOperations.Infrastructure.ProductCapabilities.Audit;
 using WaterOperations.Infrastructure.ProductCapabilities.Collaboration;
 using WaterOperations.Infrastructure.ProductCapabilities.Administration;
 using WaterOperations.Infrastructure.ProductCapabilities.Search;
-using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
+using WaterOperations.Application.Features.AI.Contracts;
+using WaterOperations.Application.Features.Reports.Contracts;
+using WaterOperations.Application.Features.Notifications.Contracts;
+using WaterOperations.Application.Features.Audit.Contracts;
+using WaterOperations.Application.Features.Collaboration.Contracts;
+using WaterOperations.Application.Features.Administration.Contracts;
+using WaterOperations.Application.Features.Search.Contracts;
 using WaterOperations.Application.Features.ProductCapabilities.AI;
 using WaterOperations.Application.Features.ProductCapabilities.Reports;
 

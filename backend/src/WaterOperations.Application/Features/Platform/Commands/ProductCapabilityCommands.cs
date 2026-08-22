@@ -2,7 +2,10 @@ using FluentValidation;
 using WaterOperations.Application.Common.Abstractions;
 using WaterOperations.Application.Common.Results;
 using WaterOperations.Application.Features.ProductCapabilities.DTOs;
-using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
+using WaterOperations.Application.Features.Reports.Contracts;
+using WaterOperations.Application.Features.Notifications.Contracts;
+using WaterOperations.Application.Features.Administration.Contracts;
+using WaterOperations.Application.Features.Collaboration.Contracts;
 
 #pragma warning disable CA1725
 

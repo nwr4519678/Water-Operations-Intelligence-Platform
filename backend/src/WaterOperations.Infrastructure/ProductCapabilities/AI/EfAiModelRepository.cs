@@ -2,15 +2,24 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using WaterOperations.Application.Common.Pagination;
 using WaterOperations.Application.Features.ProductCapabilities.DTOs;
-using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
+using WaterOperations.Application.Features.AI.Contracts;
 using WaterOperations.Domain.Entities;
 using WaterOperations.Infrastructure.Persistence;
-using WaterOperations.Infrastructure.ProductCapabilities.Persistence;
 
 namespace WaterOperations.Infrastructure.ProductCapabilities.AI;
 
-public sealed class EfAiModelRepository(WaterOperationsDbContext db) : EfProductCapabilityRepositoryBase(db), IAiModelRepository
+public sealed class EfAiModelRepository(WaterOperationsDbContext db) : IAiModelRepository
 {
+    private WaterOperationsDbContext Db { get; } = db;
+
+    private static async Task<PagedResult<T>> PageAsync<T>(IQueryable<T> query, PaginationRequest request, CancellationToken cancellationToken)
+    {
+        var page = Math.Max(1, request.Page);
+        var size = Math.Clamp(request.PageSize, 1, 100);
+        var total = await query.CountAsync(cancellationToken);
+        var data = await query.Skip((page - 1) * size).Take(size).ToListAsync(cancellationToken);
+        return new PagedResult<T>(data, page, size, total);
+    }
     public Task<PagedResult<AnomalyDto>> GetAnomaliesAsync(Guid organizationId, PaginationRequest pagination, CancellationToken cancellationToken) =>
         PageAsync(Db.AnomalyEvents.AsNoTracking().Where(x => x.OrganizationId == organizationId).OrderByDescending(x => x.DetectedAtUtc)
             .Select(x => new AnomalyDto(x.AnomalyEventId, x.StationId, x.ReasonCode, x.Score, x.DetectedAtUtc, x.IsReviewed)), pagination, cancellationToken);

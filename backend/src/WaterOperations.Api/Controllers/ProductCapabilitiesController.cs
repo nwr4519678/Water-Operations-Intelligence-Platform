@@ -5,7 +5,6 @@ using WaterOperations.Api.Extensions;
 using WaterOperations.Application.Common.Pagination;
 using WaterOperations.Application.Features.ProductCapabilities.Commands;
 using WaterOperations.Application.Features.ProductCapabilities.DTOs;
-using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
 using WaterOperations.Application.Features.ProductCapabilities.AI;
 using WaterOperations.Application.Features.ProductCapabilities.Queries;
 using WaterOperations.Application.Features.Ingestion.Commands;
@@ -61,6 +60,7 @@ public sealed class ProductCapabilitiesController(ISender sender) : ControllerBa
         (await sender.Send(new GetAiInsightQuery(null, "clusters", asOfUtc), cancellationToken)).ToActionResult(this);
 
     [HttpPost("ai/alarms/triage")]
+    [Authorize(Roles = "ADMIN")]
     public async Task<IActionResult> Triage([FromBody] AiResourceRequest request, CancellationToken cancellationToken) =>
         (await sender.Send(new GetAiInsightQuery(request.ResourceId, "alarm-triage", null), cancellationToken)).ToActionResult(this);
 

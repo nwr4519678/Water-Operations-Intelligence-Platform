@@ -32,10 +32,14 @@ public sealed class ViewerController(
         [FromQuery] string? search,
         [FromQuery] Guid? regionId,
         [FromQuery] string? status,
+        [FromQuery] decimal? minLatitude,
+        [FromQuery] decimal? minLongitude,
+        [FromQuery] decimal? maxLatitude,
+        [FromQuery] decimal? maxLongitude,
         [FromQuery] PaginationRequest pagination,
         CancellationToken cancellationToken)
     {
-        var result = await sender.Send(new SearchStationsQuery(search, regionId, status, pagination), cancellationToken);
+        var result = await sender.Send(new SearchStationsQuery(search, regionId, status, pagination, minLatitude, minLongitude, maxLatitude, maxLongitude), cancellationToken);
         return result.ToActionResult(this);
     }
 

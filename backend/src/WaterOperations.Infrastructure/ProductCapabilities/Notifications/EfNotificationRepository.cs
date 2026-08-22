@@ -2,15 +2,24 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using WaterOperations.Application.Common.Pagination;
 using WaterOperations.Application.Features.ProductCapabilities.DTOs;
-using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
+using WaterOperations.Application.Features.Notifications.Contracts;
 using WaterOperations.Domain.Entities;
 using WaterOperations.Infrastructure.Persistence;
-using WaterOperations.Infrastructure.ProductCapabilities.Persistence;
 
 namespace WaterOperations.Infrastructure.ProductCapabilities.Notifications;
 
-public sealed class EfNotificationRepository(WaterOperationsDbContext db) : EfProductCapabilityRepositoryBase(db), INotificationRepository
+public sealed class EfNotificationRepository(WaterOperationsDbContext db) : INotificationRepository
 {
+    private WaterOperationsDbContext Db { get; } = db;
+
+    private static async Task<PagedResult<T>> PageAsync<T>(IQueryable<T> query, PaginationRequest request, CancellationToken cancellationToken)
+    {
+        var page = Math.Max(1, request.Page);
+        var size = Math.Clamp(request.PageSize, 1, 100);
+        var total = await query.CountAsync(cancellationToken);
+        var data = await query.Skip((page - 1) * size).Take(size).ToListAsync(cancellationToken);
+        return new PagedResult<T>(data, page, size, total);
+    }
     public Task<PagedResult<NotificationDto>> GetNotificationsAsync(Guid organizationId, Guid userId, bool unreadOnly, PaginationRequest pagination, CancellationToken cancellationToken)
     {
         var query = Db.Notifications.AsNoTracking().Where(x => x.OrganizationId == organizationId && x.UserId == userId);

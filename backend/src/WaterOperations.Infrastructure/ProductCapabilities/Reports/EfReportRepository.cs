@@ -2,15 +2,24 @@ using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using WaterOperations.Application.Common.Pagination;
 using WaterOperations.Application.Features.ProductCapabilities.DTOs;
-using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
+using WaterOperations.Application.Features.Reports.Contracts;
 using WaterOperations.Domain.Entities;
 using WaterOperations.Infrastructure.Persistence;
-using WaterOperations.Infrastructure.ProductCapabilities.Persistence;
 
 namespace WaterOperations.Infrastructure.ProductCapabilities.Reports;
 
-public sealed class EfReportRepository(WaterOperationsDbContext db) : EfProductCapabilityRepositoryBase(db), IReportRepository
+public sealed class EfReportRepository(WaterOperationsDbContext db) : IReportRepository
 {
+    private WaterOperationsDbContext Db { get; } = db;
+
+    private static async Task<PagedResult<T>> PageAsync<T>(IQueryable<T> query, PaginationRequest request, CancellationToken cancellationToken)
+    {
+        var page = Math.Max(1, request.Page);
+        var size = Math.Clamp(request.PageSize, 1, 100);
+        var total = await query.CountAsync(cancellationToken);
+        var data = await query.Skip((page - 1) * size).Take(size).ToListAsync(cancellationToken);
+        return new PagedResult<T>(data, page, size, total);
+    }
     public Task<PagedResult<ReportDto>> GetReportsAsync(Guid organizationId, Guid userId, ReportFilter filter, PaginationRequest pagination, CancellationToken cancellationToken)
     {
         var query = Db.Reports.AsNoTracking().Where(x => x.OrganizationId == organizationId && x.RequestedByUserId == userId);

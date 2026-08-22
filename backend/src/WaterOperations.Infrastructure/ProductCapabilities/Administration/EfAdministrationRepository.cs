@@ -1,15 +1,24 @@
 using Microsoft.EntityFrameworkCore;
 using WaterOperations.Application.Common.Pagination;
 using WaterOperations.Application.Features.ProductCapabilities.DTOs;
-using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
+using WaterOperations.Application.Features.Administration.Contracts;
 using WaterOperations.Domain.Entities;
 using WaterOperations.Infrastructure.Persistence;
-using WaterOperations.Infrastructure.ProductCapabilities.Persistence;
 
 namespace WaterOperations.Infrastructure.ProductCapabilities.Administration;
 
-public sealed class EfAdministrationRepository(WaterOperationsDbContext db) : EfProductCapabilityRepositoryBase(db), IAdministrationRepository
+public sealed class EfAdministrationRepository(WaterOperationsDbContext db) : IAdministrationRepository
 {
+    private WaterOperationsDbContext Db { get; } = db;
+
+    private static async Task<PagedResult<T>> PageAsync<T>(IQueryable<T> query, PaginationRequest request, CancellationToken cancellationToken)
+    {
+        var page = Math.Max(1, request.Page);
+        var size = Math.Clamp(request.PageSize, 1, 100);
+        var total = await query.CountAsync(cancellationToken);
+        var data = await query.Skip((page - 1) * size).Take(size).ToListAsync(cancellationToken);
+        return new PagedResult<T>(data, page, size, total);
+    }
     public Task<PagedResult<UserAdminDto>> GetUsersAsync(Guid organizationId, PaginationRequest pagination, CancellationToken cancellationToken) => PageAsync(Db.Users.AsNoTracking().Where(x => x.OrganizationId == organizationId).OrderBy(x => x.DisplayName).Select(x => new UserAdminDto(x.UserId, x.Email, x.DisplayName, x.ClientType, x.IsActive, x.CreatedAtUtc)), pagination, cancellationToken);
     public Task<OrganizationDto?> GetOrganizationAsync(Guid organizationId, CancellationToken cancellationToken) => Db.Organizations.AsNoTracking().Where(x => x.OrganizationId == organizationId).Select(x => new OrganizationDto(x.OrganizationId, x.Name, x.Slug, x.LogoUrl, x.DefaultLocale, x.DefaultTimeZone, x.IsActive)).SingleOrDefaultAsync(cancellationToken);
     public async Task<IReadOnlyList<DashboardLayoutDto>> GetLayoutsAsync(Guid userId, CancellationToken cancellationToken) => await Db.DashboardLayouts.AsNoTracking().Where(x => x.UserId == userId).OrderByDescending(x => x.IsDefault).ThenBy(x => x.LayoutName).Select(x => new DashboardLayoutDto(x.DashboardLayoutId, x.LayoutName, x.WidgetsJson, x.IsDefault, x.UpdatedAtUtc)).ToListAsync(cancellationToken);

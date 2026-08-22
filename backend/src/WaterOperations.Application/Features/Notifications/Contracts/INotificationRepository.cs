@@ -1,7 +1,7 @@
 using WaterOperations.Application.Common.Pagination;
 using WaterOperations.Application.Features.ProductCapabilities.DTOs;
 
-namespace WaterOperations.Application.Features.ProductCapabilities.Interfaces;
+namespace WaterOperations.Application.Features.Notifications.Contracts;
 
 public interface INotificationRepository
 {

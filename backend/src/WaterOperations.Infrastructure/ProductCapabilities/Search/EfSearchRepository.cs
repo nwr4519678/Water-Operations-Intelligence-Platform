@@ -1,14 +1,23 @@
 using Microsoft.EntityFrameworkCore;
 using WaterOperations.Application.Common.Pagination;
 using WaterOperations.Application.Features.ProductCapabilities.DTOs;
-using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
+using WaterOperations.Application.Features.Search.Contracts;
 using WaterOperations.Infrastructure.Persistence;
-using WaterOperations.Infrastructure.ProductCapabilities.Persistence;
 
 namespace WaterOperations.Infrastructure.ProductCapabilities.Search;
 
-public sealed class EfSearchRepository(WaterOperationsDbContext db) : EfProductCapabilityRepositoryBase(db), ISearchRepository
+public sealed class EfSearchRepository(WaterOperationsDbContext db) : ISearchRepository
 {
+    private WaterOperationsDbContext Db { get; } = db;
+
+    private static async Task<PagedResult<T>> PageAsync<T>(IQueryable<T> query, PaginationRequest request, CancellationToken cancellationToken)
+    {
+        var page = Math.Max(1, request.Page);
+        var size = Math.Clamp(request.PageSize, 1, 100);
+        var total = await query.CountAsync(cancellationToken);
+        var data = await query.Skip((page - 1) * size).Take(size).ToListAsync(cancellationToken);
+        return new PagedResult<T>(data, page, size, total);
+    }
     public Task<PagedResult<SearchResultDto>> SearchAsync(Guid organizationId, string query, bool includeUsers, PaginationRequest pagination, CancellationToken cancellationToken)
     {
         var pattern = query.Trim();
