@@ -48,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<IThresholdService, EfThresholdService>();
         services.AddScoped<IDataQualityService, EfDataQualityService>();
         services.AddScoped<IJobExecutionStore, EfJobExecutionStore>();
+        services.AddSingleton<ImportJobQueue>();
         services.AddScoped<DataLifecycleService>();
         services.AddDataProtection();
         services.AddScoped<MfaService>();

@@ -93,6 +93,7 @@ if (builder.Configuration["Testing"] != "true")
         options.Configuration.ChannelPrefix = RedisChannel.Literal("water-operations:signalr");
     });
     builder.Services.AddHostedService<IntegrationEventSubscriber>();
+    builder.Services.AddHostedService<WaterOperations.Infrastructure.Jobs.ImportJobWorker>();
 }
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();

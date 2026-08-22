@@ -7,11 +7,12 @@ using Microsoft.AspNetCore.Mvc;
 using WaterOperations.Application.Features.Telemetry.DTOs;
 using WaterOperations.Application.Features.Telemetry.Interfaces;
 using WaterOperations.Infrastructure.Security;
+using WaterOperations.Infrastructure.Jobs;
 
 namespace WaterOperations.Api.Controllers;
 
 [ApiController, Route("api/v1/ingestion"), Authorize(Policy = AuthorizationPolicies.AdminOnly)]
-public sealed class BulkImportController(IMeasurementIngestionService ingestion) : ControllerBase
+public sealed class BulkImportController(IMeasurementIngestionService ingestion, ImportJobQueue queue) : ControllerBase
 {
     private const long MaxFileBytes = 5 * 1024 * 1024;
     private const int MaxRows = 1000;
@@ -46,6 +47,27 @@ public sealed class BulkImportController(IMeasurementIngestionService ingestion)
             await using var stream = file.OpenReadStream();
             var request = IsJson(file) ? await ParseJsonAsync(stream, file.FileName, cancellationToken) : await ParseCsvAsync(stream, file.FileName, cancellationToken);
             return Ok(await ingestion.PreviewAsync(request, cancellationToken));
+        }
+        catch (BulkImportFormatException exception)
+        {
+            return BadRequest(new { error = "invalid_import_file", reason = exception.Message });
+        }
+    }
+
+    [HttpPost("files/async"), RequestSizeLimit(MaxFileBytes)]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> ImportAsync(IFormFile file, [FromQuery] string conflictMode = "SKIP", CancellationToken cancellationToken = default)
+    {
+        if (file is null || file.Length == 0) return BadRequest(new { error = "file_required" });
+        if (file.Length > MaxFileBytes) return BadRequest(new { error = "file_too_large", maxBytes = MaxFileBytes });
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            var request = IsJson(file) ? await ParseJsonAsync(stream, file.FileName, cancellationToken) : await ParseCsvAsync(stream, file.FileName, cancellationToken);
+            var queued = request with { ConflictMode = conflictMode };
+            var jobKey = $"import:{queued.BatchId:N}";
+            await queue.EnqueueAsync(new ImportJobWorkItem(jobKey, queued), cancellationToken);
+            return Accepted($"/api/v1/admin/jobs/{jobKey}", new { jobKey, batchId = queued.BatchId, status = "QUEUED" });
         }
         catch (BulkImportFormatException exception)
         {
