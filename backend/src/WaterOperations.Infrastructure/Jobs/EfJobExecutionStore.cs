@@ -10,8 +10,9 @@ public sealed class EfJobExecutionStore(WaterOperationsDbContext db) : IJobExecu
     {
         var now = DateTime.UtcNow;
         var existing = await db.JobExecutions.SingleOrDefaultAsync(x => x.JobKey == jobKey, cancellationToken);
-        if (existing is not null && existing.Status == "COMPLETED") return false;
+        if (existing is not null && (existing.Status == "COMPLETED" || existing.Status == "DEAD_LETTER")) return false;
         if (existing is not null && existing.Status == "RUNNING" && existing.ExpiresAtUtc > now) return false;
+        if (existing is not null && existing.Status == "RETRY_WAIT" && existing.AvailableAtUtc > now) return false;
         if (existing is null)
         {
             db.JobExecutions.Add(new JobExecution { JobExecutionId = Guid.NewGuid(), JobKey = jobKey, JobType = jobType, AttemptCount = 1, StartedAtUtc = now, ExpiresAtUtc = now.Add(timeout) });
