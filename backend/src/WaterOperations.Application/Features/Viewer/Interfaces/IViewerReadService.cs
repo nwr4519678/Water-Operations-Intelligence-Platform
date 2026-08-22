@@ -12,4 +12,5 @@ public interface IViewerReadService
     Task<PagedResult<StationSearchDto>> SearchStationsAsync(Guid? regionId, string? search, string? status, int page, int pageSize, CancellationToken cancellationToken) => throw new NotSupportedException();
     Task<StationDetailDto?> GetStationDetailAsync(Guid stationId, CancellationToken cancellationToken) => throw new NotSupportedException();
     Task<PagedResult<ChartMeasurementDto>> QueryMeasurementsAsync(Guid stationId, int? parameterId, DateTime? fromUtc, DateTime? toUtc, int page, int pageSize, CancellationToken cancellationToken) => throw new NotSupportedException();
+    Task<AdvancedChartResult> QueryMeasurementsAdvancedAsync(Guid stationId, IReadOnlyList<int> parameterIds, DateTime? fromUtc, DateTime? toUtc, int? resolutionSeconds, CancellationToken cancellationToken) => throw new NotSupportedException();
 }

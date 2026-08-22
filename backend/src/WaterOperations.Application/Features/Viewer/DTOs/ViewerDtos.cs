@@ -12,6 +12,8 @@ public sealed record StationConnectionDto(long Id, string Protocol, string Devic
 public sealed record StationLinkDto(long Id, Guid FromStationId, Guid ToStationId, string LinkType, decimal? DistanceMeters, string? FlowDirection, bool IsActive);
 public sealed record PagedResult<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount);
 public sealed record ChartMeasurementDto(long Id, Guid StationId, int ParameterId, DateTimeOffset RecordedAt, decimal Value, string Unit, string QualityFlag, bool IsInterpolated);
+public sealed record ChartSeriesDto(int ParameterId, string Unit, IReadOnlyList<ChartMeasurementDto> Items);
+public sealed record AdvancedChartResult(Guid StationId, IReadOnlyList<ChartSeriesDto> Series, bool Downsampled, int MaxRowsPerSeries);
 
 public sealed record MeasurementDto(long Id, Guid StationId, DateTimeOffset RecordedAt, decimal Value, string Unit);
 

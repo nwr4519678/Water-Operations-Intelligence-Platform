@@ -41,4 +41,15 @@ public sealed class ViewerController(ISender sender) : ControllerBase
             return BadRequest(new { error = "invalid_time_range", maxDays = 366 });
         return Ok(ApiEnvelope.Ok(await viewer.QueryMeasurementsAsync(stationId, parameterId, fromUtc, toUtc, page, pageSize, ct), HttpContext.TraceIdentifier));
     }
+
+    [HttpGet("stations/{stationId:guid}/measurements/advanced"), Tags("Core - Advanced Chart Measurements")]
+    public async Task<IActionResult> AdvancedMeasurements([FromServices] WaterOperations.Application.Features.Viewer.Interfaces.IViewerReadService viewer, Guid stationId, [FromQuery] int[] parameterIds, DateTime? fromUtc, DateTime? toUtc, int? resolutionSeconds, CancellationToken ct = default)
+    {
+        if (parameterIds.Length is < 1 or > 16) return BadRequest(new { error = "parameter_ids_must_be_between_1_and_16" });
+        if (fromUtc is DateTime from && from.Kind != DateTimeKind.Utc || toUtc is DateTime to && to.Kind != DateTimeKind.Utc)
+            return BadRequest(new { error = "timestamps_must_be_utc" });
+        if (fromUtc is DateTime start && toUtc is DateTime end && (start > end || end - start > TimeSpan.FromDays(366)))
+            return BadRequest(new { error = "invalid_time_range", maxDays = 366 });
+        return Ok(ApiEnvelope.Ok(await viewer.QueryMeasurementsAdvancedAsync(stationId, parameterIds, fromUtc, toUtc, resolutionSeconds, ct), HttpContext.TraceIdentifier));
+    }
 }

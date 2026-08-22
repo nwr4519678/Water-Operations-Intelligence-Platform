@@ -75,4 +75,17 @@ public sealed class EfViewerReadService(WaterOperationsDbContext db, ITenantCont
             .Select(x => new ChartMeasurementDto(x.MeasurementCleanId, x.StationId, x.ParameterId, new DateTimeOffset(DateTime.SpecifyKind(x.TimestampUtc, DateTimeKind.Utc)), x.Value ?? 0m, x.CanonicalUnit, x.QualityFlag, x.IsInterpolated)).ToListAsync(cancellationToken);
         return new PagedResult<ChartMeasurementDto>(items, page, pageSize, total);
     }
+
+    public async Task<AdvancedChartResult> QueryMeasurementsAdvancedAsync(Guid stationId, IReadOnlyList<int> parameterIds, DateTime? fromUtc, DateTime? toUtc, int? resolutionSeconds, CancellationToken cancellationToken)
+    {
+        var ids = parameterIds.Distinct().Take(16).ToArray();
+        if (ids.Length == 0) throw new ArgumentException("At least one parameter is required.", nameof(parameterIds));
+        if (resolutionSeconds is < 1 or > 86_400) throw new ArgumentOutOfRangeException(nameof(resolutionSeconds));
+        var query = db.MeasurementCleans.AsNoTracking().Where(x => x.StationId == stationId && ids.Contains(x.ParameterId) && x.QualityFlag != "QUARANTINED" && (tenant.OrganizationId == null || x.OrganizationId == tenant.OrganizationId));
+        if (fromUtc is DateTime from) query = query.Where(x => x.TimestampUtc >= DateTime.SpecifyKind(from, DateTimeKind.Utc));
+        if (toUtc is DateTime to) query = query.Where(x => x.TimestampUtc <= DateTime.SpecifyKind(to, DateTimeKind.Utc));
+        var rows = await query.OrderBy(x => x.TimestampUtc).ThenBy(x => x.MeasurementCleanId).Take(10_000 * ids.Length).Select(x => new ChartMeasurementDto(x.MeasurementCleanId, x.StationId, x.ParameterId, new DateTimeOffset(DateTime.SpecifyKind(x.TimestampUtc, DateTimeKind.Utc)), x.Value ?? 0m, x.CanonicalUnit, x.QualityFlag, x.IsInterpolated)).ToListAsync(cancellationToken);
+        var series = rows.GroupBy(x => x.ParameterId).OrderBy(x => x.Key).Select(group => new ChartSeriesDto(group.Key, group.First().Unit, resolutionSeconds is null ? group.ToList() : group.GroupBy(x => ((x.RecordedAt.ToUnixTimeSeconds()) / resolutionSeconds.Value) * resolutionSeconds.Value).Select(bucket => bucket.OrderBy(x => x.RecordedAt).First() with { Value = bucket.Average(x => x.Value), IsInterpolated = bucket.Any(x => x.IsInterpolated) }).ToList())).ToList();
+        return new AdvancedChartResult(stationId, series, resolutionSeconds is not null, 10_000);
+    }
 }
