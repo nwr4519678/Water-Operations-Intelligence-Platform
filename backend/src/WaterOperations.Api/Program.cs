@@ -16,6 +16,7 @@ using System.Text;
 using WaterOperations.Infrastructure.Security;
 using WaterOperations.Api.Common;
 using WaterOperations.Api.Hubs;
+using StackExchange.Redis;
 
 Log.Logger = new LoggerConfiguration().WriteTo.Console(formatProvider: CultureInfo.InvariantCulture).CreateBootstrapLogger();
 var builder = WebApplication.CreateBuilder(args);
@@ -73,6 +74,15 @@ builder.Services.AddCors(options => options.AddPolicy("Web", policy => policy
     .AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
+if (builder.Configuration["Testing"] != "true")
+{
+    var redisConnection = builder.Configuration.GetConnectionString("Redis")
+        ?? throw new InvalidOperationException("ConnectionStrings:Redis must be configured for SignalR scale-out.");
+    builder.Services.AddSignalR().AddStackExchangeRedis(redisConnection, options =>
+    {
+        options.Configuration.ChannelPrefix = RedisChannel.Literal("water-operations:signalr");
+    });
+}
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 var healthChecks = builder.Services.AddHealthChecks().AddDbContextCheck<WaterOperationsDbContext>(tags: ["ready"]);
