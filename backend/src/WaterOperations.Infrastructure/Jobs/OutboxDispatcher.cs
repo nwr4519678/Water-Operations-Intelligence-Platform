@@ -36,7 +36,7 @@ public sealed class OutboxDispatcher(IServiceScopeFactory scopeFactory, IConnect
         var db = scope.ServiceProvider.GetRequiredService<WaterOperationsDbContext>();
         var jobs = scope.ServiceProvider.GetRequiredService<IJobExecutionStore>();
         var now = DateTime.UtcNow;
-        var messages = await db.OutboxMessages.Where(x => (x.Status == "PENDING" || x.Status == "RETRY_WAIT") && x.AvailableAtUtc <= now)
+        var messages = await db.OutboxMessages.Where(x => (x.Status == "PENDING" || x.Status == "RETRY_WAIT" || x.Status == "PROCESSING") && x.AvailableAtUtc <= now)
             .OrderBy(x => x.OccurredAtUtc).Take(50).ToListAsync(cancellationToken);
         foreach (var message in messages)
         {
