@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using WaterOperations.Application.Common.Abstractions;
 using WaterOperations.Application.Features.Telemetry.DTOs;
 using WaterOperations.Application.Features.Telemetry.Interfaces;
@@ -43,6 +44,9 @@ public sealed class EfMeasurementIngestionService(WaterOperationsDbContext db, I
             else { selected.Remove(key); duplicateOutcomes[item.Index] = new IngestionRowOutcome(item.Index, "DUPLICATE", "measurement_already_exists", null); }
         }
         var acceptedRows = selected.Values.OrderBy(x => x.Index).ToList();
+        var acceptedStationIds = acceptedRows.Select(x => x.Row.StationId).Distinct().ToArray();
+        var stationRegions = await db.Stations.AsNoTracking().Where(x => x.OrganizationId == organizationId && acceptedStationIds.Contains(x.StationId))
+            .ToDictionaryAsync(x => x.StationId, x => x.RegionId, cancellationToken);
         var batch = new IngestionBatch
         {
             IngestionBatchId = request.BatchId, OrganizationId = organizationId, SourceType = request.SourceType,
@@ -59,6 +63,21 @@ public sealed class EfMeasurementIngestionService(WaterOperationsDbContext db, I
             DeviceSequence = x.Row.DeviceSequence, IsDuplicate = false, CreatedAtUtc = now
         }).ToList();
         db.MeasurementRaws.AddRange(rawRows);
+        foreach (var acceptedRow in acceptedRows)
+        {
+            if (!stationRegions.TryGetValue(acceptedRow.Row.StationId, out var regionId) || regionId is null) continue;
+            db.OutboxMessages.Add(new OutboxMessage
+            {
+                OutboxMessageId = Guid.NewGuid(), OrganizationId = organizationId, OccurredAtUtc = now,
+                EventType = "MeasurementUpdatedEvent", AvailableAtUtc = now,
+                PayloadJson = JsonSerializer.Serialize(new
+                {
+                    StationId = acceptedRow.Row.StationId.ToString(), RegionId = regionId.Value.ToString(),
+                    TimestampUtc = DateTime.SpecifyKind(acceptedRow.Row.TimestampUtc, DateTimeKind.Utc),
+                    Value = acceptedRow.Row.Value ?? 0m, QualityFlag = "VALID"
+                })
+            });
+        }
         await db.SaveChangesAsync(cancellationToken);
         var accepted = acceptedRows.ToDictionary(x => x.Index, x => rawRows[acceptedRows.IndexOf(x)].MeasurementRawId);
         var outcomes = request.Rows.Select((_, index) => accepted.TryGetValue(index, out var rawId)
