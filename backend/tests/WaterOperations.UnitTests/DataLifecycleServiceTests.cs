@@ -36,6 +36,27 @@ public sealed class DataLifecycleServiceTests
         Assert.Equal(1, await db.MeasurementCleans.CountAsync());
     }
 
+    [Fact]
+    public async Task ActiveLegalHoldProtectsItsTelemetryWindow()
+    {
+        var organization = Guid.NewGuid();
+        var heldTimestamp = DateTime.UtcNow.AddYears(-2);
+        var purgeTimestamp = DateTime.UtcNow.AddYears(-3);
+        await using var db = new WaterOperationsDbContext(new DbContextOptionsBuilder<WaterOperationsDbContext>().UseInMemoryDatabase($"legal-hold-{Guid.NewGuid():N}").Options);
+        db.MeasurementCleans.AddRange(
+            new MeasurementClean { MeasurementCleanId = 10, OrganizationId = organization, StationId = Guid.NewGuid(), ParameterId = 1, TimestampUtc = heldTimestamp, QualityFlag = "VALID", CanonicalUnit = "m", CleaningRulesetVersion = "test" },
+            new MeasurementClean { MeasurementCleanId = 11, OrganizationId = organization, StationId = Guid.NewGuid(), ParameterId = 1, TimestampUtc = purgeTimestamp, QualityFlag = "VALID", CanonicalUnit = "m", CleaningRulesetVersion = "test" });
+        db.DataLegalHolds.Add(new DataLegalHold { DataLegalHoldId = Guid.NewGuid(), OrganizationId = organization, FromUtc = heldTimestamp.AddHours(-1), ToUtc = heldTimestamp.AddHours(1), Reason = "regulatory review", CreatedAtUtc = DateTime.UtcNow });
+        await db.SaveChangesAsync();
+        var service = new DataLifecycleService(db, new TenantContext(organization));
+
+        var result = await service.PurgeAsync(DateTime.UtcNow.AddYears(-1), "hold-purge", false, null, CancellationToken.None);
+
+        Assert.True(result.Applied);
+        Assert.NotNull(await db.MeasurementCleans.FindAsync(10L));
+        Assert.Null(await db.MeasurementCleans.FindAsync(11L));
+    }
+
     private sealed class TenantContext(Guid organizationId) : ITenantContext
     {
         public Guid? OrganizationId => organizationId;
