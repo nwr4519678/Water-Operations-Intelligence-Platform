@@ -1,3 +1,4 @@
+using System.Diagnostics.Metrics;
 using Microsoft.EntityFrameworkCore;
 using WaterOperations.Infrastructure.Persistence;
 using WaterOperations.Domain.Entities;
@@ -6,6 +7,12 @@ namespace WaterOperations.Infrastructure.Jobs;
 
 public sealed class EfJobExecutionStore(WaterOperationsDbContext db) : IJobExecutionStore
 {
+    private static readonly Meter Meter = new("WaterOperations.Jobs", "1.0.0");
+    private static readonly Counter<long> Started = Meter.CreateCounter<long>("water_operations.jobs.started");
+    private static readonly Counter<long> Completed = Meter.CreateCounter<long>("water_operations.jobs.completed");
+    private static readonly Counter<long> Failed = Meter.CreateCounter<long>("water_operations.jobs.failed");
+    private static readonly Counter<long> Cancelled = Meter.CreateCounter<long>("water_operations.jobs.cancelled");
+
     public async Task<bool> TryStartAsync(string jobKey, string jobType, TimeSpan timeout, CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
@@ -29,6 +36,7 @@ public sealed class EfJobExecutionStore(WaterOperationsDbContext db) : IJobExecu
         try
         {
             await db.SaveChangesAsync(cancellationToken);
+            Started.Add(1, new KeyValuePair<string, object?>("job.type", jobType));
             return true;
         }
         catch (DbUpdateException) when (existing is null)
@@ -46,6 +54,7 @@ public sealed class EfJobExecutionStore(WaterOperationsDbContext db) : IJobExecu
         job.CompletedAtUtc = DateTime.UtcNow;
         job.ExpiresAtUtc = null;
         await db.SaveChangesAsync(cancellationToken);
+        Completed.Add(1, new KeyValuePair<string, object?>("job.type", job.JobType));
     }
 
     public async Task FailAsync(string jobKey, string error, TimeSpan retryAfter, bool deadLetter, CancellationToken cancellationToken)
@@ -56,6 +65,9 @@ public sealed class EfJobExecutionStore(WaterOperationsDbContext db) : IJobExecu
         job.AvailableAtUtc = DateTime.UtcNow.Add(retryAfter);
         job.ExpiresAtUtc = null;
         await db.SaveChangesAsync(cancellationToken);
+        Failed.Add(1,
+            new KeyValuePair<string, object?>("job.type", job.JobType),
+            new KeyValuePair<string, object?>("dead.letter", deadLetter));
     }
 
     public async Task CancelAsync(string jobKey, string reason, CancellationToken cancellationToken)
@@ -66,5 +78,6 @@ public sealed class EfJobExecutionStore(WaterOperationsDbContext db) : IJobExecu
         job.LastError = reason.Length > 4000 ? reason[..4000] : reason;
         job.ExpiresAtUtc = null;
         await db.SaveChangesAsync(cancellationToken);
+        Cancelled.Add(1, new KeyValuePair<string, object?>("job.type", job.JobType));
     }
 }
