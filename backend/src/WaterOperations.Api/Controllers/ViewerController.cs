@@ -1,6 +1,11 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using WaterOperations.Api.Contracts;
+using WaterOperations.Api.Extensions;
+using WaterOperations.Application.Common.Pagination;
+using WaterOperations.Application.Features.Operations.Queries;
+using WaterOperations.Application.Features.Stations.Queries;
+using WaterOperations.Application.Features.Telemetry.Queries;
 using WaterOperations.Application.Features.Viewer.Queries;
 
 namespace WaterOperations.Api.Controllers;
@@ -12,6 +17,51 @@ public sealed class ViewerController(
     ISender sender)
     : ControllerBase
 {
+    [HttpGet("overview")]
+    public async Task<IActionResult> Overview([FromQuery] DateTimeOffset? asOf, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetOperationsOverviewQuery(asOf), cancellationToken);
+        return result.ToActionResult(this);
+    }
+
+    [HttpGet("map/stations")]
+    public async Task<IActionResult> MapStations(
+        [FromQuery] string? search,
+        [FromQuery] Guid? regionId,
+        [FromQuery] string? status,
+        [FromQuery] PaginationRequest pagination,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new SearchStationsQuery(search, regionId, status, pagination), cancellationToken);
+        return result.ToActionResult(this);
+    }
+
+    [HttpGet("stations/{stationId:guid}")]
+    public async Task<IActionResult> Station(Guid stationId, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetStationQuery(stationId), cancellationToken);
+        return result.ToActionResult(this);
+    }
+
+    [HttpGet("alarms")]
+    public async Task<IActionResult> AlarmSearch(
+        [FromQuery] Guid? stationId,
+        [FromQuery] string? severity,
+        [FromQuery] string? status,
+        [FromQuery] PaginationRequest pagination,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new SearchViewerAlarmsQuery(stationId, severity, status, pagination), cancellationToken);
+        return result.ToActionResult(this);
+    }
+
+    [HttpGet("alarms/{alarmId:guid}")]
+    public async Task<IActionResult> Alarm(Guid alarmId, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetViewerAlarmQuery(alarmId), cancellationToken);
+        return result.ToActionResult(this);
+    }
+
     [HttpGet("organizations")]
     [Tags("Viewer - Organizations")]
     public async Task<IActionResult> Organizations(
@@ -63,16 +113,17 @@ public sealed class ViewerController(
     [Tags("Viewer - Measurements")]
     public async Task<IActionResult> Measurements(
         Guid stationId,
+        [FromQuery] DateTimeOffset? from,
+        [FromQuery] DateTimeOffset? to,
+        [FromQuery] int? parameterId,
+        [FromQuery] int? limit,
         CancellationToken cancellationToken)
     {
         var result = await sender.Send(
-            new GetMeasurementsQuery(stationId),
+            new GetTelemetryQuery(from, to, stationId, parameterId, limit),
             cancellationToken);
 
-        return Ok(
-            ApiEnvelope.Ok(
-                result,
-                HttpContext.TraceIdentifier));
+        return result.ToTelemetryResult(this);
     }
 
     [HttpGet("stations/{stationId:guid}/alarms")]
