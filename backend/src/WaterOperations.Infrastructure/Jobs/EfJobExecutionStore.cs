@@ -26,8 +26,17 @@ public sealed class EfJobExecutionStore(WaterOperationsDbContext db) : IJobExecu
             existing.AvailableAtUtc = null;
             existing.LastError = null;
         }
-        await db.SaveChangesAsync(cancellationToken);
-        return true;
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateException) when (existing is null)
+        {
+            // Another worker won the unique JobKey race; this execution is not claimed.
+            db.ChangeTracker.Clear();
+            return false;
+        }
     }
 
     public async Task CompleteAsync(string jobKey, CancellationToken cancellationToken)
