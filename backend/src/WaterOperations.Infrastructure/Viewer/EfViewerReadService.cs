@@ -72,7 +72,7 @@ public sealed class EfViewerReadService(WaterOperationsDbContext db, ITenantCont
         if (toUtc is DateTime to) query = query.Where(x => x.TimestampUtc <= DateTime.SpecifyKind(to, DateTimeKind.Utc));
         var total = await query.CountAsync(cancellationToken);
         var items = await query.OrderBy(x => x.TimestampUtc).ThenBy(x => x.MeasurementCleanId).Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(x => new ChartMeasurementDto(x.MeasurementCleanId, x.StationId, x.ParameterId, new DateTimeOffset(DateTime.SpecifyKind(x.TimestampUtc, DateTimeKind.Utc)), x.Value ?? 0m, x.CanonicalUnit, x.QualityFlag)).ToListAsync(cancellationToken);
+            .Select(x => new ChartMeasurementDto(x.MeasurementCleanId, x.StationId, x.ParameterId, new DateTimeOffset(DateTime.SpecifyKind(x.TimestampUtc, DateTimeKind.Utc)), x.Value ?? 0m, x.CanonicalUnit, x.QualityFlag, x.IsInterpolated)).ToListAsync(cancellationToken);
         return new PagedResult<ChartMeasurementDto>(items, page, pageSize, total);
     }
 }

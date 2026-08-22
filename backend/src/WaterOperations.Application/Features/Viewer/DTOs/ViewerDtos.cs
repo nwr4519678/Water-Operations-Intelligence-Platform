@@ -11,7 +11,7 @@ public sealed record StationParameterDto(int ParameterId, string Code, string Na
 public sealed record StationConnectionDto(long Id, string Protocol, string DeviceIdentifier, string? FirmwareVersion, decimal? SignalStrength, decimal? BatteryVoltage, bool IsPrimary, bool IsActive, DateTime? LastConnectedAtUtc);
 public sealed record StationLinkDto(long Id, Guid FromStationId, Guid ToStationId, string LinkType, decimal? DistanceMeters, string? FlowDirection, bool IsActive);
 public sealed record PagedResult<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount);
-public sealed record ChartMeasurementDto(long Id, Guid StationId, int ParameterId, DateTimeOffset RecordedAt, decimal Value, string Unit, string QualityFlag);
+public sealed record ChartMeasurementDto(long Id, Guid StationId, int ParameterId, DateTimeOffset RecordedAt, decimal Value, string Unit, string QualityFlag, bool IsInterpolated);
 
 public sealed record MeasurementDto(long Id, Guid StationId, DateTimeOffset RecordedAt, decimal Value, string Unit);
 
