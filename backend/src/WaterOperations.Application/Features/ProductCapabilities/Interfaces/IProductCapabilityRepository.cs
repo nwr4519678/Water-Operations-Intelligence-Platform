@@ -29,4 +29,6 @@ public interface IProductCapabilityRepository
     Task<bool> SaveNotificationPreferenceAsync(Guid userId, NotificationPreferenceDto preference, CancellationToken cancellationToken);
     Task<ReportDto> CreateReportAsync(Guid organizationId, Guid userId, CreateReportRequest request, CancellationToken cancellationToken);
     Task<ReportDto?> GetReportAsync(Guid organizationId, Guid userId, Guid reportId, CancellationToken cancellationToken);
+    Task<ModelMutationResult> PromoteModelAsync(Guid organizationId, Guid userId, Guid modelId, CancellationToken cancellationToken);
+    Task<ModelMutationResult> StartModelRetrainingAsync(Guid organizationId, Guid userId, Guid modelId, CancellationToken cancellationToken);
 }

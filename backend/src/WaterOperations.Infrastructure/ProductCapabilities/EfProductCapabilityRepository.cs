@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using WaterOperations.Application.Common.Pagination;
 using WaterOperations.Application.Features.ProductCapabilities.DTOs;
 using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
@@ -180,6 +181,44 @@ public sealed class EfProductCapabilityRepository(WaterOperationsDbContext db) :
     public Task<ReportDto?> GetReportAsync(Guid organizationId, Guid userId, Guid reportId, CancellationToken ct) =>
         db.Reports.AsNoTracking().Where(x => x.OrganizationId == organizationId && x.RequestedByUserId == userId && x.ReportId == reportId)
             .Select(x => new ReportDto(x.ReportId, x.StationId, x.Format, x.Status, x.PeriodStartUtc, x.PeriodEndUtc, x.CreatedAtUtc, x.FilePath)).SingleOrDefaultAsync(ct);
+
+    public async Task<ModelMutationResult> PromoteModelAsync(Guid organizationId, Guid userId, Guid modelId, CancellationToken ct)
+    {
+        var candidate = await db.MlModels.SingleOrDefaultAsync(x => x.OrganizationId == organizationId && x.ModelId == modelId, ct);
+        if (candidate is null) return new(false, "MODEL_NOT_FOUND");
+        if (!string.Equals(candidate.Status, "CANDIDATE", StringComparison.OrdinalIgnoreCase)) return new(false, "INVALID_MODEL_STATE");
+        var current = await db.MlModels.Where(x => x.OrganizationId == organizationId && x.ModelType == candidate.ModelType && x.StationId == candidate.StationId && x.ParameterId == candidate.ParameterId && x.Status == "PROMOTED").OrderByDescending(x => x.PromotedAtUtc).FirstOrDefaultAsync(ct);
+        if (current is not null && ReadScore(candidate.MetricsJson) <= ReadScore(current.MetricsJson)) return new(false, "PROMOTION_GATE_FAILED");
+        if (current is not null) current.Status = "RETIRED";
+        candidate.Status = "PROMOTED"; candidate.PromotedAtUtc = DateTime.UtcNow;
+        db.AuditLogs.Add(new AuditLog { OrganizationId = organizationId, ActorUserId = userId, ActionCode = "AI_MODEL_PROMOTED", EntityType = "MlModel", EntityId = modelId.ToString(), Success = true, OccurredAtUtc = DateTime.UtcNow, AfterJson = candidate.MetricsJson });
+        await db.SaveChangesAsync(ct);
+        return new(true, null);
+    }
+
+    public async Task<ModelMutationResult> StartModelRetrainingAsync(Guid organizationId, Guid userId, Guid modelId, CancellationToken ct)
+    {
+        var model = await db.MlModels.SingleOrDefaultAsync(x => x.OrganizationId == organizationId && x.ModelId == modelId, ct);
+        if (model is null) return new(false, "MODEL_NOT_FOUND");
+        if (model.Status is "TRAINING" or "PROMOTED") return new(false, "INVALID_MODEL_STATE");
+        model.Status = "TRAINING";
+        db.AuditLogs.Add(new AuditLog { OrganizationId = organizationId, ActorUserId = userId, ActionCode = "AI_MODEL_RETRAIN_REQUESTED", EntityType = "MlModel", EntityId = modelId.ToString(), Success = true, OccurredAtUtc = DateTime.UtcNow });
+        await db.SaveChangesAsync(ct);
+        return new(true, null);
+    }
+
+    private static decimal ReadScore(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return 0;
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            foreach (var name in new[] { "score", "accuracy", "f1" })
+                if (document.RootElement.TryGetProperty(name, out var value) && value.TryGetDecimal(out var score)) return score;
+        }
+        catch (JsonException) { }
+        return 0;
+    }
 
     private static async Task<PagedResult<T>> PageAsync<T>(IQueryable<T> query, PaginationRequest request, CancellationToken ct)
     {

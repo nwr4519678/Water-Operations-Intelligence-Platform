@@ -19,4 +19,5 @@ public sealed record CreateReportRequest(Guid? StationId, int? ParameterId, Date
 public sealed record SetUserActiveRequest(bool IsActive);
 public sealed record UserPreferencesDto(string Theme, string Locale, string TimeZone, byte DecimalPrecision);
 public sealed record NotificationPreferenceDto(string Severity, bool InAppEnabled, bool EmailEnabled, bool PushEnabled, bool DesktopEnabled, bool DailyDigestEnabled);
+public sealed record ModelMutationResult(bool Succeeded, string? ErrorCode);
 public sealed record ProductPage<T>(PagedResult<T> Result);

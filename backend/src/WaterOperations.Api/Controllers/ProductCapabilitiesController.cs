@@ -24,6 +24,16 @@ public sealed class ProductCapabilitiesController(ISender sender) : ControllerBa
     public async Task<IActionResult> Models([FromQuery] PaginationRequest pagination, CancellationToken cancellationToken) =>
         (await sender.Send(new GetModelsQuery(pagination), cancellationToken)).ToActionResult(this);
 
+    [HttpPost("ai/models/{modelId:guid}/retrain")]
+    [Authorize(Roles = "ADMIN")]
+    public async Task<IActionResult> Retrain(Guid modelId, CancellationToken cancellationToken) =>
+        (await sender.Send(new RetrainModelCommand(modelId), cancellationToken)).ToActionResult(this);
+
+    [HttpPost("ai/models/{modelId:guid}/promote")]
+    [Authorize(Roles = "ADMIN")]
+    public async Task<IActionResult> Promote(Guid modelId, CancellationToken cancellationToken) =>
+        (await sender.Send(new PromoteModelCommand(modelId), cancellationToken)).ToActionResult(this);
+
     [HttpGet("ai/insights/{stationId:guid}")]
     public async Task<IActionResult> Insight(Guid stationId, [FromQuery] string insightType, [FromQuery] DateTimeOffset? asOfUtc, CancellationToken cancellationToken) =>
         (await sender.Send(new GetAiInsightQuery(stationId, insightType, asOfUtc), cancellationToken)).ToActionResult(this);
