@@ -33,7 +33,8 @@ public sealed class ViewerUserStore(IConfiguration configuration) : IUserCredent
             failures.TryRemove(request.Email, out _);
             return new AuthenticatedUser(
                 configuredEmail,
-                configuration["DevelopmentViewer:Organization"] ?? "A",
+                configuration["DevelopmentViewer:Organization"]
+                    ?? "11111111-1111-1111-1111-111111111111",
                 configuration["DevelopmentViewer:Region"] ?? "1",
                 AuthorizationPolicies.ViewerRole);
         }

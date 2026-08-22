@@ -6,7 +6,10 @@ public sealed record AuthenticatedUser(
     string Email,
     string Organization,
     string Region,
-    string Role);
+    string Role)
+{
+    public Guid UserId { get; init; }
+}
 
 public sealed record AuthSession(
     string Email,

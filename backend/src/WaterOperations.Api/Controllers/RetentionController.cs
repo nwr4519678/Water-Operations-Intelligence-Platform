@@ -10,7 +10,7 @@ namespace WaterOperations.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/governance/retention")]
-[Authorize(Policy = AuthorizationPolicies.ViewerOnly)]
+[Authorize(Roles = "ADMIN")]
 public sealed class RetentionController(
     ISender sender)
     : ControllerBase

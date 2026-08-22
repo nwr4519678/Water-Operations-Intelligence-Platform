@@ -10,12 +10,13 @@ namespace WaterOperations.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/ingestion")]
-[Authorize(Policy = AuthorizationPolicies.ViewerOnly)]
+[Authorize]
 public sealed class IngestionController(
     ISender sender)
     : ControllerBase
 {
     [HttpPost("batches")]
+    [Authorize(Roles = "ADMIN")]
     public async Task<IActionResult> Ingest(
         BatchRequestDto request,
         CancellationToken cancellationToken)
@@ -27,6 +28,7 @@ public sealed class IngestionController(
     }
 
     [HttpGet("batches/{batchId:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.ViewerOnly)]
     public async Task<IActionResult> GetBatch(
         Guid batchId,
         CancellationToken cancellationToken)

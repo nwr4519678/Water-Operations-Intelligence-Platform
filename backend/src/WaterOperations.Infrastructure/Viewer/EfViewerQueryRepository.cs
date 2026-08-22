@@ -11,37 +11,46 @@ namespace WaterOperations.Infrastructure.Viewer;
 public sealed class EfViewerQueryRepository(IRepositoryContext repository) : IViewerQueryRepository
 {
     public async Task<IReadOnlyList<OrganizationDto>> GetOrganizationsAsync(
+        Guid organizationId,
         CancellationToken cancellationToken) =>
         await repository.Query<Organization>()
             .AsNoTracking()
+            .Where(x => x.OrganizationId == organizationId)
             .OrderBy(x => x.Name)
             .Select(x => new OrganizationDto(x.OrganizationId, x.Name))
             .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<RegionDto>> GetRegionsAsync(
+        Guid currentOrganizationId,
         Guid organizationId,
         CancellationToken cancellationToken) =>
         await repository.Query<Region>()
             .AsNoTracking()
-            .Where(x => x.OrganizationId == organizationId)
+            .Where(x => x.OrganizationId == currentOrganizationId && x.OrganizationId == organizationId)
             .OrderBy(x => x.Name)
             .Select(x => new RegionDto(x.RegionId, x.OrganizationId, x.Name))
             .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<StationDto>> GetStationsAsync(
+        Guid organizationId,
         Guid regionId,
         CancellationToken cancellationToken) =>
         await repository.Query<Station>()
             .AsNoTracking()
-            .Where(x => x.RegionId == regionId)
+            .Where(x => x.RegionId == regionId && x.OrganizationId == organizationId)
             .OrderBy(x => x.Name)
             .Select(x => new StationDto(x.StationId, x.RegionId!.Value, x.Name))
             .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<MeasurementDto>> GetMeasurementsAsync(
+        Guid organizationId,
         Guid stationId,
         CancellationToken cancellationToken)
     {
+        if (!await repository.Query<Station>().AnyAsync(x => x.OrganizationId == organizationId && x.StationId == stationId, cancellationToken))
+        {
+            return [];
+        }
         var rows = await repository.Query<MeasurementClean>()
             .AsNoTracking()
             .Where(x => x.StationId == stationId && x.QualityFlag != "QUARANTINED")
@@ -58,12 +67,13 @@ public sealed class EfViewerQueryRepository(IRepositoryContext repository) : IVi
     }
 
     public async Task<IReadOnlyList<AlarmDto>> GetAlarmsAsync(
+        Guid organizationId,
         Guid stationId,
         CancellationToken cancellationToken)
     {
         var rows = await repository.Query<Alarm>()
             .AsNoTracking()
-            .Where(x => x.StationId == stationId)
+            .Where(x => x.StationId == stationId && x.OrganizationId == organizationId)
             .OrderByDescending(x => x.RaisedAtUtc)
             .ToListAsync(cancellationToken);
         return rows

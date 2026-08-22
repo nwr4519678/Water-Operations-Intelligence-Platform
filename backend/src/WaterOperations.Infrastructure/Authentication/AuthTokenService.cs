@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Cryptography;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
@@ -12,6 +13,9 @@ public sealed class AuthTokenService(IConfiguration configuration) : IAccessToke
 {
     public string Create(AuthenticatedUser user)
     {
+        var userId = user.UserId == Guid.Empty
+            ? StableUserId(user.Email)
+            : user.UserId;
         var key = configuration["Authentication:SigningKey"]
             ?? "development-only-signing-key-change-me-please";
         var credentials = new SigningCredentials(
@@ -20,7 +24,7 @@ public sealed class AuthTokenService(IConfiguration configuration) : IAccessToke
         var claims = new[]
         {
             new Claim(ClaimTypes.Name, user.Email),
-            new Claim(ClaimTypes.NameIdentifier, user.Email),
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString("D")),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim("role", user.Role),
             new Claim("organization", user.Organization),
@@ -33,5 +37,11 @@ public sealed class AuthTokenService(IConfiguration configuration) : IAccessToke
                 claims: claims,
                 expires: DateTime.UtcNow.AddMinutes(15),
                 signingCredentials: credentials));
+    }
+
+    private static Guid StableUserId(string email)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(email.Trim().ToUpperInvariant()));
+        return new Guid(hash.AsSpan(0, 16));
     }
 }
