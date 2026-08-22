@@ -71,14 +71,23 @@ public sealed class EfProductCapabilityRepository(WaterOperationsDbContext db) :
         return true;
     }
 
-    public Task<PagedResult<SearchResultDto>> SearchAsync(Guid organizationId, string query, PaginationRequest p, CancellationToken ct)
+    public Task<PagedResult<SearchResultDto>> SearchAsync(Guid organizationId, string query, bool includeUsers, PaginationRequest p, CancellationToken ct)
     {
         var pattern = query.Trim();
         var stations = db.Stations.AsNoTracking().Where(x => x.OrganizationId == organizationId && (EF.Functions.ILike(x.Name, $"%{pattern}%") || EF.Functions.ILike(x.StationCode, $"%{pattern}%")))
             .Select(x => new SearchResultDto("station", x.StationId.ToString(), x.Name, x.StationCode));
         var alarms = db.Alarms.AsNoTracking().Where(x => x.OrganizationId == organizationId && EF.Functions.ILike(x.Message, $"%{pattern}%"))
             .Select(x => new SearchResultDto("alarm", x.AlarmId.ToString(), x.Message, x.Severity));
-        return PageAsync(stations.Concat(alarms).OrderBy(x => x.Title), p, ct);
+        var reports = db.Reports.AsNoTracking().Where(x => x.OrganizationId == organizationId && EF.Functions.ILike(x.Format, $"%{pattern}%"))
+            .Select(x => new SearchResultDto("report", x.ReportId.ToString(), $"{x.Format} report", x.Status));
+        var results = stations.Concat(alarms).Concat(reports);
+        if (includeUsers)
+        {
+            var users = db.Users.AsNoTracking().Where(x => x.OrganizationId == organizationId && (EF.Functions.ILike(x.DisplayName, $"%{pattern}%") || EF.Functions.ILike(x.Email, $"%{pattern}%")))
+                .Select(x => new SearchResultDto("user", x.UserId.ToString(), x.DisplayName, x.Email));
+            results = results.Concat(users);
+        }
+        return PageAsync(results.OrderBy(x => x.Title), p, ct);
     }
 
     public Task<PagedResult<CollaborationNoteDto>> GetNotesAsync(Guid organizationId, Guid stationId, PaginationRequest p, CancellationToken ct) =>

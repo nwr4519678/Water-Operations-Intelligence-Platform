@@ -16,7 +16,7 @@ public interface IProductCapabilityRepository
     Task<OrganizationDto?> GetOrganizationAsync(Guid organizationId, CancellationToken cancellationToken);
     Task<IReadOnlyList<DashboardLayoutDto>> GetLayoutsAsync(Guid userId, CancellationToken cancellationToken);
     Task<bool> SaveLayoutAsync(Guid userId, string name, string widgetsJson, bool isDefault, CancellationToken cancellationToken);
-    Task<PagedResult<SearchResultDto>> SearchAsync(Guid organizationId, string query, PaginationRequest pagination, CancellationToken cancellationToken);
+    Task<PagedResult<SearchResultDto>> SearchAsync(Guid organizationId, string query, bool includeUsers, PaginationRequest pagination, CancellationToken cancellationToken);
     Task<PagedResult<CollaborationNoteDto>> GetNotesAsync(Guid organizationId, Guid stationId, PaginationRequest pagination, CancellationToken cancellationToken);
     Task<CollaborationNoteDto> AddNoteAsync(Guid organizationId, Guid userId, Guid stationId, string noteText, CancellationToken cancellationToken);
     Task<SharedSnapshotDto> CreateSnapshotAsync(Guid organizationId, Guid userId, Guid? stationId, string snapshotJson, int expiresInHours, CancellationToken cancellationToken);
