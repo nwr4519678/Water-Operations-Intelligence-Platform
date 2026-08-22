@@ -15,6 +15,8 @@ public sealed record CreateShareSnapshotCommand(Guid? StationId, string Snapshot
 public sealed record CreateReportScheduleCommand(string Frequency, string Format, string RecipientJson, DateTime NextRunAtUtc) : ICommand<ScopeResult<ReportScheduleDto>>, IRequireOrganization, IRequireUser;
 public sealed record UpdateOrganizationCommand(string Name, string? LogoUrl, string Locale, string TimeZone) : ICommand<ScopeResult<bool>>, IRequireOrganization;
 public sealed record SetUserActiveCommand(Guid UserId, bool IsActive) : ICommand<ScopeResult<bool>>, IRequireOrganization;
+public sealed record UpdateUserPreferencesCommand(string Theme, string Locale, string TimeZone, byte DecimalPrecision) : ICommand<ScopeResult<bool>>, IRequireOrganization, IRequireUser;
+public sealed record SaveNotificationPreferenceCommand(NotificationPreferenceDto Preference) : ICommand<ScopeResult<bool>>, IRequireUser;
 
 public sealed class MarkNotificationReadCommandValidator : AbstractValidator<MarkNotificationReadCommand>
 { public MarkNotificationReadCommandValidator() => RuleFor(x => x.NotificationId).GreaterThan(0); }
@@ -30,6 +32,10 @@ public sealed class UpdateOrganizationCommandValidator : AbstractValidator<Updat
 { public UpdateOrganizationCommandValidator() { RuleFor(x => x.Name).NotEmpty().MaximumLength(200); RuleFor(x => x.Locale).NotEmpty().MaximumLength(10); RuleFor(x => x.TimeZone).NotEmpty().MaximumLength(100); RuleFor(x => x.LogoUrl).MaximumLength(2000); } }
 public sealed class SetUserActiveCommandValidator : AbstractValidator<SetUserActiveCommand>
 { public SetUserActiveCommandValidator() => RuleFor(x => x.UserId).NotEmpty(); }
+public sealed class UpdateUserPreferencesCommandValidator : AbstractValidator<UpdateUserPreferencesCommand>
+{ public UpdateUserPreferencesCommandValidator() { RuleFor(x => x.Theme).Must(x => new[] { "LIGHT", "DARK", "SYSTEM" }.Contains(x.ToUpperInvariant())); RuleFor(x => x.Locale).NotEmpty().MaximumLength(10); RuleFor(x => x.TimeZone).NotEmpty().MaximumLength(100); RuleFor(x => x.DecimalPrecision).InclusiveBetween((byte)0, (byte)8); } }
+public sealed class SaveNotificationPreferenceCommandValidator : AbstractValidator<SaveNotificationPreferenceCommand>
+{ public SaveNotificationPreferenceCommandValidator() { RuleFor(x => x.Preference.Severity).NotEmpty().MaximumLength(20); } }
 public sealed class MarkNotificationReadCommandHandler(IProductCapabilityRepository repository, WaterOperations.Application.Common.Abstractions.ICurrentUser user) : ICommandHandler<MarkNotificationReadCommand, ScopeResult<bool>>
 { public async Task<ScopeResult<bool>> Handle(MarkNotificationReadCommand r, CancellationToken ct) => ScopeResult.Authorized(await repository.MarkNotificationReadAsync(user.OrganizationId!.Value, user.UserId!.Value, r.NotificationId, ct)); }
 public sealed class SaveDashboardLayoutCommandHandler(IProductCapabilityRepository repository, WaterOperations.Application.Common.Abstractions.ICurrentUser user) : ICommandHandler<SaveDashboardLayoutCommand, ScopeResult<bool>>
@@ -44,5 +50,9 @@ public sealed class UpdateOrganizationCommandHandler(IProductCapabilityRepositor
 { public async Task<ScopeResult<bool>> Handle(UpdateOrganizationCommand r, CancellationToken ct) => ScopeResult.Authorized(await repository.UpdateOrganizationAsync(user.OrganizationId!.Value, r.Name, r.LogoUrl, r.Locale, r.TimeZone, ct)); }
 public sealed class SetUserActiveCommandHandler(IProductCapabilityRepository repository, WaterOperations.Application.Common.Abstractions.ICurrentUser user) : ICommandHandler<SetUserActiveCommand, ScopeResult<bool>>
 { public async Task<ScopeResult<bool>> Handle(SetUserActiveCommand r, CancellationToken ct) => ScopeResult.Authorized(await repository.SetUserActiveAsync(user.OrganizationId!.Value, r.UserId, r.IsActive, ct)); }
+public sealed class UpdateUserPreferencesCommandHandler(IProductCapabilityRepository repository, WaterOperations.Application.Common.Abstractions.ICurrentUser user) : ICommandHandler<UpdateUserPreferencesCommand, ScopeResult<bool>>
+{ public async Task<ScopeResult<bool>> Handle(UpdateUserPreferencesCommand r, CancellationToken ct) => ScopeResult.Authorized(await repository.UpdateUserPreferencesAsync(user.OrganizationId!.Value, user.UserId!.Value, r.Theme.ToUpperInvariant(), r.Locale, r.TimeZone, r.DecimalPrecision, ct)); }
+public sealed class SaveNotificationPreferenceCommandHandler(IProductCapabilityRepository repository, WaterOperations.Application.Common.Abstractions.ICurrentUser user) : ICommandHandler<SaveNotificationPreferenceCommand, ScopeResult<bool>>
+{ public async Task<ScopeResult<bool>> Handle(SaveNotificationPreferenceCommand r, CancellationToken ct) => ScopeResult.Authorized(await repository.SaveNotificationPreferenceAsync(user.UserId!.Value, r.Preference, ct)); }
 
 #pragma warning restore CA1725

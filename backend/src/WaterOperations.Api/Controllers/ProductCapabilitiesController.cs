@@ -73,6 +73,22 @@ public sealed class ProductCapabilitiesController(ISender sender) : ControllerBa
     public async Task<IActionResult> Layouts(CancellationToken cancellationToken) =>
         (await sender.Send(new GetLayoutsQuery(), cancellationToken)).ToActionResult(this);
 
+    [HttpGet("settings/me")]
+    public async Task<IActionResult> Preferences(CancellationToken cancellationToken) =>
+        (await sender.Send(new GetUserPreferencesQuery(), cancellationToken)).ToActionResult(this);
+
+    [HttpPut("settings/me")]
+    public async Task<IActionResult> UpdatePreferences([FromBody] UpdateUserPreferencesCommand command, CancellationToken cancellationToken) =>
+        (await sender.Send(command, cancellationToken)).ToActionResult(this);
+
+    [HttpGet("settings/notification-preferences")]
+    public async Task<IActionResult> NotificationPreferences(CancellationToken cancellationToken) =>
+        (await sender.Send(new GetNotificationPreferencesQuery(), cancellationToken)).ToActionResult(this);
+
+    [HttpPut("settings/notification-preferences")]
+    public async Task<IActionResult> SaveNotificationPreference([FromBody] SaveNotificationPreferenceCommand command, CancellationToken cancellationToken) =>
+        (await sender.Send(command, cancellationToken)).ToActionResult(this);
+
     [HttpPut("settings/dashboard-layouts")]
     public async Task<IActionResult> SaveLayout([FromBody] SaveDashboardLayoutCommand command, CancellationToken cancellationToken) =>
         (await sender.Send(command, cancellationToken)).ToActionResult(this);

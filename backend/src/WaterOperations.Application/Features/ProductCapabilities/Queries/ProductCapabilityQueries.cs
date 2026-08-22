@@ -17,6 +17,8 @@ public sealed record GetAuditQuery(PaginationRequest Pagination) : IQuery<ScopeR
 public sealed record GetUsersQuery(PaginationRequest Pagination) : IQuery<ScopeResult<PagedResult<UserAdminDto>>>, IRequireOrganization;
 public sealed record GetOrganizationQuery : IQuery<ScopeResult<OrganizationDto>>, IRequireOrganization;
 public sealed record GetLayoutsQuery : IQuery<ScopeResult<IReadOnlyList<DashboardLayoutDto>>>, IRequireUser;
+public sealed record GetUserPreferencesQuery : IQuery<ScopeResult<UserPreferencesDto>>, IRequireOrganization, IRequireUser;
+public sealed record GetNotificationPreferencesQuery : IQuery<ScopeResult<IReadOnlyList<NotificationPreferenceDto>>>, IRequireUser;
 public sealed record SearchProductQuery(string Query, PaginationRequest Pagination) : IQuery<ScopeResult<PagedResult<SearchResultDto>>>, IRequireOrganization;
 public sealed record GetCollaborationNotesQuery(Guid StationId, PaginationRequest Pagination) : IQuery<ScopeResult<PagedResult<CollaborationNoteDto>>>, IRequireOrganization;
 
@@ -38,6 +40,10 @@ public sealed class GetOrganizationQueryHandler(IProductCapabilityRepository rep
 { public async Task<ScopeResult<OrganizationDto>> Handle(GetOrganizationQuery r, CancellationToken ct) => (await repository.GetOrganizationAsync(user.OrganizationId!.Value, ct)) is { } value ? ScopeResult.Authorized(value) : ScopeResult.NotFound<OrganizationDto>(); }
 public sealed class GetLayoutsQueryHandler(IProductCapabilityRepository repository, ICurrentUser user) : IQueryHandler<GetLayoutsQuery, ScopeResult<IReadOnlyList<DashboardLayoutDto>>>
 { public async Task<ScopeResult<IReadOnlyList<DashboardLayoutDto>>> Handle(GetLayoutsQuery r, CancellationToken ct) => ScopeResult.Authorized(await repository.GetLayoutsAsync(user.UserId!.Value, ct)); }
+public sealed class GetUserPreferencesQueryHandler(IProductCapabilityRepository repository, ICurrentUser user) : IQueryHandler<GetUserPreferencesQuery, ScopeResult<UserPreferencesDto>>
+{ public async Task<ScopeResult<UserPreferencesDto>> Handle(GetUserPreferencesQuery r, CancellationToken ct) => (await repository.GetUserPreferencesAsync(user.OrganizationId!.Value, user.UserId!.Value, ct)) is { } value ? ScopeResult.Authorized(value) : ScopeResult.NotFound<UserPreferencesDto>(); }
+public sealed class GetNotificationPreferencesQueryHandler(IProductCapabilityRepository repository, ICurrentUser user) : IQueryHandler<GetNotificationPreferencesQuery, ScopeResult<IReadOnlyList<NotificationPreferenceDto>>>
+{ public async Task<ScopeResult<IReadOnlyList<NotificationPreferenceDto>>> Handle(GetNotificationPreferencesQuery r, CancellationToken ct) => ScopeResult.Authorized(await repository.GetNotificationPreferencesAsync(user.UserId!.Value, ct)); }
 public sealed class SearchProductQueryHandler(IProductCapabilityRepository repository, ICurrentUser user) : IQueryHandler<SearchProductQuery, ScopeResult<PagedResult<SearchResultDto>>>
 { public async Task<ScopeResult<PagedResult<SearchResultDto>>> Handle(SearchProductQuery r, CancellationToken ct) => ScopeResult.Authorized(await repository.SearchAsync(user.OrganizationId!.Value, r.Query, r.Pagination, ct)); }
 public sealed class GetCollaborationNotesQueryHandler(IProductCapabilityRepository repository, ICurrentUser user) : IQueryHandler<GetCollaborationNotesQuery, ScopeResult<PagedResult<CollaborationNoteDto>>>

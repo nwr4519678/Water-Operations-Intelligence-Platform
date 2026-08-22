@@ -16,4 +16,6 @@ public sealed record SharedSnapshotDto(Guid ShareSnapshotId, Guid? StationId, Da
 public sealed record AddCollaborationNoteRequest(string NoteText);
 public sealed record ReportScheduleDto(long Id, string Frequency, string Format, string RecipientJson, DateTime NextRunAtUtc, DateTime? LastRunAtUtc, bool IsActive);
 public sealed record SetUserActiveRequest(bool IsActive);
+public sealed record UserPreferencesDto(string Theme, string Locale, string TimeZone, byte DecimalPrecision);
+public sealed record NotificationPreferenceDto(string Severity, bool InAppEnabled, bool EmailEnabled, bool PushEnabled, bool DesktopEnabled, bool DailyDigestEnabled);
 public sealed record ProductPage<T>(PagedResult<T> Result);
