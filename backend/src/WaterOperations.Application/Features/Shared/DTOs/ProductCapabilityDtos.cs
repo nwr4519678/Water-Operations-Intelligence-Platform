@@ -9,6 +9,11 @@ public sealed record ReportDownloadDto(Stream Content, string ContentType, strin
 public sealed record NotificationDto(long Id, string Title, string Body, string Severity, string Channel, bool IsRead, DateTime CreatedAtUtc);
 public sealed record AuditEntryDto(long Id, string ActionCode, string? EntityType, string? EntityId, bool Success, DateTime OccurredAtUtc, Guid? ActorUserId, string? RequestId = null, string? BeforeJson = null, string? AfterJson = null);
 public sealed record UserAdminDto(Guid UserId, string Email, string DisplayName, string ClientType, bool IsActive, DateTime CreatedAtUtc);
+public sealed record RegionAdminDto(Guid RegionId, Guid OrganizationId, string Code, string Name, string? Description, bool IsActive, DateTime CreatedAtUtc);
+public sealed record UserRoleDto(Guid UserId, int RoleId, string Code, string DisplayName, DateTime AssignedAtUtc);
+public sealed record CreateRegionRequest(string Code, string Name, string? Description, string? BoundaryJson);
+public sealed record UpdateRegionRequest(string Code, string Name, string? Description, string? BoundaryJson, bool IsActive);
+public sealed record AssignUserRoleRequest(int RoleId);
 public sealed record OrganizationDto(Guid OrganizationId, string Name, string Slug, string? LogoUrl, string DefaultLocale, string DefaultTimeZone, bool IsActive);
 public sealed record DashboardLayoutDto(long Id, string LayoutName, string WidgetsJson, bool IsDefault, DateTime UpdatedAtUtc);
 public sealed record SearchResultDto(string Type, string Id, string Title, string? Subtitle);
