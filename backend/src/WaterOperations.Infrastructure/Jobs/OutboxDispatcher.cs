@@ -46,7 +46,7 @@ public sealed class OutboxDispatcher(IServiceScopeFactory scopeFactory, IConnect
             {
                 message.Status = "PROCESSING";
                 await db.SaveChangesAsync(cancellationToken);
-                var envelope = JsonSerializer.Serialize(new { message.OutboxMessageId, message.OrganizationId, message.EventType, message.PayloadJson, message.OccurredAtUtc });
+                var envelope = JsonSerializer.Serialize(new { ProtocolVersion = "integration.v1", message.OutboxMessageId, message.OrganizationId, message.EventType, message.PayloadJson, message.OccurredAtUtc });
                 await redis.GetSubscriber().PublishAsync(RedisChannel.Literal(Channel), envelope);
                 message.Status = "PROCESSED";
                 message.ProcessedAtUtc = DateTime.UtcNow;

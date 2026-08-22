@@ -39,6 +39,11 @@ public sealed class IntegrationEventSubscriber(
         {
             using var envelope = JsonDocument.Parse(serializedEnvelope);
             var root = envelope.RootElement;
+            if (!root.TryGetProperty("ProtocolVersion", out var protocol) || protocol.GetString() != "integration.v1")
+            {
+                logger.LogWarning("Ignoring unsupported integration protocol version: {Event}", serializedEnvelope);
+                return;
+            }
             if (!root.TryGetProperty("OrganizationId", out var organization) ||
                 !root.TryGetProperty("PayloadJson", out var payloadText) ||
                 string.IsNullOrWhiteSpace(payloadText.GetString()))
