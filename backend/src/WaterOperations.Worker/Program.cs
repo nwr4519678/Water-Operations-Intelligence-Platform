@@ -5,6 +5,7 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.Configuration["Worker:Enabled"] = "true";
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHostedService<WorkerHeartbeat>();
+builder.Services.AddHostedService<WaterOperations.Infrastructure.Jobs.OutboxDispatcher>();
 await builder.Build().RunAsync();
 
 internal sealed class WorkerHeartbeat(ILogger<WorkerHeartbeat> logger) : BackgroundService

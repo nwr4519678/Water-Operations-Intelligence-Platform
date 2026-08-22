@@ -9,3 +9,7 @@ registers Hangfire storage/client services for enqueueing but does not start a w
 `JobExecution` is the durable idempotency ledger for worker jobs. A completed key is never
 executed again; running jobs have an expiry for crash recovery; failures transition to retry
 wait or dead-letter state with bounded error text and the next available time.
+
+`OutboxDispatcher` claims pending messages, publishes an envelope to the Redis integration
+channel, marks successful delivery as processed, and applies exponential retry/dead-letter
+state on failures. It runs only in the dedicated Worker process.
