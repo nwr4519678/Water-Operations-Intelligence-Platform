@@ -112,6 +112,24 @@ public sealed class EfProductCapabilityRepository(WaterOperationsDbContext db) :
         return new ReportScheduleDto(schedule.ReportScheduleId, schedule.Frequency, schedule.Format, schedule.RecipientJson, schedule.NextRunAtUtc, schedule.LastRunAtUtc, schedule.IsActive);
     }
 
+    public async Task<bool> UpdateOrganizationAsync(Guid organizationId, string name, string? logoUrl, string locale, string timeZone, CancellationToken ct)
+    {
+        var organization = await db.Organizations.SingleOrDefaultAsync(x => x.OrganizationId == organizationId, ct);
+        if (organization is null) return false;
+        organization.Name = name; organization.LogoUrl = logoUrl; organization.DefaultLocale = locale; organization.DefaultTimeZone = timeZone; organization.UpdatedAtUtc = DateTime.UtcNow;
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    public async Task<bool> SetUserActiveAsync(Guid organizationId, Guid userId, bool isActive, CancellationToken ct)
+    {
+        var user = await db.Users.SingleOrDefaultAsync(x => x.OrganizationId == organizationId && x.UserId == userId, ct);
+        if (user is null) return false;
+        user.IsActive = isActive; user.UpdatedAtUtc = DateTime.UtcNow;
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
+
     private static async Task<PagedResult<T>> PageAsync<T>(IQueryable<T> query, PaginationRequest request, CancellationToken ct)
     {
         var page = Math.Max(1, request.Page);

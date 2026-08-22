@@ -13,6 +13,8 @@ public sealed record SaveDashboardLayoutCommand(string Name, string WidgetsJson,
 public sealed record AddCollaborationNoteCommand(Guid StationId, string NoteText) : ICommand<ScopeResult<CollaborationNoteDto>>, IRequireOrganization, IRequireUser;
 public sealed record CreateShareSnapshotCommand(Guid? StationId, string SnapshotJson, int ExpiresInHours = 24) : ICommand<ScopeResult<SharedSnapshotDto>>, IRequireOrganization, IRequireUser;
 public sealed record CreateReportScheduleCommand(string Frequency, string Format, string RecipientJson, DateTime NextRunAtUtc) : ICommand<ScopeResult<ReportScheduleDto>>, IRequireOrganization, IRequireUser;
+public sealed record UpdateOrganizationCommand(string Name, string? LogoUrl, string Locale, string TimeZone) : ICommand<ScopeResult<bool>>, IRequireOrganization;
+public sealed record SetUserActiveCommand(Guid UserId, bool IsActive) : ICommand<ScopeResult<bool>>, IRequireOrganization;
 
 public sealed class MarkNotificationReadCommandValidator : AbstractValidator<MarkNotificationReadCommand>
 { public MarkNotificationReadCommandValidator() => RuleFor(x => x.NotificationId).GreaterThan(0); }
@@ -24,6 +26,10 @@ public sealed class CreateShareSnapshotCommandValidator : AbstractValidator<Crea
 { public CreateShareSnapshotCommandValidator() { RuleFor(x => x.SnapshotJson).NotEmpty().MaximumLength(1_000_000); RuleFor(x => x.ExpiresInHours).InclusiveBetween(1, 168); } }
 public sealed class CreateReportScheduleCommandValidator : AbstractValidator<CreateReportScheduleCommand>
 { public CreateReportScheduleCommandValidator() { RuleFor(x => x.Frequency).Must(x => new[] { "DAILY", "WEEKLY", "MONTHLY" }.Contains(x.ToUpperInvariant())).WithMessage("Frequency must be DAILY, WEEKLY, or MONTHLY."); RuleFor(x => x.Format).Must(x => new[] { "CSV", "PDF" }.Contains(x.ToUpperInvariant())); RuleFor(x => x.RecipientJson).NotEmpty().MaximumLength(10_000); } }
+public sealed class UpdateOrganizationCommandValidator : AbstractValidator<UpdateOrganizationCommand>
+{ public UpdateOrganizationCommandValidator() { RuleFor(x => x.Name).NotEmpty().MaximumLength(200); RuleFor(x => x.Locale).NotEmpty().MaximumLength(10); RuleFor(x => x.TimeZone).NotEmpty().MaximumLength(100); RuleFor(x => x.LogoUrl).MaximumLength(2000); } }
+public sealed class SetUserActiveCommandValidator : AbstractValidator<SetUserActiveCommand>
+{ public SetUserActiveCommandValidator() => RuleFor(x => x.UserId).NotEmpty(); }
 public sealed class MarkNotificationReadCommandHandler(IProductCapabilityRepository repository, WaterOperations.Application.Common.Abstractions.ICurrentUser user) : ICommandHandler<MarkNotificationReadCommand, ScopeResult<bool>>
 { public async Task<ScopeResult<bool>> Handle(MarkNotificationReadCommand r, CancellationToken ct) => ScopeResult.Authorized(await repository.MarkNotificationReadAsync(user.OrganizationId!.Value, user.UserId!.Value, r.NotificationId, ct)); }
 public sealed class SaveDashboardLayoutCommandHandler(IProductCapabilityRepository repository, WaterOperations.Application.Common.Abstractions.ICurrentUser user) : ICommandHandler<SaveDashboardLayoutCommand, ScopeResult<bool>>
@@ -34,5 +40,9 @@ public sealed class CreateShareSnapshotCommandHandler(IProductCapabilityReposito
 { public async Task<ScopeResult<SharedSnapshotDto>> Handle(CreateShareSnapshotCommand r, CancellationToken ct) => ScopeResult.Authorized(await repository.CreateSnapshotAsync(user.OrganizationId!.Value, user.UserId!.Value, r.StationId, r.SnapshotJson, r.ExpiresInHours, ct)); }
 public sealed class CreateReportScheduleCommandHandler(IProductCapabilityRepository repository, WaterOperations.Application.Common.Abstractions.ICurrentUser user) : ICommandHandler<CreateReportScheduleCommand, ScopeResult<ReportScheduleDto>>
 { public async Task<ScopeResult<ReportScheduleDto>> Handle(CreateReportScheduleCommand r, CancellationToken ct) => ScopeResult.Authorized(await repository.CreateReportScheduleAsync(user.OrganizationId!.Value, user.UserId!.Value, r.Frequency.ToUpperInvariant(), r.Format.ToUpperInvariant(), r.RecipientJson, r.NextRunAtUtc, ct)); }
+public sealed class UpdateOrganizationCommandHandler(IProductCapabilityRepository repository, WaterOperations.Application.Common.Abstractions.ICurrentUser user) : ICommandHandler<UpdateOrganizationCommand, ScopeResult<bool>>
+{ public async Task<ScopeResult<bool>> Handle(UpdateOrganizationCommand r, CancellationToken ct) => ScopeResult.Authorized(await repository.UpdateOrganizationAsync(user.OrganizationId!.Value, r.Name, r.LogoUrl, r.Locale, r.TimeZone, ct)); }
+public sealed class SetUserActiveCommandHandler(IProductCapabilityRepository repository, WaterOperations.Application.Common.Abstractions.ICurrentUser user) : ICommandHandler<SetUserActiveCommand, ScopeResult<bool>>
+{ public async Task<ScopeResult<bool>> Handle(SetUserActiveCommand r, CancellationToken ct) => ScopeResult.Authorized(await repository.SetUserActiveAsync(user.OrganizationId!.Value, r.UserId, r.IsActive, ct)); }
 
 #pragma warning restore CA1725

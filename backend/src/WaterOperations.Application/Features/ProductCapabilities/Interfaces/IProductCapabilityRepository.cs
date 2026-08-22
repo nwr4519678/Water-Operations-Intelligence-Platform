@@ -21,4 +21,6 @@ public interface IProductCapabilityRepository
     Task<CollaborationNoteDto> AddNoteAsync(Guid organizationId, Guid userId, Guid stationId, string noteText, CancellationToken cancellationToken);
     Task<SharedSnapshotDto> CreateSnapshotAsync(Guid organizationId, Guid userId, Guid? stationId, string snapshotJson, int expiresInHours, CancellationToken cancellationToken);
     Task<ReportScheduleDto> CreateReportScheduleAsync(Guid organizationId, Guid userId, string frequency, string format, string recipientJson, DateTime nextRunAtUtc, CancellationToken cancellationToken);
+    Task<bool> UpdateOrganizationAsync(Guid organizationId, string name, string? logoUrl, string locale, string timeZone, CancellationToken cancellationToken);
+    Task<bool> SetUserActiveAsync(Guid organizationId, Guid userId, bool isActive, CancellationToken cancellationToken);
 }

@@ -1,12 +1,15 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WaterOperations.Api.Contracts;
 using WaterOperations.Application.Features.Viewer.Queries;
+using WaterOperations.Infrastructure.Security;
 
 namespace WaterOperations.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/viewer")]
+[Authorize(Policy = AuthorizationPolicies.ViewerOnly)]
 [Produces("application/json")]
 public sealed class ViewerController(
     ISender sender)

@@ -15,4 +15,5 @@ public sealed record CollaborationNoteDto(long NoteId, Guid StationId, Guid Auth
 public sealed record SharedSnapshotDto(Guid ShareSnapshotId, Guid? StationId, DateTime ExpiresAtUtc, DateTime CreatedAtUtc);
 public sealed record AddCollaborationNoteRequest(string NoteText);
 public sealed record ReportScheduleDto(long Id, string Frequency, string Format, string RecipientJson, DateTime NextRunAtUtc, DateTime? LastRunAtUtc, bool IsActive);
+public sealed record SetUserActiveRequest(bool IsActive);
 public sealed record ProductPage<T>(PagedResult<T> Result);

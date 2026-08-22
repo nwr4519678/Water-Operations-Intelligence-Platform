@@ -54,6 +54,16 @@ public sealed class ProductCapabilitiesController(ISender sender) : ControllerBa
     public async Task<IActionResult> Organization(CancellationToken cancellationToken) =>
         (await sender.Send(new GetOrganizationQuery(), cancellationToken)).ToActionResult(this);
 
+    [HttpPut("admin/organization")]
+    [Authorize(Roles = "ADMIN")]
+    public async Task<IActionResult> UpdateOrganization([FromBody] UpdateOrganizationCommand command, CancellationToken cancellationToken) =>
+        (await sender.Send(command, cancellationToken)).ToActionResult(this);
+
+    [HttpPatch("admin/users/{userId:guid}/active")]
+    [Authorize(Roles = "ADMIN")]
+    public async Task<IActionResult> SetUserActive(Guid userId, [FromBody] SetUserActiveRequest request, CancellationToken cancellationToken) =>
+        (await sender.Send(new SetUserActiveCommand(userId, request.IsActive), cancellationToken)).ToActionResult(this);
+
     [HttpGet("settings/dashboard-layouts")]
     public async Task<IActionResult> Layouts(CancellationToken cancellationToken) =>
         (await sender.Send(new GetLayoutsQuery(), cancellationToken)).ToActionResult(this);
