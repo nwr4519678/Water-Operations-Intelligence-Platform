@@ -135,6 +135,14 @@ public sealed class ProductCapabilitiesController(ISender sender) : ControllerBa
     public async Task<IActionResult> Audit([FromQuery] AuditFilter filter, [FromQuery] PaginationRequest pagination, CancellationToken cancellationToken) =>
         (await sender.Send(new GetAuditQuery(filter, pagination), cancellationToken)).ToActionResult(this);
 
+    [HttpGet("admin/audit/export")]
+    [Authorize(Roles = "ADMIN")]
+    public async Task<IActionResult> ExportAudit([FromQuery] AuditFilter filter, CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new ExportAuditQuery(filter), cancellationToken);
+        return result.IsAuthorized ? File(System.Text.Encoding.UTF8.GetBytes(result.Value!), "text/csv", "audit-log.csv") : Forbid();
+    }
+
     [HttpGet("admin/users")]
     [Authorize(Roles = "ADMIN")]
     public async Task<IActionResult> Users([FromQuery] PaginationRequest pagination, CancellationToken cancellationToken) =>
@@ -211,4 +219,8 @@ public sealed class ProductCapabilitiesController(ISender sender) : ControllerBa
     [HttpPost("reports/schedules")]
     public async Task<IActionResult> CreateReportSchedule([FromBody] CreateReportScheduleCommand command, CancellationToken cancellationToken) =>
         (await sender.Send(command, cancellationToken)).ToActionResult(this);
+
+    [HttpPatch("reports/schedules/{scheduleId:long}")]
+    public async Task<IActionResult> SetReportScheduleActive(long scheduleId, [FromBody] SetReportScheduleActiveCommand command, CancellationToken cancellationToken) =>
+        (await sender.Send(command with { ScheduleId = scheduleId }, cancellationToken)).ToActionResult(this);
 }

@@ -15,6 +15,7 @@ public sealed record UpdateCollaborationNoteCommand(long NoteId, string NoteText
 public sealed record CreateShareSnapshotCommand(Guid? StationId, string SnapshotJson, int ExpiresInHours = 24) : ICommand<ScopeResult<SharedSnapshotDto>>, IRequireOrganization, IRequireUser;
 public sealed record RevokeShareSnapshotCommand(Guid SnapshotId) : ICommand<ScopeResult<bool>>, IRequireOrganization, IRequireUser;
 public sealed record CreateReportScheduleCommand(string Frequency, string Format, string RecipientJson, DateTime NextRunAtUtc) : ICommand<ScopeResult<ReportScheduleDto>>, IRequireOrganization, IRequireUser;
+public sealed record SetReportScheduleActiveCommand(long ScheduleId, bool IsActive) : ICommand<ScopeResult<bool>>, IRequireOrganization, IRequireUser;
 public sealed record UpdateOrganizationCommand(string Name, string? LogoUrl, string Locale, string TimeZone) : ICommand<ScopeResult<bool>>, IRequireOrganization;
 public sealed record SetUserActiveCommand(Guid UserId, bool IsActive) : ICommand<ScopeResult<bool>>, IRequireOrganization;
 public sealed record UpdateUserPreferencesCommand(string Theme, string Locale, string TimeZone, byte DecimalPrecision) : ICommand<ScopeResult<bool>>, IRequireOrganization, IRequireUser;
@@ -33,7 +34,9 @@ public sealed class CreateShareSnapshotCommandValidator : AbstractValidator<Crea
 public sealed class RevokeShareSnapshotCommandValidator : AbstractValidator<RevokeShareSnapshotCommand>
 { public RevokeShareSnapshotCommandValidator() => RuleFor(x => x.SnapshotId).NotEmpty(); }
 public sealed class CreateReportScheduleCommandValidator : AbstractValidator<CreateReportScheduleCommand>
-{ public CreateReportScheduleCommandValidator() { RuleFor(x => x.Frequency).Must(x => new[] { "DAILY", "WEEKLY", "MONTHLY" }.Contains(x.ToUpperInvariant())).WithMessage("Frequency must be DAILY, WEEKLY, or MONTHLY."); RuleFor(x => x.Format).Must(x => new[] { "CSV", "PDF" }.Contains(x.ToUpperInvariant())); RuleFor(x => x.RecipientJson).NotEmpty().MaximumLength(10_000); } }
+{ public CreateReportScheduleCommandValidator() { RuleFor(x => x.Frequency).Must(x => new[] { "DAILY", "WEEKLY", "MONTHLY" }.Contains(x.ToUpperInvariant())).WithMessage("Frequency must be DAILY, WEEKLY, or MONTHLY."); RuleFor(x => x.Format).Must(x => new[] { "CSV", "PDF", "XLSX" }.Contains(x.ToUpperInvariant())); RuleFor(x => x.RecipientJson).NotEmpty().MaximumLength(10_000); RuleFor(x => x.NextRunAtUtc).NotEmpty(); } }
+public sealed class SetReportScheduleActiveCommandValidator : AbstractValidator<SetReportScheduleActiveCommand>
+{ public SetReportScheduleActiveCommandValidator() => RuleFor(x => x.ScheduleId).GreaterThan(0); }
 public sealed class UpdateOrganizationCommandValidator : AbstractValidator<UpdateOrganizationCommand>
 { public UpdateOrganizationCommandValidator() { RuleFor(x => x.Name).NotEmpty().MaximumLength(200); RuleFor(x => x.Locale).NotEmpty().MaximumLength(10); RuleFor(x => x.TimeZone).NotEmpty().MaximumLength(100); RuleFor(x => x.LogoUrl).MaximumLength(2000); } }
 public sealed class SetUserActiveCommandValidator : AbstractValidator<SetUserActiveCommand>
@@ -56,6 +59,8 @@ public sealed class RevokeShareSnapshotCommandHandler(ICollaborationRepository r
 { public async Task<ScopeResult<bool>> Handle(RevokeShareSnapshotCommand r, CancellationToken ct) => ScopeResult.Authorized(await repository.RevokeSnapshotAsync(user.OrganizationId!.Value, user.UserId!.Value, r.SnapshotId, ct)); }
 public sealed class CreateReportScheduleCommandHandler(IReportRepository repository, WaterOperations.Application.Common.Abstractions.ICurrentUser user, Reports.IReportJobScheduler scheduler) : ICommandHandler<CreateReportScheduleCommand, ScopeResult<ReportScheduleDto>>
 { public async Task<ScopeResult<ReportScheduleDto>> Handle(CreateReportScheduleCommand r, CancellationToken ct) { var schedule = await repository.CreateReportScheduleAsync(user.OrganizationId!.Value, user.UserId!.Value, r.Frequency.ToUpperInvariant(), r.Format.ToUpperInvariant(), r.RecipientJson, r.NextRunAtUtc, ct); scheduler.ScheduleRecurring(schedule.Id, schedule.Frequency); return ScopeResult.Authorized(schedule); } }
+public sealed class SetReportScheduleActiveCommandHandler(IReportRepository repository, WaterOperations.Application.Common.Abstractions.ICurrentUser user, Reports.IReportJobScheduler scheduler) : ICommandHandler<SetReportScheduleActiveCommand, ScopeResult<bool>>
+{ public async Task<ScopeResult<bool>> Handle(SetReportScheduleActiveCommand r, CancellationToken ct) { var updated = await repository.SetReportScheduleActiveAsync(user.OrganizationId!.Value, user.UserId!.Value, r.ScheduleId, r.IsActive, ct); if (updated) scheduler.ScheduleRecurring(r.ScheduleId, "DAILY"); return ScopeResult.Authorized(updated); } }
 public sealed class UpdateOrganizationCommandHandler(IAdministrationRepository repository, WaterOperations.Application.Common.Abstractions.ICurrentUser user) : ICommandHandler<UpdateOrganizationCommand, ScopeResult<bool>>
 { public async Task<ScopeResult<bool>> Handle(UpdateOrganizationCommand r, CancellationToken ct) => ScopeResult.Authorized(await repository.UpdateOrganizationAsync(user.OrganizationId!.Value, r.Name, r.LogoUrl, r.Locale, r.TimeZone, ct)); }
 public sealed class SetUserActiveCommandHandler(IAdministrationRepository repository, WaterOperations.Application.Common.Abstractions.ICurrentUser user) : ICommandHandler<SetUserActiveCommand, ScopeResult<bool>>

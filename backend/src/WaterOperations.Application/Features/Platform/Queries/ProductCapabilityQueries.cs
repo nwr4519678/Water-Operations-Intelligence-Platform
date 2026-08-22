@@ -3,6 +3,8 @@ using WaterOperations.Application.Common.Pagination;
 using WaterOperations.Application.Common.Results;
 using WaterOperations.Application.Features.ProductCapabilities.DTOs;
 using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
+using System.Text;
+using System.Globalization;
 
 #pragma warning disable CA1725
 
@@ -14,6 +16,7 @@ public sealed record GetReportsQuery(ReportFilter Filter, PaginationRequest Pagi
 public sealed record GetNotificationsQuery(bool UnreadOnly, PaginationRequest Pagination) : IQuery<ScopeResult<PagedResult<NotificationDto>>>, IRequireOrganization, IRequireUser;
 public sealed record GetUnreadNotificationCountQuery : IQuery<ScopeResult<int>>, IRequireOrganization, IRequireUser;
 public sealed record GetAuditQuery(AuditFilter Filter, PaginationRequest Pagination) : IQuery<ScopeResult<PagedResult<AuditEntryDto>>>, IRequireOrganization;
+public sealed record ExportAuditQuery(AuditFilter Filter) : IQuery<ScopeResult<string>>, IRequireOrganization;
 public sealed record GetUsersQuery(PaginationRequest Pagination) : IQuery<ScopeResult<PagedResult<UserAdminDto>>>, IRequireOrganization;
 public sealed record GetOrganizationQuery : IQuery<ScopeResult<OrganizationDto>>, IRequireOrganization;
 public sealed record GetLayoutsQuery : IQuery<ScopeResult<IReadOnlyList<DashboardLayoutDto>>>, IRequireUser;
@@ -35,6 +38,24 @@ public sealed class GetUnreadNotificationCountQueryHandler(INotificationReposito
 { public async Task<ScopeResult<int>> Handle(GetUnreadNotificationCountQuery r, CancellationToken ct) => ScopeResult.Authorized(await repository.GetUnreadNotificationCountAsync(user.OrganizationId!.Value, user.UserId!.Value, ct)); }
 public sealed class GetAuditQueryHandler(IAuditRepository repository, ICurrentUser user) : IQueryHandler<GetAuditQuery, ScopeResult<PagedResult<AuditEntryDto>>>
 { public async Task<ScopeResult<PagedResult<AuditEntryDto>>> Handle(GetAuditQuery r, CancellationToken ct) => ScopeResult.Authorized(await repository.GetAuditAsync(user.OrganizationId!.Value, r.Filter, r.Pagination, ct)); }
+public sealed class ExportAuditQueryHandler(IAuditRepository repository, ICurrentUser user) : IQueryHandler<ExportAuditQuery, ScopeResult<string>>
+{
+    public async Task<ScopeResult<string>> Handle(ExportAuditQuery r, CancellationToken ct)
+    {
+        var csv = new StringBuilder("id,actionCode,entityType,entityId,success,occurredAtUtc,actorUserId,requestId\n");
+        var page = 1;
+        while (true)
+        {
+            var result = await repository.GetAuditAsync(user.OrganizationId!.Value, r.Filter, new PaginationRequest(page, 100), ct);
+            foreach (var item in result.Data) csv.AppendLine(string.Join(',', item.Id, Csv(item.ActionCode), Csv(item.EntityType), Csv(item.EntityId), item.Success, item.OccurredAtUtc.ToString("O", CultureInfo.InvariantCulture), item.ActorUserId, Csv(item.RequestId)));
+            if (result.Data.Count == 0 || page * 100 >= result.Total) break;
+            page++;
+        }
+        return ScopeResult.Authorized(csv.ToString());
+    }
+
+    private static string Csv(string? value) => value is null ? string.Empty : $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
+}
 public sealed class GetUsersQueryHandler(IAdministrationRepository repository, ICurrentUser user) : IQueryHandler<GetUsersQuery, ScopeResult<PagedResult<UserAdminDto>>>
 { public async Task<ScopeResult<PagedResult<UserAdminDto>>> Handle(GetUsersQuery r, CancellationToken ct) => ScopeResult.Authorized(await repository.GetUsersAsync(user.OrganizationId!.Value, r.Pagination, ct)); }
 public sealed class GetOrganizationQueryHandler(IAdministrationRepository repository, ICurrentUser user) : IQueryHandler<GetOrganizationQuery, ScopeResult<OrganizationDto>>

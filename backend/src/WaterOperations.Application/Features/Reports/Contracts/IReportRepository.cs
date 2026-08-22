@@ -9,4 +9,5 @@ public interface IReportRepository
     Task<ReportDto> CreateReportAsync(Guid organizationId, Guid userId, CreateReportRequest request, CancellationToken cancellationToken);
     Task<ReportDto?> GetReportAsync(Guid organizationId, Guid userId, Guid reportId, CancellationToken cancellationToken);
     Task<ReportScheduleDto> CreateReportScheduleAsync(Guid organizationId, Guid userId, string frequency, string format, string recipientJson, DateTime nextRunAtUtc, CancellationToken cancellationToken);
+    Task<bool> SetReportScheduleActiveAsync(Guid organizationId, Guid userId, long scheduleId, bool isActive, CancellationToken cancellationToken);
 }

@@ -5,8 +5,9 @@ using WaterOperations.Application.Features.ProductCapabilities.DTOs;
 using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
 using WaterOperations.Domain.Entities;
 using WaterOperations.Infrastructure.Persistence;
+using WaterOperations.Infrastructure.ProductCapabilities.Persistence;
 
-namespace WaterOperations.Infrastructure.ProductCapabilities.Persistence;
+namespace WaterOperations.Infrastructure.ProductCapabilities.AI;
 
 public sealed class EfAiModelRepository(WaterOperationsDbContext db) : EfProductCapabilityRepositoryBase(db), IAiModelRepository
 {

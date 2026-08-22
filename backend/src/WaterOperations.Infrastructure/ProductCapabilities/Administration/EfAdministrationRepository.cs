@@ -4,8 +4,9 @@ using WaterOperations.Application.Features.ProductCapabilities.DTOs;
 using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
 using WaterOperations.Domain.Entities;
 using WaterOperations.Infrastructure.Persistence;
+using WaterOperations.Infrastructure.ProductCapabilities.Persistence;
 
-namespace WaterOperations.Infrastructure.ProductCapabilities.Persistence;
+namespace WaterOperations.Infrastructure.ProductCapabilities.Administration;
 
 public sealed class EfAdministrationRepository(WaterOperationsDbContext db) : EfProductCapabilityRepositoryBase(db), IAdministrationRepository
 {

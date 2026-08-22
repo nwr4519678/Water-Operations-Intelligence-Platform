@@ -5,8 +5,9 @@ using WaterOperations.Application.Features.ProductCapabilities.DTOs;
 using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
 using WaterOperations.Domain.Entities;
 using WaterOperations.Infrastructure.Persistence;
+using WaterOperations.Infrastructure.ProductCapabilities.Persistence;
 
-namespace WaterOperations.Infrastructure.ProductCapabilities.Persistence;
+namespace WaterOperations.Infrastructure.ProductCapabilities.Reports;
 
 public sealed class EfReportRepository(WaterOperationsDbContext db) : EfProductCapabilityRepositoryBase(db), IReportRepository
 {
@@ -39,5 +40,15 @@ public sealed class EfReportRepository(WaterOperationsDbContext db) : EfProductC
         Db.AuditLogs.Add(new AuditLog { OrganizationId = organizationId, ActorUserId = userId, ActionCode = "REPORT_SCHEDULE_CREATED", EntityType = "ReportSchedule", EntityId = schedule.ReportScheduleId.ToString(CultureInfo.InvariantCulture), Success = true, OccurredAtUtc = DateTime.UtcNow });
         await Db.SaveChangesAsync(cancellationToken);
         return new ReportScheduleDto(schedule.ReportScheduleId, schedule.Frequency, schedule.Format, schedule.RecipientJson, schedule.NextRunAtUtc, schedule.LastRunAtUtc, schedule.IsActive);
+    }
+
+    public async Task<bool> SetReportScheduleActiveAsync(Guid organizationId, Guid userId, long scheduleId, bool isActive, CancellationToken cancellationToken)
+    {
+        var schedule = await Db.ReportSchedules.SingleOrDefaultAsync(x => x.ReportScheduleId == scheduleId && x.OrganizationId == organizationId && x.CreatedByUserId == userId, cancellationToken);
+        if (schedule is null) return false;
+        schedule.IsActive = isActive;
+        Db.AuditLogs.Add(new AuditLog { OrganizationId = organizationId, ActorUserId = userId, ActionCode = isActive ? "REPORT_SCHEDULE_RESUMED" : "REPORT_SCHEDULE_PAUSED", EntityType = "ReportSchedule", EntityId = scheduleId.ToString(CultureInfo.InvariantCulture), Success = true, OccurredAtUtc = DateTime.UtcNow });
+        await Db.SaveChangesAsync(cancellationToken);
+        return true;
     }
 }

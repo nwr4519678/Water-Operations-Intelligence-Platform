@@ -3,8 +3,9 @@ using WaterOperations.Application.Common.Pagination;
 using WaterOperations.Application.Features.ProductCapabilities.DTOs;
 using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
 using WaterOperations.Infrastructure.Persistence;
+using WaterOperations.Infrastructure.ProductCapabilities.Persistence;
 
-namespace WaterOperations.Infrastructure.ProductCapabilities.Persistence;
+namespace WaterOperations.Infrastructure.ProductCapabilities.Search;
 
 public sealed class EfSearchRepository(WaterOperationsDbContext db) : EfProductCapabilityRepositoryBase(db), ISearchRepository
 {

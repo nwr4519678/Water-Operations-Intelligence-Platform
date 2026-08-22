@@ -19,6 +19,10 @@ public interface ITelemetryClient
     public Task DataQualityChanged(RealtimeEventEnvelope payload);
 
     public Task AiAvailabilityChanged(RealtimeEventEnvelope payload);
+
+    public Task NotificationCreated(RealtimeEventEnvelope payload);
+
+    public Task NotificationDigestCreated(RealtimeEventEnvelope payload);
 }
 
 public sealed record RealtimeEventEnvelope(

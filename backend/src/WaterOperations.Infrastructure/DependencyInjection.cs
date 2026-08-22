@@ -35,11 +35,16 @@ using WaterOperations.Infrastructure.Telemetry;
 using WaterOperations.Infrastructure.Time;
 using WaterOperations.Infrastructure.Viewer;
 using WaterOperations.Infrastructure.ProductCapabilities.Persistence;
+using WaterOperations.Infrastructure.ProductCapabilities.AI;
+using WaterOperations.Infrastructure.ProductCapabilities.Reports;
+using WaterOperations.Infrastructure.ProductCapabilities.Notifications;
+using WaterOperations.Infrastructure.ProductCapabilities.Audit;
+using WaterOperations.Infrastructure.ProductCapabilities.Collaboration;
+using WaterOperations.Infrastructure.ProductCapabilities.Administration;
+using WaterOperations.Infrastructure.ProductCapabilities.Search;
 using WaterOperations.Application.Features.ProductCapabilities.Interfaces;
 using WaterOperations.Application.Features.ProductCapabilities.AI;
-using WaterOperations.Infrastructure.ProductCapabilities.AI;
 using WaterOperations.Application.Features.ProductCapabilities.Reports;
-using WaterOperations.Infrastructure.ProductCapabilities.Reports;
 
 namespace WaterOperations.Infrastructure;
 

@@ -53,5 +53,13 @@ public static class InfrastructureStartup
             "outbox-publisher",
             job => job.PublishAsync(CancellationToken.None),
             "*/1 * * * *");
+        recurringJobs.AddOrUpdate<NotificationDeliveryJob>(
+            "notification-delivery",
+            job => job.PublishPendingAsync(CancellationToken.None),
+            "*/1 * * * *");
+        recurringJobs.AddOrUpdate<NotificationDigestJob>(
+            "notification-digest",
+            job => job.PublishDailyDigestsAsync(CancellationToken.None),
+            "0 8 * * *");
     }
 }

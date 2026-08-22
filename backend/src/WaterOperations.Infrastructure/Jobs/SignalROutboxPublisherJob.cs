@@ -36,6 +36,8 @@ public sealed class SignalROutboxPublisherJob(
                         "ModelPromoted" => clients.ModelPromoted(envelope),
                         "DataQualityChanged" => clients.DataQualityChanged(envelope),
                         "AiAvailabilityChanged" => clients.AiAvailabilityChanged(envelope),
+                        "NotificationCreated" => clients.NotificationCreated(envelope),
+                        "NotificationDigestCreated" => clients.NotificationDigestCreated(envelope),
                         _ => clients.MeasurementUpdated(envelope)
                     });
                 }
