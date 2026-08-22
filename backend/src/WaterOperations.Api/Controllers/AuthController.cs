@@ -1,31 +1,52 @@
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WaterOperations.Api.Common;
-using WaterOperations.Infrastructure.Security;
+using Microsoft.AspNetCore.RateLimiting;
+using WaterOperations.Api.Extensions;
+using WaterOperations.Application.Features.Auth.Commands;
+using WaterOperations.Application.Features.Auth.DTOs;
 
 namespace WaterOperations.Api.Controllers;
 
-[ApiController, Route("api/v1/auth")]
-public sealed class AuthController(ViewerUserStore users, SessionStore sessions, AuthTokenService tokens) : ControllerBase
+[ApiController]
+[Route("api/v1/auth")]
+public sealed class AuthController(
+    ISender sender)
+    : ControllerBase
 {
-    public sealed record LoginRequest(string Email, string Password);
-    public sealed record RefreshRequest(string RefreshToken);
+    [EnableRateLimiting("auth")]
     [HttpPost("login")]
-    public IActionResult Login(LoginRequest request)
+    public async Task<IActionResult> Login(
+        LoginRequest request,
+        CancellationToken cancellationToken)
     {
-        var user = users.Find(request.Email, request.Password);
-        return user is null ? Unauthorized(new { error = "invalid_credentials" }) : Ok(Issue(user));
+        var result = await sender.Send(
+            new LoginCommand(request),
+            cancellationToken);
+        return result.ToAuthenticationResult(this, "invalid_credentials");
     }
+
     [Authorize]
     [HttpPost("logout")]
-    public IActionResult Logout(RefreshRequest request) => sessions.Revoke(request.RefreshToken) ? NoContent() : NoContent();
+    public async Task<IActionResult> Logout(
+        RefreshRequest request,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(
+            new LogoutCommand(request.RefreshToken),
+            cancellationToken);
+        return NoContent();
+    }
+
     [AllowAnonymous]
     [HttpPost("refresh")]
-    public IActionResult Refresh(RefreshRequest request)
+    public async Task<IActionResult> Refresh(
+        RefreshRequest request,
+        CancellationToken cancellationToken)
     {
-        if (!sessions.TryConsume(request.RefreshToken, out var session)) return Unauthorized(new { error = "invalid_refresh_session" });
-        var user = new ViewerUser(session.Email, string.Empty, session.Organization, session.Region, AuthorizationPolicies.ViewerRole);
-        return Ok(Issue(user));
+        var result = await sender.Send(
+            new RefreshCommand(request.RefreshToken),
+            cancellationToken);
+        return result.ToAuthenticationResult(this, "invalid_refresh_session");
     }
-    private object Issue(ViewerUser user) => new { accessToken = tokens.Create(user), refreshToken = sessions.Create(user.Email, user.Organization, user.Region), expiresIn = 900 };
 }

@@ -1,0 +1,25 @@
+name: ClickUp Community plugin
+
+on:
+  push:
+    paths:
+      - ".agents/plugins/marketplace.json"
+      - "plugins/clickup-community/**"
+      - "scripts/validate_clickup_community.py"
+      - ".github/workflows/clickup-community.yml"
+  pull_request:
+    paths:
+      - ".agents/plugins/marketplace.json"
+      - "plugins/clickup-community/**"
+      - "scripts/validate_clickup_community.py"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/validate_clickup_community.py
+      - run: python -m py_compile plugins/clickup-community/clickup_community_server.py

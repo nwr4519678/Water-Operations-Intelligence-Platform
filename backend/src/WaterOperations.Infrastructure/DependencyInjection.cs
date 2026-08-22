@@ -1,37 +1,165 @@
-using Hangfire;
+﻿using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using WaterOperations.Application.Common.Abstractions;
-using WaterOperations.Infrastructure.Persistence;
+using WaterOperations.Application.Common.Repositories;
+using WaterOperations.Application.Common.Caching;
+using WaterOperations.Application.Features.Auth.Interfaces;
+using WaterOperations.Application.Features.Ingestion.Interfaces;
+using WaterOperations.Application.Features.Mfa.Interfaces;
+using WaterOperations.Application.Features.Operations.Interfaces;
+using WaterOperations.Application.Features.Pipeline.Interfaces;
+using WaterOperations.Application.Features.Retention.Interfaces;
+using WaterOperations.Application.Features.Stations.Interfaces;
+using WaterOperations.Application.Features.Telemetry.Interfaces;
 using WaterOperations.Application.Features.Viewer.Interfaces;
+using WaterOperations.Infrastructure.Ingestion;
+using WaterOperations.Infrastructure.Caching;
+using WaterOperations.Infrastructure.Authentication;
+using WaterOperations.Infrastructure.Configuration;
+using WaterOperations.Infrastructure.Jobs;
+using WaterOperations.Infrastructure.Messaging;
+using WaterOperations.Infrastructure.Mfa;
+using WaterOperations.Infrastructure.Operations;
+using WaterOperations.Infrastructure.Persistence;
+using WaterOperations.Infrastructure.Persistence.Repositories;
+using WaterOperations.Infrastructure.Pipeline;
+using WaterOperations.Infrastructure.Retention;
+using WaterOperations.Infrastructure.Security;
+using WaterOperations.Infrastructure.Stations;
+using WaterOperations.Infrastructure.Storage;
+using WaterOperations.Infrastructure.Telemetry;
+using WaterOperations.Infrastructure.Time;
 using WaterOperations.Infrastructure.Viewer;
 
 namespace WaterOperations.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("Default")
-            ?? throw new InvalidOperationException("ConnectionStrings:Default must be configured before starting the API.");
-        if (configuration["Testing"] == "true") services.AddDbContext<WaterOperationsDbContext>(options => options.UseInMemoryDatabase("water-operations-tests"));
-        else services.AddDbContext<WaterOperationsDbContext>(options => options.UseNpgsql(connectionString));
-        services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
-        services.AddScoped<IUnitOfWork>(serviceProvider => serviceProvider.GetRequiredService<WaterOperationsDbContext>());
-        services.AddScoped<IViewerReadService, EfViewerReadService>();
-        if (configuration["Testing"] != "true")
+            ?? throw new InvalidOperationException(
+                "ConnectionStrings:Default must be configured before starting the API.");
+
+        services
+            .AddPersistence(configuration, connectionString)
+            .AddInfrastructureOptions(configuration)
+            .AddInfrastructureServices(configuration)
+            .AddFeatureServices()
+            .AddCaching()
+            .AddBackgroundProcessing(configuration, connectionString);
+
+        return services;
+    }
+
+    private static IServiceCollection AddPersistence(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        string connectionString)
+    {
+        if (configuration["Testing"] == "true")
         {
-            var redisConnection = configuration.GetConnectionString("Redis")
-                ?? throw new InvalidOperationException("ConnectionStrings:Redis must be configured before starting the API.");
-            services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnection));
-            services.AddStackExchangeRedisCache(options => options.Configuration = redisConnection);
-            services.AddHybridCache();
-            services.AddHangfire(config => config.UseSimpleAssemblyNameTypeSerializer().UseRecommendedSerializerSettings().UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString!)));
-            services.AddHangfireServer();
+            services.AddDbContext<WaterOperationsDbContext>(
+                options => options.UseInMemoryDatabase("water-operations-tests"));
         }
+        else
+        {
+            services.AddDbContext<WaterOperationsDbContext>(
+                options => options.UseNpgsql(connectionString));
+        }
+
+        services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
+        services.AddScoped<IRepositoryContext, EfRepositoryContext>();
+        services.AddScoped<IUnitOfWork>(
+            serviceProvider => serviceProvider.GetRequiredService<WaterOperationsDbContext>());
+        return services;
+    }
+
+    private static IServiceCollection AddInfrastructureOptions(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.Configure<InfrastructureOptions>(
+            configuration.GetSection(InfrastructureOptions.SectionName));
+        services.Configure<JwtAuthenticationOptions>(
+            configuration.GetSection(JwtAuthenticationOptions.SectionName));
+        return services;
+    }
+
+    private static IServiceCollection AddInfrastructureServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.AddSingleton<IClock, SystemClock>();
+        services.AddSingleton<IFileStorage, LocalFileStorage>();
+        if (configuration["Testing"] == "true")
+        {
+            services.AddSingleton<WaterOperations.Infrastructure.Telemetry.TelemetryStore>();
+        }
+        return services;
+    }
+
+    private static IServiceCollection AddFeatureServices(
+        this IServiceCollection services)
+    {
+        services.AddScoped<IViewerQueryRepository, EfViewerQueryRepository>();
+        services.AddSingleton<IUserCredentialRepository>(
+            provider => provider.GetRequiredService<ViewerUserStore>());
+        services.AddSingleton<IRefreshSessionRepository>(
+            provider => provider.GetRequiredService<SessionStore>());
+        services.AddSingleton<IAccessTokenIssuer>(
+            provider => provider.GetRequiredService<AuthTokenService>());
+        services.AddScoped<IStationQueryRepository, EfStationQueryRepository>();
+        services.AddScoped<IOperationsQueryRepository, EfOperationsQueryRepository>();
+        services.AddScoped<ITelemetryQueryRepository, EfTelemetryQueryRepository>();
+        services.AddSingleton<ITelemetryFixtureReader, TelemetryFixtureReader>();
+        services.AddScoped<IIngestionRepository, EfIngestionRepository>();
+        services.AddScoped<ICsvBatchParser, CsvBatchParser>();
+        services.AddScoped<IPipelineRepository, EfPipelineRepository>();
+        services.AddScoped<IRetentionRepository, EfRetentionRepository>();
+        services.AddScoped<IMfaRepository, EfMfaRepository>();
+        return services;
+    }
+
+    private static IServiceCollection AddCaching(
+        this IServiceCollection services)
+    {
+        services.AddHybridCache();
+        services.AddSingleton<ICacheService, HybridCacheService>();
+        services.AddSingleton<OutboxPayloadSerializer>();
+        return services;
+    }
+
+    private static IServiceCollection AddBackgroundProcessing(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        string connectionString)
+    {
+        services.AddScoped<OutboxPublisherJob>();
+        if (configuration["Testing"] == "true")
+        {
+            return services;
+        }
+
+        var redisConnection = configuration.GetConnectionString("Redis")
+            ?? throw new InvalidOperationException(
+                "ConnectionStrings:Redis must be configured before starting the API.");
+        services.AddSingleton<IConnectionMultiplexer>(
+            _ => ConnectionMultiplexer.Connect(redisConnection));
+        services.AddStackExchangeRedisCache(
+            options => options.Configuration = redisConnection);
+        services.AddHangfire(config => config
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UsePostgreSqlStorage(options => options
+                .UseNpgsqlConnection(connectionString)));
+        services.AddHangfireServer();
         return services;
     }
 }

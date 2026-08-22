@@ -1,7 +1,9 @@
-using System.Reflection;
+﻿using System.Reflection;
+using WaterOperations.Api.Controllers;
 using WaterOperations.Application.Features.Viewer.DTOs;
 using WaterOperations.Application.Features.Viewer.Interfaces;
 using WaterOperations.Domain.Entities;
+using WaterOperations.Infrastructure.Persistence;
 
 namespace WaterOperations.ArchitectureTests;
 
@@ -22,7 +24,7 @@ public sealed class LayerBoundaryTests
     [Fact]
     public void ApplicationDoesNotReferenceInfrastructureOrApi()
     {
-        var references = ReferencedAssemblyNames(typeof(IViewerReadService).Assembly);
+        var references = ReferencedAssemblyNames(typeof(IViewerQueryRepository).Assembly);
 
         Assert.DoesNotContain("WaterOperations.Infrastructure", references);
         Assert.DoesNotContain("WaterOperations.Api", references);
@@ -34,7 +36,7 @@ public sealed class LayerBoundaryTests
     {
         var contractTypes = new[]
         {
-            typeof(IViewerReadService),
+            typeof(IViewerQueryRepository),
             typeof(OrganizationDto),
             typeof(RegionDto),
             typeof(StationDto),
@@ -51,16 +53,29 @@ public sealed class LayerBoundaryTests
         Assert.DoesNotContain(exposedTypes, domainTypes.Contains);
     }
 
+    [Fact]
+    public void ApiControllersDoNotDependOnEfDbContext()
+    {
+        var controllers = typeof(ViewerController).Assembly.GetTypes()
+            .Where(type => type.Namespace == typeof(ViewerController).Namespace && type.Name.EndsWith("Controller", StringComparison.Ordinal));
+        var parameters = controllers.SelectMany(type => type.GetConstructors().SelectMany(constructor => constructor.GetParameters()));
+        Assert.DoesNotContain(parameters, parameter => parameter.ParameterType == typeof(WaterOperationsDbContext));
+    }
+
     private static string[] ReferencedAssemblyNames(Assembly assembly) =>
         assembly.GetReferencedAssemblies().Select(name => name.Name!).ToArray();
 
     private static Type UnwrapTaskOrCollectionType(Type type)
     {
         if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Task<>))
+        {
             return UnwrapTaskOrCollectionType(type.GetGenericArguments()[0]);
+        }
 
         if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IReadOnlyList<>))
+        {
             return UnwrapTaskOrCollectionType(type.GetGenericArguments()[0]);
+        }
 
         return type;
     }

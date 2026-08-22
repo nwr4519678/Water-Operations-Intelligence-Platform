@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using WaterOperations.Application.Common.Abstractions;
+using WaterOperations.Application.Common.Repositories;
 using WaterOperations.Domain.Entities;
 
 namespace WaterOperations.Infrastructure.Persistence;
@@ -46,6 +46,8 @@ public partial class WaterOperationsDbContext : DbContext, IUnitOfWork
 
     public virtual DbSet<MeasurementRaw> MeasurementRaws { get; set; }
 
+    public virtual DbSet<MfaRecoveryCode> MfaRecoveryCodes { get; set; }
+
     public virtual DbSet<MlModel> MlModels { get; set; }
 
     public virtual DbSet<MlTrainingRun> MlTrainingRuns { get; set; }
@@ -53,6 +55,8 @@ public partial class WaterOperationsDbContext : DbContext, IUnitOfWork
     public virtual DbSet<Notification> Notifications { get; set; }
 
     public virtual DbSet<NotificationPreference> NotificationPreferences { get; set; }
+
+    public virtual DbSet<OutboxMessage> OutboxMessages { get; set; }
 
     public virtual DbSet<Organization> Organizations { get; set; }
 
@@ -168,6 +172,30 @@ public partial class WaterOperationsDbContext : DbContext, IUnitOfWork
                 .HasForeignKey(d => d.StationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Alarm_Station");
+        });
+
+        modelBuilder.Entity<MfaRecoveryCode>(entity =>
+        {
+            entity.HasKey(x => x.MfaRecoveryCodeId);
+            entity.ToTable("MfaRecoveryCode", "Security");
+            entity.HasIndex(x => new { x.UserId, x.CodeHash }).IsUnique();
+            entity.Property(x => x.CodeHash).IsRequired().HasMaxLength(64).IsUnicode(false);
+            entity.Property(x => x.CreatedAtUtc).HasPrecision(3);
+            entity.Property(x => x.UsedAtUtc).HasPrecision(3);
+            entity.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<OutboxMessage>(entity =>
+        {
+            entity.HasKey(x => x.OutboxMessageId);
+            entity.ToTable("OutboxMessage", "Platform");
+            entity.HasIndex(x => new { x.ProcessedAtUtc, x.OccurredAtUtc });
+            entity.Property(x => x.EventType).IsRequired().HasMaxLength(200).IsUnicode(false);
+            entity.Property(x => x.PayloadJson).IsRequired().HasColumnType("jsonb");
+            entity.Property(x => x.OccurredAtUtc).HasPrecision(3);
+            entity.Property(x => x.ProcessedAtUtc).HasPrecision(3);
+            entity.Property(x => x.FailedAtUtc).HasPrecision(3);
+            entity.Property(x => x.LastError).HasMaxLength(4000);
         });
 
         modelBuilder.Entity<AlarmLabel>(entity =>

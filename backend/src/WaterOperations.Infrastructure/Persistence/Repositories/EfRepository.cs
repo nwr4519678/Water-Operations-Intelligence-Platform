@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
-using WaterOperations.Application.Common.Abstractions;
+﻿using Microsoft.EntityFrameworkCore;
+using WaterOperations.Application.Common.Repositories;
 
 namespace WaterOperations.Infrastructure.Persistence;
 

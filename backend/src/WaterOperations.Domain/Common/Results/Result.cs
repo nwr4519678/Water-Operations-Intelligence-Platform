@@ -1,4 +1,4 @@
-namespace WaterOperations.Domain.Common.Results;
+﻿namespace WaterOperations.Domain.Common.Results;
 
 public readonly record struct Result(bool IsSuccess, string? Error = null)
 {

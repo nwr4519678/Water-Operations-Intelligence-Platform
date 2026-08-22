@@ -1,0 +1,12 @@
+<Solution>
+  <Project Path="WaterOperations.Domain/WaterOperations.Domain.csproj" />
+  <Project Path="WaterOperations.Application/WaterOperations.Application.csproj" />
+  <Project Path="WaterOperations.Infrastructure/WaterOperations.Infrastructure.csproj" />
+  <Folder Name="/src/" />
+  <Folder Name="/tests/">
+    <Project Path="../tests/WaterOperations.ArchitectureTests/WaterOperations.ArchitectureTests.csproj" />
+    <Project Path="../tests/WaterOperations.IntegrationTests/WaterOperations.IntegrationTests.csproj" />
+    <Project Path="../tests/WaterOperations.UnitTests/WaterOperations.UnitTests.csproj" />
+  </Folder>
+  <Project Path="WaterOperations.Api/WaterOperations.Api.csproj" />
+</Solution>

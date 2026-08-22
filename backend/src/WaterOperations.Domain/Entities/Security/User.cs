@@ -55,7 +55,11 @@ public partial class User
 
     public virtual ICollection<FocusStationScore> FocusStationScores { get; set; } = new List<FocusStationScore>();
 
-    public virtual ICollection<NotificationPreference> NotificationPreferences { get; set; } = new List<NotificationPreference>();
+    public virtual ICollection<NotificationPreference> NotificationPreferences
+    {
+        get;
+        set;
+    } = new List<NotificationPreference>();
 
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
@@ -69,7 +73,11 @@ public partial class User
 
     public virtual ICollection<ShareSnapshot> ShareSnapshots { get; set; } = new List<ShareSnapshot>();
 
-    public virtual ICollection<StationCollaborationNote> StationCollaborationNotes { get; set; } = new List<StationCollaborationNote>();
+    public virtual ICollection<StationCollaborationNote> StationCollaborationNotes
+    {
+        get;
+        set;
+    } = new List<StationCollaborationNote>();
 
     public virtual ICollection<Threshold> Thresholds { get; set; } = new List<Threshold>();
 

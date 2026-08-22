@@ -27,7 +27,11 @@ public partial class StationCollaborationNote
 
     public virtual User AuthorUser { get; set; }
 
-    public virtual ICollection<StationCollaborationNote> InverseParentNote { get; set; } = new List<StationCollaborationNote>();
+    public virtual ICollection<StationCollaborationNote> InverseParentNote
+    {
+        get;
+        set;
+    } = new List<StationCollaborationNote>();
 
     public virtual Organization Organization { get; set; }
 

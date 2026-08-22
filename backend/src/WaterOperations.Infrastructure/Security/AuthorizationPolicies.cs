@@ -1,4 +1,4 @@
-namespace WaterOperations.Infrastructure.Security;
+﻿namespace WaterOperations.Infrastructure.Security;
 
 public static class AuthorizationPolicies
 {
