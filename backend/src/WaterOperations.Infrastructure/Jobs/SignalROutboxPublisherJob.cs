@@ -24,16 +24,20 @@ public sealed class SignalROutboxPublisherJob(
                 var payload = JsonSerializer.Deserialize<JsonElement>(message.PayloadJson);
                 if (message.OrganizationId.HasValue)
                 {
-                    await hub.Clients
-                        .Group($"org:{message.OrganizationId.Value}")
-                        .MeasurementUpdated(
-                            new
-                            {
-                                protocolVersion = "1",
-                                eventType = message.EventType,
-                                occurredAtUtc = message.OccurredAtUtc,
-                                payload
-                            });
+                    var envelope = new RealtimeEventEnvelope("1", message.EventType, message.OccurredAtUtc, payload);
+                    var clients = hub.Clients.Group($"org:{message.OrganizationId.Value}");
+                    await (message.EventType switch
+                    {
+                        "StationStatusChanged" => clients.StationStatusChanged(envelope),
+                        "AlarmTriggered" => clients.AlarmTriggered(envelope),
+                        "AlarmAcknowledged" => clients.AlarmAcknowledged(envelope),
+                        "AlarmResolved" => clients.AlarmResolved(envelope),
+                        "AnomalyDetected" => clients.AnomalyDetected(envelope),
+                        "ModelPromoted" => clients.ModelPromoted(envelope),
+                        "DataQualityChanged" => clients.DataQualityChanged(envelope),
+                        "AiAvailabilityChanged" => clients.AiAvailabilityChanged(envelope),
+                        _ => clients.MeasurementUpdated(envelope)
+                    });
                 }
 
                 message.AttemptCount++;
