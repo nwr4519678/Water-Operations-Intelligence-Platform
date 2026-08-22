@@ -35,6 +35,24 @@ public sealed class BulkImportController(IMeasurementIngestionService ingestion)
         }
     }
 
+    [HttpPost("files/preview"), RequestSizeLimit(MaxFileBytes)]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> Preview(IFormFile file, CancellationToken cancellationToken)
+    {
+        if (file is null || file.Length == 0) return BadRequest(new { error = "file_required" });
+        if (file.Length > MaxFileBytes) return BadRequest(new { error = "file_too_large", maxBytes = MaxFileBytes });
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            var request = IsJson(file) ? await ParseJsonAsync(stream, file.FileName, cancellationToken) : await ParseCsvAsync(stream, file.FileName, cancellationToken);
+            return Ok(await ingestion.PreviewAsync(request, cancellationToken));
+        }
+        catch (BulkImportFormatException exception)
+        {
+            return BadRequest(new { error = "invalid_import_file", reason = exception.Message });
+        }
+    }
+
     private static bool IsJson(IFormFile file) =>
         file.ContentType?.Contains("json", StringComparison.OrdinalIgnoreCase) == true ||
         file.FileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase);

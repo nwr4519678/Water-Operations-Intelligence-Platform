@@ -17,13 +17,7 @@ public sealed class EfMeasurementIngestionService(WaterOperationsDbContext db, I
             return new IngestionBatchResult(request.BatchId, 0, request.Rows.Count, 0,
                 request.Rows.Select((_, index) => new IngestionRowOutcome(index, "DUPLICATE", "batch_already_processed", null)).ToList());
 
-        var stationIds = request.Rows.Select(row => row.StationId).Distinct().ToArray();
-        var ownedStations = await db.Stations.AsNoTracking()
-            .Where(station => station.OrganizationId == organizationId && stationIds.Contains(station.StationId))
-            .Select(station => station.StationId).ToHashSetAsync(cancellationToken);
-        var bindings = await db.StationParameters.AsNoTracking().Include(x => x.Parameter)
-            .Where(x => ownedStations.Contains(x.StationId) && x.IsEnabled)
-            .ToDictionaryAsync(x => (x.StationId, x.ParameterId), cancellationToken);
+        var (ownedStations, bindings) = await LoadScopeAsync(request, organizationId, cancellationToken);
         var now = DateTime.UtcNow;
         var valid = request.Rows.Select((row, index) => new { row, index, reason = Validate(row, ownedStations, bindings, now) })
             .Where(x => x.reason is null).ToList();
@@ -49,6 +43,34 @@ public sealed class EfMeasurementIngestionService(WaterOperationsDbContext db, I
             ? new IngestionRowOutcome(index, "ACCEPTED", null, rawId)
             : new IngestionRowOutcome(index, "QUARANTINED", "validation_failed", null)).ToList();
         return new IngestionBatchResult(request.BatchId, valid.Count, 0, request.Rows.Count - valid.Count, outcomes);
+    }
+
+    public async Task<IngestionPreviewResult> PreviewAsync(IngestionBatchRequest request, CancellationToken cancellationToken)
+    {
+        if (request.Rows.Count is 0 or > 1000) throw new ArgumentOutOfRangeException(nameof(request.Rows), "A batch must contain between 1 and 1000 rows.");
+        if (tenant.OrganizationId is not Guid organizationId) throw new UnauthorizedAccessException("A valid organization scope is required.");
+        var (ownedStations, bindings) = await LoadScopeAsync(request, organizationId, cancellationToken);
+        var now = DateTime.UtcNow;
+        var seen = new HashSet<(Guid, int, DateTime)>();
+        var outcomes = new List<IngestionRowOutcome>(request.Rows.Count);
+        foreach (var (row, index) in request.Rows.Select((row, index) => (row, index)))
+        {
+            var reason = Validate(row, ownedStations, bindings, now);
+            var key = (row.StationId, row.ParameterId, DateTime.SpecifyKind(row.TimestampUtc, DateTimeKind.Utc));
+            if (reason is null && (!seen.Add(key) || await db.MeasurementCleans.AnyAsync(x => x.StationId == row.StationId && x.ParameterId == row.ParameterId && x.TimestampUtc == key.Item3 && (tenant.OrganizationId == null || x.OrganizationId == organizationId), cancellationToken)))
+                outcomes.Add(new IngestionRowOutcome(index, "DUPLICATE", "measurement_already_exists", null));
+            else if (reason is null) outcomes.Add(new IngestionRowOutcome(index, "ACCEPTED", null, null));
+            else outcomes.Add(new IngestionRowOutcome(index, "QUARANTINED", reason, null));
+        }
+        return new IngestionPreviewResult(request.BatchId, outcomes.Count(x => x.Status == "ACCEPTED"), outcomes.Count(x => x.Status == "DUPLICATE"), outcomes.Count(x => x.Status == "QUARANTINED"), outcomes);
+    }
+
+    private async Task<(HashSet<Guid> Stations, Dictionary<(Guid, int), Domain.Entities.StationParameter> Bindings)> LoadScopeAsync(IngestionBatchRequest request, Guid organizationId, CancellationToken cancellationToken)
+    {
+        var stationIds = request.Rows.Select(row => row.StationId).Distinct().ToArray();
+        var ownedStations = await db.Stations.AsNoTracking().Where(station => station.OrganizationId == organizationId && stationIds.Contains(station.StationId)).Select(station => station.StationId).ToHashSetAsync(cancellationToken);
+        var bindings = await db.StationParameters.AsNoTracking().Include(x => x.Parameter).Where(x => ownedStations.Contains(x.StationId) && x.IsEnabled).ToDictionaryAsync(x => (x.StationId, x.ParameterId), cancellationToken);
+        return (ownedStations, bindings);
     }
 
     private static string? Validate(IngestionRowRequest row, ISet<Guid> ownedStations, IReadOnlyDictionary<(Guid StationId, int ParameterId), Domain.Entities.StationParameter> bindings, DateTime now)
