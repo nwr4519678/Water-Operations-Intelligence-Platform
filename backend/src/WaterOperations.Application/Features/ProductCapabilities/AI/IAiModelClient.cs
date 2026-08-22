@@ -2,6 +2,7 @@ namespace WaterOperations.Application.Features.ProductCapabilities.AI;
 
 public sealed record AiInsightRequest(Guid OrganizationId, Guid StationId, string InsightType, DateTimeOffset? AsOfUtc);
 public sealed record AiInsightResponse(string ModelVersion, string InsightType, decimal? Score, string PayloadJson, bool IsFallback);
+public sealed record AiInsightResult(string Status, AiInsightResponse? Data);
 
 public interface IAiModelClient
 {

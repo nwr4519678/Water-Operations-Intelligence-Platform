@@ -11,13 +11,30 @@ public sealed class HttpAiModelClient(HttpClient httpClient, ILogger<HttpAiModel
     {
         using var message = new HttpRequestMessage(HttpMethod.Post, "api/v1/insights") { Content = JsonContent.Create(request) };
         if (!string.IsNullOrWhiteSpace(correlationId)) message.Headers.TryAddWithoutValidation("X-Correlation-Id", correlationId);
-        using var response = await httpClient.SendAsync(message, cancellationToken);
-        if (!response.IsSuccessStatusCode)
+        HttpResponseMessage response;
+        try
         {
-            logger.LogWarning("AI service returned status {StatusCode} for {InsightType}", response.StatusCode, request.InsightType);
+            response = await httpClient.SendAsync(message, cancellationToken);
+        }
+        catch (HttpRequestException exception)
+        {
+            logger.LogWarning(exception, "AI service is unavailable for {InsightType}", request.InsightType);
             return null;
         }
-        return await response.Content.ReadFromJsonAsync<AiInsightResponse>(cancellationToken);
+        catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            logger.LogWarning(exception, "AI service timed out for {InsightType}", request.InsightType);
+            return null;
+        }
+        using (response)
+        {
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogWarning("AI service returned status {StatusCode} for {InsightType}", response.StatusCode, request.InsightType);
+                return null;
+            }
+            return await response.Content.ReadFromJsonAsync<AiInsightResponse>(cancellationToken);
+        }
     }
 }
 #pragma warning restore CA1848

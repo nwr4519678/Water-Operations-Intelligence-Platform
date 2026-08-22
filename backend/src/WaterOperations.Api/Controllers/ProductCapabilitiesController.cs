@@ -5,6 +5,7 @@ using WaterOperations.Api.Extensions;
 using WaterOperations.Application.Common.Pagination;
 using WaterOperations.Application.Features.ProductCapabilities.Commands;
 using WaterOperations.Application.Features.ProductCapabilities.DTOs;
+using WaterOperations.Application.Features.ProductCapabilities.AI;
 using WaterOperations.Application.Features.ProductCapabilities.Queries;
 
 namespace WaterOperations.Api.Controllers;
@@ -22,6 +23,10 @@ public sealed class ProductCapabilitiesController(ISender sender) : ControllerBa
     [HttpGet("ai/models")]
     public async Task<IActionResult> Models([FromQuery] PaginationRequest pagination, CancellationToken cancellationToken) =>
         (await sender.Send(new GetModelsQuery(pagination), cancellationToken)).ToActionResult(this);
+
+    [HttpGet("ai/insights/{stationId:guid}")]
+    public async Task<IActionResult> Insight(Guid stationId, [FromQuery] string insightType, [FromQuery] DateTimeOffset? asOfUtc, CancellationToken cancellationToken) =>
+        (await sender.Send(new GetAiInsightQuery(stationId, insightType, asOfUtc), cancellationToken)).ToActionResult(this);
 
     [HttpGet("reports")]
     public async Task<IActionResult> Reports([FromQuery] PaginationRequest pagination, CancellationToken cancellationToken) =>
