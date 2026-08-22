@@ -130,6 +130,38 @@ public sealed class EfProductCapabilityRepository(WaterOperationsDbContext db) :
         return true;
     }
 
+    public Task<UserPreferencesDto?> GetUserPreferencesAsync(Guid organizationId, Guid userId, CancellationToken ct) =>
+        db.Users.AsNoTracking().Where(x => x.OrganizationId == organizationId && x.UserId == userId)
+            .Select(x => new UserPreferencesDto(x.Theme, x.PreferredLocale, x.PreferredTimeZone, x.DecimalPrecision)).SingleOrDefaultAsync(ct);
+
+    public async Task<bool> UpdateUserPreferencesAsync(Guid organizationId, Guid userId, string theme, string locale, string timeZone, byte decimalPrecision, CancellationToken ct)
+    {
+        var user = await db.Users.SingleOrDefaultAsync(x => x.OrganizationId == organizationId && x.UserId == userId, ct);
+        if (user is null) return false;
+        user.Theme = theme; user.PreferredLocale = locale; user.PreferredTimeZone = timeZone; user.DecimalPrecision = decimalPrecision; user.UpdatedAtUtc = DateTime.UtcNow;
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    public async Task<IReadOnlyList<NotificationPreferenceDto>> GetNotificationPreferencesAsync(Guid userId, CancellationToken ct) =>
+        await db.NotificationPreferences.AsNoTracking().Where(x => x.UserId == userId).OrderBy(x => x.Severity)
+            .Select(x => new NotificationPreferenceDto(x.Severity, x.InAppEnabled, x.EmailEnabled, x.PushEnabled, x.DesktopEnabled, x.DailyDigestEnabled)).ToListAsync(ct);
+
+    public async Task<bool> SaveNotificationPreferenceAsync(Guid userId, NotificationPreferenceDto preference, CancellationToken ct)
+    {
+        var entity = await db.NotificationPreferences.SingleOrDefaultAsync(x => x.UserId == userId && x.Severity == preference.Severity, ct);
+        if (entity is null)
+        {
+            db.NotificationPreferences.Add(new NotificationPreference { UserId = userId, Severity = preference.Severity, InAppEnabled = preference.InAppEnabled, EmailEnabled = preference.EmailEnabled, PushEnabled = preference.PushEnabled, DesktopEnabled = preference.DesktopEnabled, DailyDigestEnabled = preference.DailyDigestEnabled });
+        }
+        else
+        {
+            entity.InAppEnabled = preference.InAppEnabled; entity.EmailEnabled = preference.EmailEnabled; entity.PushEnabled = preference.PushEnabled; entity.DesktopEnabled = preference.DesktopEnabled; entity.DailyDigestEnabled = preference.DailyDigestEnabled;
+        }
+        await db.SaveChangesAsync(ct);
+        return true;
+    }
+
     private static async Task<PagedResult<T>> PageAsync<T>(IQueryable<T> query, PaginationRequest request, CancellationToken ct)
     {
         var page = Math.Max(1, request.Page);
