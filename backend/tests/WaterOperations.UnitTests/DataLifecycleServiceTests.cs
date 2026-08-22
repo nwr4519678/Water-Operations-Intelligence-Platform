@@ -19,6 +19,9 @@ public sealed class DataLifecycleServiceTests
             new MeasurementClean { MeasurementCleanId = 2, OrganizationId = otherOrganization, StationId = Guid.NewGuid(), ParameterId = 1, TimestampUtc = DateTime.UtcNow.AddYears(-2), QualityFlag = "VALID", CanonicalUnit = "m", CleaningRulesetVersion = "test" });
         db.DataQualityLogs.Add(new DataQualityLog { DataQualityLogId = 1, OrganizationId = organization, StationId = Guid.NewGuid(), WindowStartUtc = DateTime.UtcNow.AddYears(-2).AddHours(-1), WindowEndUtc = DateTime.UtcNow.AddYears(-2), RulesetVersion = "test" });
         db.ShareSnapshots.Add(new ShareSnapshot { ShareSnapshotId = Guid.NewGuid(), OrganizationId = organization, CreatedByUserId = Guid.NewGuid(), TokenHash = "hash", SnapshotJson = "{}", CreatedAtUtc = DateTime.UtcNow.AddYears(-2), ExpiresAtUtc = DateTime.UtcNow.AddYears(-2).AddDays(1) });
+        var userId = Guid.NewGuid();
+        db.Users.Add(new User { UserId = userId, OrganizationId = organization, Email = "expired@example.com", DisplayName = "Expired User", PasswordHash = "hash", ClientType = "TEST", PreferredLocale = "en", PreferredTimeZone = "UTC", Theme = "light", RowVersion = Array.Empty<byte>(), CreatedAtUtc = DateTime.UtcNow.AddYears(-3), UpdatedAtUtc = DateTime.UtcNow.AddYears(-3) });
+        db.Sessions.Add(new Session { SessionId = Guid.NewGuid(), UserId = userId, CreatedAtUtc = DateTime.UtcNow.AddYears(-2), ExpiresAtUtc = DateTime.UtcNow.AddYears(-2).AddDays(1), RefreshTokenHash = "hash" });
         await db.SaveChangesAsync();
         var service = new DataLifecycleService(db, new TenantContext(organization));
         var cutoff = DateTime.UtcNow.AddYears(-1);
@@ -28,6 +31,7 @@ public sealed class DataLifecycleServiceTests
         Assert.Equal(1, preview.CleanMeasurements);
         Assert.Equal(1, preview.DataQualityLogs);
         Assert.Equal(1, preview.ShareSnapshots);
+        Assert.Equal(1, preview.Sessions);
         Assert.Equal(2, await db.MeasurementCleans.CountAsync());
 
         var applied = await service.PurgeAsync(cutoff, "purge-1", false, null, CancellationToken.None);
@@ -35,6 +39,7 @@ public sealed class DataLifecycleServiceTests
         Assert.Equal(1, await db.MeasurementCleans.CountAsync());
         Assert.Empty(await db.DataQualityLogs.ToListAsync());
         Assert.Empty(await db.ShareSnapshots.ToListAsync());
+        Assert.Empty(await db.Sessions.ToListAsync());
         Assert.Single(await db.AuditLogs.Where(x => x.ActionCode == "DATA_PURGE").ToListAsync());
 
         var replay = await service.PurgeAsync(cutoff, "purge-1", false, null, CancellationToken.None);
