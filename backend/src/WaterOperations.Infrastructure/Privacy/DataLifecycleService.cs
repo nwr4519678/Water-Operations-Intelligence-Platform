@@ -6,7 +6,7 @@ using WaterOperations.Domain.Entities;
 
 namespace WaterOperations.Infrastructure.Privacy;
 
-public sealed record DataPurgeResult(string IdempotencyKey, bool DryRun, int CleanMeasurements, int RawMeasurements, bool Applied);
+public sealed record DataPurgeResult(string IdempotencyKey, bool DryRun, int CleanMeasurements, int RawMeasurements, int DataQualityLogs, bool Applied);
 
 public sealed class DataLifecycleService(WaterOperationsDbContext db, ITenantContext tenant)
 {
@@ -19,7 +19,7 @@ public sealed class DataLifecycleService(WaterOperationsDbContext db, ITenantCon
         if (tenant.OrganizationId is not Guid organizationId) throw new UnauthorizedAccessException("A valid organization scope is required.");
 
         if (await db.AuditLogs.AnyAsync(x => x.OrganizationId == organizationId && x.ActionCode == "DATA_PURGE" && x.EntityId == idempotencyKey, cancellationToken))
-            return new DataPurgeResult(idempotencyKey, false, 0, 0, false);
+            return new DataPurgeResult(idempotencyKey, false, 0, 0, 0, false);
 
         var cleanIds = await db.MeasurementCleans.Where(x => x.OrganizationId == organizationId && x.TimestampUtc < beforeUtc)
             .Where(x => !db.DataLegalHolds.Any(hold => hold.OrganizationId == organizationId && hold.IsActive && x.TimestampUtc >= hold.FromUtc && (hold.ToUtc == null || x.TimestampUtc < hold.ToUtc)))
@@ -27,20 +27,25 @@ public sealed class DataLifecycleService(WaterOperationsDbContext db, ITenantCon
         var rawIds = await db.MeasurementRaws.Where(x => x.OrganizationId == organizationId && x.DeviceTimestampUtc < beforeUtc)
             .Where(x => !db.DataLegalHolds.Any(hold => hold.OrganizationId == organizationId && hold.IsActive && x.DeviceTimestampUtc >= hold.FromUtc && (hold.ToUtc == null || x.DeviceTimestampUtc < hold.ToUtc)))
             .OrderBy(x => x.MeasurementRawId).Select(x => x.MeasurementRawId).Take(MaxRowsPerRun).ToListAsync(cancellationToken);
-        if (dryRun) return new DataPurgeResult(idempotencyKey, true, cleanIds.Count, rawIds.Count, false);
+        var qualityIds = await db.DataQualityLogs.Where(x => x.OrganizationId == organizationId && x.WindowEndUtc < beforeUtc)
+            .Where(x => !db.DataLegalHolds.Any(hold => hold.OrganizationId == organizationId && hold.IsActive && x.WindowStartUtc < (hold.ToUtc ?? DateTime.MaxValue) && x.WindowEndUtc >= hold.FromUtc))
+            .OrderBy(x => x.DataQualityLogId).Select(x => x.DataQualityLogId).Take(MaxRowsPerRun).ToListAsync(cancellationToken);
+        if (dryRun) return new DataPurgeResult(idempotencyKey, true, cleanIds.Count, rawIds.Count, qualityIds.Count, false);
 
         var cleanRows = await db.MeasurementCleans.Where(x => cleanIds.Contains(x.MeasurementCleanId)).ToListAsync(cancellationToken);
         var rawRows = await db.MeasurementRaws.Where(x => rawIds.Contains(x.MeasurementRawId)).ToListAsync(cancellationToken);
+        var qualityRows = await db.DataQualityLogs.Where(x => qualityIds.Contains(x.DataQualityLogId)).ToListAsync(cancellationToken);
         db.MeasurementCleans.RemoveRange(cleanRows);
         db.MeasurementRaws.RemoveRange(rawRows);
+        db.DataQualityLogs.RemoveRange(qualityRows);
         db.AuditLogs.Add(new AuditLog
         {
             OrganizationId = organizationId, ActorUserId = actorUserId, ActionCode = "DATA_PURGE",
             EntityType = "TelemetryRetention", EntityId = idempotencyKey, Success = true,
-            OccurredAtUtc = DateTime.UtcNow, MetadataJson = JsonSerializer.Serialize(new { beforeUtc, cleanMeasurements = cleanRows.Count, rawMeasurements = rawRows.Count })
+            OccurredAtUtc = DateTime.UtcNow, MetadataJson = JsonSerializer.Serialize(new { beforeUtc, cleanMeasurements = cleanRows.Count, rawMeasurements = rawRows.Count, dataQualityLogs = qualityRows.Count })
         });
         await db.SaveChangesAsync(cancellationToken);
-        return new DataPurgeResult(idempotencyKey, false, cleanRows.Count, rawRows.Count, true);
+        return new DataPurgeResult(idempotencyKey, false, cleanRows.Count, rawRows.Count, qualityRows.Count, true);
     }
 
     public async Task<Guid> CreateLegalHoldAsync(DateTime fromUtc, DateTime? toUtc, string reason, Guid? actorUserId, CancellationToken cancellationToken)

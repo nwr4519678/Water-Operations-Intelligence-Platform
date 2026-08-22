@@ -17,6 +17,7 @@ public sealed class DataLifecycleServiceTests
         db.MeasurementCleans.AddRange(
             new MeasurementClean { MeasurementCleanId = 1, OrganizationId = organization, StationId = Guid.NewGuid(), ParameterId = 1, TimestampUtc = DateTime.UtcNow.AddYears(-2), QualityFlag = "VALID", CanonicalUnit = "m", CleaningRulesetVersion = "test" },
             new MeasurementClean { MeasurementCleanId = 2, OrganizationId = otherOrganization, StationId = Guid.NewGuid(), ParameterId = 1, TimestampUtc = DateTime.UtcNow.AddYears(-2), QualityFlag = "VALID", CanonicalUnit = "m", CleaningRulesetVersion = "test" });
+        db.DataQualityLogs.Add(new DataQualityLog { DataQualityLogId = 1, OrganizationId = organization, StationId = Guid.NewGuid(), WindowStartUtc = DateTime.UtcNow.AddYears(-2).AddHours(-1), WindowEndUtc = DateTime.UtcNow.AddYears(-2), RulesetVersion = "test" });
         await db.SaveChangesAsync();
         var service = new DataLifecycleService(db, new TenantContext(organization));
         var cutoff = DateTime.UtcNow.AddYears(-1);
@@ -24,11 +25,13 @@ public sealed class DataLifecycleServiceTests
         var preview = await service.PurgeAsync(cutoff, "purge-1", true, null, CancellationToken.None);
         Assert.True(preview.DryRun);
         Assert.Equal(1, preview.CleanMeasurements);
+        Assert.Equal(1, preview.DataQualityLogs);
         Assert.Equal(2, await db.MeasurementCleans.CountAsync());
 
         var applied = await service.PurgeAsync(cutoff, "purge-1", false, null, CancellationToken.None);
         Assert.True(applied.Applied);
         Assert.Equal(1, await db.MeasurementCleans.CountAsync());
+        Assert.Empty(await db.DataQualityLogs.ToListAsync());
         Assert.Single(await db.AuditLogs.Where(x => x.ActionCode == "DATA_PURGE").ToListAsync());
 
         var replay = await service.PurgeAsync(cutoff, "purge-1", false, null, CancellationToken.None);
@@ -46,6 +49,7 @@ public sealed class DataLifecycleServiceTests
         db.MeasurementCleans.AddRange(
             new MeasurementClean { MeasurementCleanId = 10, OrganizationId = organization, StationId = Guid.NewGuid(), ParameterId = 1, TimestampUtc = heldTimestamp, QualityFlag = "VALID", CanonicalUnit = "m", CleaningRulesetVersion = "test" },
             new MeasurementClean { MeasurementCleanId = 11, OrganizationId = organization, StationId = Guid.NewGuid(), ParameterId = 1, TimestampUtc = purgeTimestamp, QualityFlag = "VALID", CanonicalUnit = "m", CleaningRulesetVersion = "test" });
+        db.DataQualityLogs.Add(new DataQualityLog { DataQualityLogId = 10, OrganizationId = organization, StationId = Guid.NewGuid(), WindowStartUtc = heldTimestamp.AddHours(-2), WindowEndUtc = heldTimestamp, RulesetVersion = "test" });
         db.DataLegalHolds.Add(new DataLegalHold { DataLegalHoldId = Guid.NewGuid(), OrganizationId = organization, FromUtc = heldTimestamp.AddHours(-1), ToUtc = heldTimestamp.AddHours(1), Reason = "regulatory review", CreatedAtUtc = DateTime.UtcNow });
         await db.SaveChangesAsync();
         var service = new DataLifecycleService(db, new TenantContext(organization));
@@ -55,6 +59,7 @@ public sealed class DataLifecycleServiceTests
         Assert.True(result.Applied);
         Assert.NotNull(await db.MeasurementCleans.FindAsync(10L));
         Assert.Null(await db.MeasurementCleans.FindAsync(11L));
+        Assert.NotNull(await db.DataQualityLogs.FindAsync(10L));
     }
 
     [Fact]
