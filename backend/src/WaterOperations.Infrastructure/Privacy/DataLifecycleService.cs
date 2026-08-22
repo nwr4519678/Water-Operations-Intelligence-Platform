@@ -46,10 +46,28 @@ public sealed class DataLifecycleService(WaterOperationsDbContext db, ITenantCon
     public async Task<Guid> CreateLegalHoldAsync(DateTime fromUtc, DateTime? toUtc, string reason, Guid? actorUserId, CancellationToken cancellationToken)
     {
         if (fromUtc.Kind != DateTimeKind.Utc || (toUtc is not null && toUtc.Value.Kind != DateTimeKind.Utc) || (toUtc is not null && toUtc <= fromUtc)) throw new ArgumentException("Legal hold dates must be UTC and ordered.");
+        if (string.IsNullOrWhiteSpace(reason) || reason.Length > 500) throw new ArgumentException("A bounded legal hold reason is required.", nameof(reason));
         if (tenant.OrganizationId is not Guid organizationId) throw new UnauthorizedAccessException("A valid organization scope is required.");
         var hold = new DataLegalHold { DataLegalHoldId = Guid.NewGuid(), OrganizationId = organizationId, FromUtc = fromUtc, ToUtc = toUtc, Reason = reason, CreatedAtUtc = DateTime.UtcNow, CreatedByUserId = actorUserId };
         db.DataLegalHolds.Add(hold);
         await db.SaveChangesAsync(cancellationToken);
         return hold.DataLegalHoldId;
+    }
+
+    public async Task ReleaseLegalHoldAsync(Guid legalHoldId, Guid? actorUserId, CancellationToken cancellationToken)
+    {
+        if (tenant.OrganizationId is not Guid organizationId) throw new UnauthorizedAccessException("A valid organization scope is required.");
+        var hold = await db.DataLegalHolds.SingleOrDefaultAsync(x => x.DataLegalHoldId == legalHoldId && x.OrganizationId == organizationId, cancellationToken)
+            ?? throw new KeyNotFoundException("The legal hold was not found in the current organization scope.");
+        if (!hold.IsActive) return;
+
+        hold.IsActive = false;
+        db.AuditLogs.Add(new AuditLog
+        {
+            OrganizationId = organizationId, ActorUserId = actorUserId, ActionCode = "LEGAL_HOLD_RELEASE",
+            EntityType = "DataLegalHold", EntityId = legalHoldId.ToString(), Success = true,
+            OccurredAtUtc = DateTime.UtcNow, MetadataJson = JsonSerializer.Serialize(new { legalHoldId })
+        });
+        await db.SaveChangesAsync(cancellationToken);
     }
 }

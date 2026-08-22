@@ -33,5 +33,17 @@ public sealed class DataLifecycleController(DataLifecycleService lifecycle) : Co
         catch (ArgumentException exception) { return BadRequest(new { error = "invalid_legal_hold", reason = exception.Message }); }
     }
 
+    [HttpPost("legal-holds/{legalHoldId:guid}/release")]
+    public async Task<IActionResult> ReleaseHold(Guid legalHoldId, CancellationToken cancellationToken)
+    {
+        var actor = Guid.TryParse(User.FindFirstValue("sub"), out var actorId) ? actorId : (Guid?)null;
+        try
+        {
+            await lifecycle.ReleaseLegalHoldAsync(legalHoldId, actor, cancellationToken);
+            return NoContent();
+        }
+        catch (KeyNotFoundException) { return NotFound(new { error = "legal_hold_not_found" }); }
+    }
+
     public sealed record LegalHoldRequest(DateTime FromUtc, DateTime? ToUtc, string Reason);
 }

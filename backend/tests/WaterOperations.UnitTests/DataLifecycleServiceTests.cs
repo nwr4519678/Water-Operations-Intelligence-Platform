@@ -57,6 +57,21 @@ public sealed class DataLifecycleServiceTests
         Assert.Null(await db.MeasurementCleans.FindAsync(11L));
     }
 
+    [Fact]
+    public async Task LegalHoldReleaseIsTenantScopedAndAudited()
+    {
+        var organization = Guid.NewGuid();
+        var holdId = Guid.NewGuid();
+        await using var db = new WaterOperationsDbContext(new DbContextOptionsBuilder<WaterOperationsDbContext>().UseInMemoryDatabase($"legal-hold-release-{Guid.NewGuid():N}").Options);
+        db.DataLegalHolds.Add(new DataLegalHold { DataLegalHoldId = holdId, OrganizationId = organization, FromUtc = DateTime.UtcNow.AddDays(-2), ToUtc = null, Reason = "review", CreatedAtUtc = DateTime.UtcNow });
+        await db.SaveChangesAsync();
+
+        await new DataLifecycleService(db, new TenantContext(organization)).ReleaseLegalHoldAsync(holdId, null, CancellationToken.None);
+
+        Assert.False((await db.DataLegalHolds.SingleAsync()).IsActive);
+        Assert.Single(await db.AuditLogs.Where(x => x.ActionCode == "LEGAL_HOLD_RELEASE").ToListAsync());
+    }
+
     private sealed class TenantContext(Guid organizationId) : ITenantContext
     {
         public Guid? OrganizationId => organizationId;
