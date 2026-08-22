@@ -17,6 +17,8 @@ using WaterOperations.Infrastructure.Security;
 using WaterOperations.Api.Common;
 using WaterOperations.Api.Hubs;
 using StackExchange.Redis;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 
 Log.Logger = new LoggerConfiguration().WriteTo.Console(formatProvider: CultureInfo.InvariantCulture).CreateBootstrapLogger();
 var builder = WebApplication.CreateBuilder(args);
@@ -73,6 +75,13 @@ builder.Services.AddCors(options => options.AddPolicy("Web", policy => policy
     .WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? ["http://localhost:5173"])
     .AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 builder.Services.AddControllers();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth-login", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+});
 builder.Services.AddSignalR();
 if (builder.Configuration["Testing"] != "true")
 {
@@ -99,6 +108,7 @@ app.UseMiddleware<TraceIdMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseSerilogRequestLogging();
 app.UseCors("Web");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHealthChecks("/health");

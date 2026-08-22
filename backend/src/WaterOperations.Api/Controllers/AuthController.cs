@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using WaterOperations.Api.Common;
 using WaterOperations.Infrastructure.Security;
 
@@ -11,6 +12,7 @@ public sealed class AuthController(ViewerUserStore users, SessionStore sessions,
     public sealed record LoginRequest(string Email, string Password);
     public sealed record RefreshRequest(string RefreshToken);
     [HttpPost("login")]
+    [EnableRateLimiting("auth-login")]
     public async Task<IActionResult> Login(LoginRequest request, CancellationToken cancellationToken)
     {
         var user = await users.FindAsync(request.Email, request.Password, cancellationToken);
