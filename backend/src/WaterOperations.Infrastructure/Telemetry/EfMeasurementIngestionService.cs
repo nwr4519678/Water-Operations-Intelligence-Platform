@@ -24,6 +24,8 @@ public sealed class EfMeasurementIngestionService(WaterOperationsDbContext db, I
         var now = DateTime.UtcNow;
         var valid = request.Rows.Select((row, index) => new { row, index, reason = Validate(row, ownedStations, bindings, now) })
             .Where(x => x.reason is null).ToList();
+        var validationReasons = request.Rows.Select((row, index) => new { index, reason = Validate(row, ownedStations, bindings, now) })
+            .Where(x => x.reason is not null).ToDictionary(x => x.index, x => x.reason!);
         var selected = new Dictionary<(Guid StationId, int ParameterId, DateTime TimestampUtc), (IngestionRowRequest Row, int Index)>();
         var duplicateOutcomes = new Dictionary<int, IngestionRowOutcome>();
         foreach (var item in valid)
@@ -44,6 +46,14 @@ public sealed class EfMeasurementIngestionService(WaterOperationsDbContext db, I
             else { selected.Remove(key); duplicateOutcomes[item.Index] = new IngestionRowOutcome(item.Index, "DUPLICATE", "measurement_already_exists", null); }
         }
         var acceptedRows = selected.Values.OrderBy(x => x.Index).ToList();
+        var acceptedIndexes = acceptedRows.Select(x => x.Index).ToHashSet();
+        var persistedOutcomes = request.Rows.Select((_, index) =>
+            acceptedIndexes.Contains(index)
+                ? null
+                : duplicateOutcomes.TryGetValue(index, out var duplicate)
+                    ? new { Index = index, duplicate.Status, duplicate.Reason }
+                    : new { Index = index, Status = "QUARANTINED", Reason = validationReasons.GetValueOrDefault(index, "validation_failed") })
+            .Where(x => x is not null).ToList();
         var acceptedStationIds = acceptedRows.Select(x => x.Row.StationId).Distinct().ToArray();
         var stationRegions = await db.Stations.AsNoTracking().Where(x => x.OrganizationId == organizationId && acceptedStationIds.Contains(x.StationId))
             .ToDictionaryAsync(x => x.StationId, x => x.RegionId, cancellationToken);
@@ -52,7 +62,8 @@ public sealed class EfMeasurementIngestionService(WaterOperationsDbContext db, I
             IngestionBatchId = request.BatchId, OrganizationId = organizationId, SourceType = request.SourceType,
             SourceName = request.SourceName, SchemaVersion = request.SchemaVersion, StartedAtUtc = now,
             CompletedAtUtc = now, TotalRows = request.Rows.Count, AcceptedRows = acceptedRows.Count,
-            RejectedRows = request.Rows.Count - acceptedRows.Count, Status = acceptedRows.Count == request.Rows.Count ? "COMPLETED" : "PARTIAL"
+            RejectedRows = request.Rows.Count - acceptedRows.Count, Status = acceptedRows.Count == request.Rows.Count ? "COMPLETED" : "PARTIAL",
+            ErrorMessage = persistedOutcomes.Count == 0 ? null : JsonSerializer.Serialize(persistedOutcomes)
         };
         db.IngestionBatches.Add(batch);
         var rawRows = acceptedRows.Select(x => new MeasurementRaw
