@@ -19,6 +19,8 @@ public sealed class ImportJobWorker(IServiceScopeFactory scopeFactory, ILogger<I
             var staleBefore = DateTime.UtcNow.AddMinutes(-30);
             var stored = await db.ImportJobs.Where(x => x.Status == "QUEUED" || (x.Status == "RUNNING" && x.StartedAtUtc < staleBefore)).OrderBy(x => x.CreatedAtUtc).FirstOrDefaultAsync(stoppingToken);
             if (stored is null) { await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken); continue; }
+            await db.Entry(stored).ReloadAsync(stoppingToken);
+            if (stored.Status is "CANCELLED" or "CANCEL_REQUESTED") continue;
             stored.Status = "RUNNING"; stored.ProgressPercent = 0; stored.StartedAtUtc = DateTime.UtcNow;
             await db.SaveChangesAsync(stoppingToken);
             var request = JsonSerializer.Deserialize<WaterOperations.Application.Features.Telemetry.DTOs.IngestionBatchRequest>(stored.RequestJson)
@@ -29,6 +31,14 @@ public sealed class ImportJobWorker(IServiceScopeFactory scopeFactory, ILogger<I
             try
             {
                 await scope.ServiceProvider.GetRequiredService<IMeasurementIngestionService>().IngestAsync(request, stoppingToken);
+                await db.Entry(stored).ReloadAsync(stoppingToken);
+                if (stored.Status == "CANCEL_REQUESTED")
+                {
+                    stored.Status = "CANCELLED";
+                    stored.LastError ??= "cancelled_by_admin";
+                    await db.SaveChangesAsync(stoppingToken);
+                    continue;
+                }
                 await jobs.CompleteAsync(jobKey, stoppingToken);
                 stored.Status = "COMPLETED"; stored.ProgressPercent = 100; stored.CompletedAtUtc = DateTime.UtcNow;
             }

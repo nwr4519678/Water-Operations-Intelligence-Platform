@@ -30,8 +30,13 @@ public sealed class JobExecutionController(WaterOperationsDbContext db, IJobExec
         await jobs.CancelAsync(jobKey, string.IsNullOrWhiteSpace(request.Reason) ? "cancelled_by_admin" : request.Reason, cancellationToken);
         if (jobKey.StartsWith("import:", StringComparison.OrdinalIgnoreCase) && Guid.TryParse(jobKey[7..], out var importId))
         {
-            var import = await db.ImportJobs.SingleOrDefaultAsync(x => x.ImportJobId == importId && x.Status == "QUEUED" && (tenant.OrganizationId == null || x.OrganizationId == tenant.OrganizationId), cancellationToken);
-            if (import is not null) { import.Status = "CANCELLED"; import.LastError = request.Reason ?? "cancelled_by_admin"; await db.SaveChangesAsync(cancellationToken); }
+            var import = await db.ImportJobs.SingleOrDefaultAsync(x => x.ImportJobId == importId && (x.Status == "QUEUED" || x.Status == "RUNNING") && (tenant.OrganizationId == null || x.OrganizationId == tenant.OrganizationId), cancellationToken);
+            if (import is not null)
+            {
+                import.Status = import.Status == "RUNNING" ? "CANCEL_REQUESTED" : "CANCELLED";
+                import.LastError = request.Reason ?? "cancelled_by_admin";
+                await db.SaveChangesAsync(cancellationToken);
+            }
         }
         return NoContent();
     }
