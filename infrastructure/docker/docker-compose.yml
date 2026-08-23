@@ -1,4 +1,29 @@
 services:
+  api:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/api.Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ConnectionStrings__Default: ${ConnectionStrings__Default:?Set ConnectionStrings__Default in .env}
+      ConnectionStrings__Redis: redis:6379
+      Authentication__SigningKey: ${Authentication__SigningKey:?Set Authentication__SigningKey in .env}
+      Authentication__Issuer: ${Authentication__Issuer:-water-operations}
+      Authentication__Audience: ${Authentication__Audience:-water-operations-web}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
   postgres:
     image: timescale/timescaledb:2.17.2-pg16
     restart: unless-stopped

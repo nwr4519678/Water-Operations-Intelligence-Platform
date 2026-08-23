@@ -16,8 +16,11 @@ public sealed class AuthTokenService(IConfiguration configuration) : IAccessToke
         var userId = user.UserId == Guid.Empty
             ? StableUserId(user.Email)
             : user.UserId;
-        var key = configuration["Authentication:SigningKey"]
-            ?? "development-only-signing-key-change-me-please";
+        var key = configuration["Authentication:SigningKey"];
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            key = "development-only-signing-key-change-me-please";
+        }
         var credentials = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
             SecurityAlgorithms.HmacSha256);

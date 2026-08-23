@@ -1,16 +1,33 @@
-# Data Engineering
+# Data engineering
 
-Data ingestion, validation, transformation, quality, feature preparation, and analytical workflows for the Water Operations Intelligence Platform.
+Independent Python workflows for ingestion, validation, normalization, quality checks, and analytical preparation. This package is decoupled from the .NET API and communicates through explicit storage and data contracts.
 
-## Structure
-
-```text
-data-engineering/
-├── src/       # Reusable data-engineering Python package
-├── pipelines/ # Pipeline entry points and orchestration definitions
-├── tests/     # Unit, data-quality, and pipeline tests
-├── configs/   # Non-secret environment and pipeline configuration
-└── README.md
+```mermaid
+flowchart LR
+  Source[Telemetry / CSV / external source] --> Ingest[Ingestion]
+  Ingest --> Validate[Schema + quality validation]
+  Validate --> Normalize[Units + timestamps]
+  Normalize --> Store[(PostgreSQL / TimescaleDB)]
+  Store --> Features[Analytical features]
+  Features --> AI[AI service]
+  Validate --> Reject[Rejected records + report]
 ```
 
-This area is intentionally independent from the ASP.NET Core application and AI service. Pipelines communicate through explicit data contracts and storage boundaries. Secrets are supplied through environment variables or deployment secret stores.
+## Layout
+
+`src/water_operations_data` contains reusable Python code; `pipelines` contains executable workflows; `configs` contains non-secret configuration; `tests` contains unit and data-quality tests; `Output_Data` is generated local output.
+
+```mermaid
+stateDiagram-v2
+  [*] --> Received
+  Received --> Validating
+  Validating --> Rejected: schema/range failure
+  Validating --> Normalizing: valid
+  Normalizing --> Persisted
+  Persisted --> Published
+  Rejected --> QualityReport
+  Published --> [*]
+  QualityReport --> [*]
+```
+
+Install test dependencies with `python -m pip install -e ".[test]"` and run `pytest`. Secrets belong in environment variables or the deployment secret store. Pipelines must be deterministic, explicit about units/timezones, and idempotent where possible.

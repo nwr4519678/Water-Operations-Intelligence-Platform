@@ -1,0 +1,19 @@
+environment: production
+deployment:
+  strategy: rolling
+  max_unavailable: 0
+  automatic_rollback: true
+api:
+  replicas: 3
+  image: ${API_IMAGE}
+  ports:
+    - 8080
+  readiness_probe: /health/ready
+  liveness_probe: /health/live
+  secrets:
+    - ConnectionStrings__Default
+    - Authentication__SigningKey
+redis:
+  required: true
+frontend:
+  image: ${FRONTEND_IMAGE}

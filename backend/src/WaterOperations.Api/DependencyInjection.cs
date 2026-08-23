@@ -10,6 +10,7 @@ using WaterOperations.Infrastructure.Authentication;
 using WaterOperations.Infrastructure.Messaging;
 using WaterOperations.Infrastructure.Persistence;
 using WaterOperations.Infrastructure.Security;
+using WaterOperations.Api.Observability;
 
 namespace WaterOperations.Api;
 
@@ -53,6 +54,7 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.AddHttpContextAccessor();
+        services.AddSingleton<ApiMetrics>();
         services.AddScoped<ICurrentUser, HttpCurrentUser>();
         services.AddSingleton<SessionStore>();
         services.AddSingleton<ViewerUserStore>();
@@ -77,8 +79,11 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         options.MapInboundClaims = false;
-        var signingKey = configuration["Authentication:SigningKey"]
-            ?? "development-only-signing-key-change-me-please";
+        var signingKey = configuration["Authentication:SigningKey"];
+        if (string.IsNullOrWhiteSpace(signingKey))
+        {
+            signingKey = "development-only-signing-key-change-me-please";
+        }
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -142,6 +147,25 @@ public static class DependencyInjection
     {
         services.AddRateLimiter(options =>
         {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.OnRejected = async (context, cancellationToken) =>
+            {
+                context.HttpContext.Response.Headers.RetryAfter = "60";
+                await Results.Problem(
+                    statusCode: StatusCodes.Status429TooManyRequests,
+                    title: "Too many requests",
+                    detail: "Please retry after the rate limit window resets.")
+                    .ExecuteAsync(context.HttpContext);
+            };
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(
+                context => RateLimitPartition.GetFixedWindowLimiter(
+                    context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 300,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0
+                    }));
             options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
                 context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
@@ -173,7 +197,15 @@ public static class DependencyInjection
     {
         services.AddControllers();
         services.AddOpenApi();
-        services.AddSwaggerGen();
+        services.AddSwaggerGen(options =>
+        {
+            options.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo
+            {
+                Title = "Water Operations API",
+                Version = "v1",
+                Description = "Versioned API contract for the Water Operations platform."
+            });
+        });
         services.AddProblemDetails();
         return services;
     }
