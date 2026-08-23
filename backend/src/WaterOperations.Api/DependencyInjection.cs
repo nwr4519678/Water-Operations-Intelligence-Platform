@@ -125,7 +125,7 @@ public static class DependencyInjection
                 AuthorizationPolicies.ViewerOnly,
                 policy => policy
                     .RequireAuthenticatedUser()
-                    .RequireRole(AuthorizationPolicies.ViewerRole)));
+                    .RequireRole("VIEWER", "OPERATOR", "ADMIN")));
 
         return services;
     }
