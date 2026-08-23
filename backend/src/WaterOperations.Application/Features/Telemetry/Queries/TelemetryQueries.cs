@@ -1,5 +1,3 @@
-using MediatR;
-using AutoMapper;
 using WaterOperations.Application.Common.Abstractions;
 using WaterOperations.Application.Common.Results;
 using WaterOperations.Application.Features.Telemetry.DTOs;
@@ -13,7 +11,7 @@ public sealed record GetTelemetryQuery(
     Guid? StationId,
     int? ParameterId,
     int? Limit)
-    : IQuery<ScopeResult<TelemetryResponse>>;
+    : IQuery<ScopeResult<TelemetryResponse>>, IRequireOrganization;
 
 public sealed record GetChartQuery(
     Guid StationId,
@@ -21,17 +19,10 @@ public sealed record GetChartQuery(
     DateTimeOffset From,
     DateTimeOffset To,
     int Limit)
-    : IQuery<ChartQueryResult>, IRequireOrganization;
-
-public sealed record ChartQueryResult(
-    bool IsAuthorized,
-    bool IsValid,
-    ChartResponse? Value);
+    : IQuery<ScopeResult<ChartResponse>>, IRequireOrganization;
 
 public sealed class GetTelemetryQueryHandler(
     ITelemetryQueryRepository telemetry,
-    IMapper mapper,
-    ITelemetryFixtureReader fixtureReader,
     ICurrentUser currentUser)
     : IQueryHandler<GetTelemetryQuery, ScopeResult<TelemetryResponse>>
 {
@@ -39,35 +30,34 @@ public sealed class GetTelemetryQueryHandler(
         GetTelemetryQuery request,
         CancellationToken cancellationToken)
     {
-        if (!currentUser.OrganizationId.HasValue)
-        {
-            var fixture = fixtureReader.Read(
-                currentUser.Organization ?? string.Empty,
-                currentUser.Region ?? string.Empty);
-            return fixture is null
-                ? ScopeResult.Forbidden<TelemetryResponse>()
-                : ScopeResult.Authorized(
-                    new TelemetryResponse([], fixture.Count, fixture));
-        }
-
         var result = await telemetry.GetAsync(
             currentUser.OrganizationId!.Value,
             currentUser.RegionId,
             new TelemetryQuery(request.From, request.To, request.StationId, request.ParameterId, request.Limit),
             cancellationToken);
-        var limit = Math.Clamp(request.Limit ?? 100, 1, 1000);
-        return ScopeResult.Authorized(
-            new TelemetryResponse(result.Select(mapper.Map<TelemetryItem>).ToList(), limit));
-    }
 
+        var limit = Math.Clamp(request.Limit ?? 100, 1, 1000);
+
+        var items = result.Select(x => new TelemetryItem(
+            long.TryParse(x.Id, out var id) ? id : 0L,
+            x.StationId,
+            x.ParameterId,
+            x.TimestampUtc,
+            x.Value,
+            x.Unit,
+            x.QualityFlag,
+            x.IsInterpolated)).ToList();
+
+        return ScopeResult.Authorized(new TelemetryResponse(items, limit));
+    }
 }
 
 public sealed class GetChartQueryHandler(
     ITelemetryQueryRepository telemetry,
     ICurrentUser currentUser)
-    : IQueryHandler<GetChartQuery, ChartQueryResult>
+    : IQueryHandler<GetChartQuery, ScopeResult<ChartResponse>>
 {
-    public async Task<ChartQueryResult> Handle(
+    public async Task<ScopeResult<ChartResponse>> Handle(
         GetChartQuery request,
         CancellationToken cancellationToken)
     {
@@ -76,12 +66,13 @@ public sealed class GetChartQueryHandler(
             currentUser.RegionId,
             new ChartQuery(request.StationId, request.ParameterIds, request.From, request.To, request.Limit),
             cancellationToken);
+
         if (result is null)
         {
-            return new(true, true, null);
+            return ScopeResult.NotFound<ChartResponse>();
         }
 
         var limit = Math.Clamp(request.Limit, 1, 10_000);
-        return new(true, true, new ChartResponse(result, result.Count == limit, limit));
+        return ScopeResult.Authorized(new ChartResponse(result, result.Count == limit, limit));
     }
 }

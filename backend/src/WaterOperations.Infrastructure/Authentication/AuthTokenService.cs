@@ -19,7 +19,7 @@ public sealed class AuthTokenService(IConfiguration configuration) : IAccessToke
         var key = configuration["Authentication:SigningKey"];
         if (string.IsNullOrWhiteSpace(key))
         {
-            key = "development-only-signing-key-change-me-please";
+            key = AuthenticationConstants.DevSigningKey;
         }
         var credentials = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),

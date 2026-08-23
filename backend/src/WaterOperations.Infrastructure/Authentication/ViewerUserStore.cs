@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Extensions.Configuration;
 using WaterOperations.Application.Features.Auth.DTOs;
 using WaterOperations.Application.Features.Auth.Interfaces;
@@ -27,8 +29,14 @@ public sealed class ViewerUserStore(IConfiguration configuration) : IUserCredent
             return null;
         }
 
-        if (string.Equals(request.Email, configuredEmail, StringComparison.OrdinalIgnoreCase)
-            && request.Password == configuredPassword)
+        var emailMatch = string.Equals(request.Email, configuredEmail, StringComparison.OrdinalIgnoreCase);
+
+        // SEC-1: Use constant-time comparison to prevent timing side-channel on password check.
+        var suppliedBytes = Encoding.UTF8.GetBytes(request.Password ?? string.Empty);
+        var configuredBytes = Encoding.UTF8.GetBytes(configuredPassword);
+        var passwordMatch = CryptographicOperations.FixedTimeEquals(suppliedBytes, configuredBytes);
+
+        if (emailMatch && passwordMatch)
         {
             failures.TryRemove(request.Email, out _);
             return new AuthenticatedUser(

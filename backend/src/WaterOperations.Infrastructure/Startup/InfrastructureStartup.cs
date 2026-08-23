@@ -17,21 +17,17 @@ public static class InfrastructureStartup
         this WebApplication app,
         CancellationToken cancellationToken = default)
     {
-        if (app.Configuration["Testing"] != "true"
-            && !(app.Environment.IsDevelopment()
-                && app.Configuration.GetValue<bool>("Seed:Enabled")))
-        {
-            return;
-        }
-
         await using var scope = app.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<WaterOperationsDbContext>();
+
         if (app.Configuration["Testing"] == "true")
         {
+            // Integration tests: schema-only, no migration history table needed.
             await db.Database.EnsureCreatedAsync(cancellationToken);
         }
         else
         {
+            // All non-test environments (including production) apply pending migrations.
             await db.Database.MigrateAsync(cancellationToken);
         }
 

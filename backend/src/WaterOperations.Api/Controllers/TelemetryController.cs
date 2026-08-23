@@ -8,13 +8,11 @@ using WaterOperations.Infrastructure.Security;
 namespace WaterOperations.Api.Controllers;
 
 [ApiController]
-[Route("api/v1/telemetry")]
+[Route("api/v1")]
 [Authorize(Policy = AuthorizationPolicies.ViewerOnly)]
-public sealed class TelemetryController(
-    ISender sender)
-    : ControllerBase
+public sealed class TelemetryController(ISender sender) : ControllerBase
 {
-    [HttpGet]
+    [HttpGet("telemetry")]
     public async Task<IActionResult> Get(
         [FromQuery] DateTimeOffset? from,
         [FromQuery] DateTimeOffset? to,
@@ -26,11 +24,23 @@ public sealed class TelemetryController(
         var result = await sender.Send(
             new GetTelemetryQuery(from, to, stationId, parameterId, limit),
             cancellationToken);
-        return result.ToTelemetryResult(this);
-}
-    [HttpPost("start")]
-    public IActionResult Start()
+
+        return result.ToActionResult(this);
+    }
+
+    [HttpGet("charts/measurements")]
+    public async Task<IActionResult> ChartMeasurements(
+        [FromQuery] Guid stationId,
+        [FromQuery] int[] parameterId,
+        [FromQuery] DateTimeOffset from,
+        [FromQuery] DateTimeOffset to,
+        [FromQuery] int limit = 5000,
+        CancellationToken cancellationToken = default)
     {
-        return Forbid();
+        var result = await sender.Send(
+            new GetChartQuery(stationId, parameterId, from, to, limit),
+            cancellationToken);
+
+        return result.ToActionResult(this);
     }
 }

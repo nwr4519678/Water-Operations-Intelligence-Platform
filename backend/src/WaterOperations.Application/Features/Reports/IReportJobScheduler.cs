@@ -1,7 +1,1 @@
-namespace WaterOperations.Application.Features.ProductCapabilities.Reports;
-
-public interface IReportJobScheduler
-{
-    void Schedule(Guid reportId);
-    void ScheduleRecurring(long scheduleId, string frequency);
-}
+// Obsolete interface file — moved to WaterOperations.Application.Features.Reports.Contracts.IReportJobScheduler.

@@ -1,10 +1,10 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using WaterOperations.Application.Features.ProductCapabilities.AI;
-using WaterOperations.Infrastructure.ProductCapabilities.AI;
+using WaterOperations.Application.Features.AI.DTOs;
+using WaterOperations.Application.Features.AI.Interfaces;
+using WaterOperations.Infrastructure.AI;
 
 namespace WaterOperations.UnitTests;
 
@@ -15,9 +15,9 @@ public sealed class AiModelClientContractTests
     {
         var handler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent("{\"modelVersion\":\"v1\",\"insightType\":\"forecast\",\"score\":0.9,\"payloadJson\":\"{}\",\"isFallback\":false}", Encoding.UTF8, "application/json")
+            Content = new StringContent("{\"modelVersion\":\"v1\",\"insightType\":\"forecast\",\"payloadJson\":\"{}\",\"isFallback\":false}", Encoding.UTF8, "application/json")
         });
-        using var client = CreateClient(handler);
+        var client = CreateClient(handler);
 
         var result = await client.GetInsightAsync(new AiInsightRequest(Guid.NewGuid(), Guid.NewGuid(), "forecast", null), "trace-abc", CancellationToken.None);
 
@@ -33,7 +33,7 @@ public sealed class AiModelClientContractTests
         {
             Content = new StringContent("{\"modelVersion\":\"v1\",\"insightType\":\"forecast\",\"payloadJson\":\"not-json\"}", Encoding.UTF8, "application/json")
         });
-        using var client = CreateClient(handler);
+        var client = CreateClient(handler);
 
         var result = await client.GetInsightAsync(new AiInsightRequest(Guid.NewGuid(), Guid.NewGuid(), "forecast", null), null, CancellationToken.None);
 

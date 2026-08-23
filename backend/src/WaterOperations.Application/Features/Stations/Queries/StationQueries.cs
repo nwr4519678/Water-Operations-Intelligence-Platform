@@ -1,7 +1,8 @@
 using MediatR;
 using WaterOperations.Application.Common.Abstractions;
-using WaterOperations.Application.Common.Results;
+using WaterOperations.Application.Common.Caching;
 using WaterOperations.Application.Common.Pagination;
+using WaterOperations.Application.Common.Results;
 using WaterOperations.Application.Features.Stations.DTOs;
 using WaterOperations.Application.Features.Stations.Interfaces;
 
@@ -19,7 +20,11 @@ public sealed record SearchStationsQuery(
     : IQuery<ScopeResult<PagedResult<StationListItemDto>>>, IRequireOrganization;
 
 public sealed record GetStationQuery(Guid StationId)
-    : IQuery<ScopeResult<StationDetailsDto>>, IRequireOrganization;
+    : IQuery<ScopeResult<StationDetailsDto>>, IRequireOrganization, ICacheableQuery
+{
+    public string GetCacheKey(ICurrentUser currentUser) => $"stations:detail:{currentUser.OrganizationId}:{StationId}";
+    public TimeSpan? Expiration => TimeSpan.FromMinutes(10);
+}
 
 public sealed class SearchStationsQueryHandler(
     IStationQueryRepository stations,

@@ -1,4 +1,5 @@
 using WaterOperations.Application.Common.Abstractions;
+using WaterOperations.Application.Common.Caching;
 using WaterOperations.Application.Common.Pagination;
 using WaterOperations.Application.Common.Results;
 using WaterOperations.Application.Features.Operations.DTOs;
@@ -7,7 +8,11 @@ using WaterOperations.Application.Features.Operations.Interfaces;
 namespace WaterOperations.Application.Features.Operations.Queries;
 
 public sealed record GetOperationsOverviewQuery(DateTimeOffset? AsOf)
-    : IQuery<ScopeResult<OperationsOverviewDto>>, IRequireOrganization;
+    : IQuery<ScopeResult<OperationsOverviewDto>>, IRequireOrganization, ICacheableQuery
+{
+    public string GetCacheKey(ICurrentUser currentUser) => $"operations:overview:{currentUser.OrganizationId}:{currentUser.RegionId}:{AsOf?.Ticks}";
+    public TimeSpan? Expiration => TimeSpan.FromMinutes(2);
+}
 
 public sealed record GetDataQualityQuery(
     DateTimeOffset? From,
