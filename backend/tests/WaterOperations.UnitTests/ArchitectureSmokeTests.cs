@@ -1,4 +1,4 @@
-namespace WaterOperations.UnitTests;
+﻿namespace WaterOperations.UnitTests;
 
 public sealed class ArchitectureSmokeTests
 {

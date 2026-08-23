@@ -10,6 +10,8 @@ __pycache__/
 *.user
 *.suo
 .env
+appsettings.*.local.json
+secrets/
 *.db
 TestResults/
 coverage/

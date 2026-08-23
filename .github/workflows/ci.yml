@@ -1,4 +1,5 @@
 name: CI
+
 on:
   pull_request:
   push:
@@ -8,22 +9,47 @@ on:
       - 'add/**'
       - 'fix/**'
       - 'refactor/**'
+      - 'feature/**'
+
 jobs:
   backend:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: water_operations_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d water_operations_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v5
-        with: { dotnet-version: '10.0.x' }
-      - run: dotnet restore WaterOperations.slnx
-      - run: dotnet build WaterOperations.slnx --configuration Release --no-restore
-      - run: dotnet test WaterOperations.slnx --configuration Release --no-build
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore backend/src/WaterOperations.slnx
+      - run: dotnet build backend/src/WaterOperations.slnx --configuration Release --no-restore
+      - run: dotnet test backend/src/WaterOperations.slnx --configuration Release --no-build
+        env:
+          INTEGRATION_POSTGRES_CONNECTION: Host=localhost;Port=5432;Database=water_operations_ci;Username=postgres;Password=postgres
+      - name: Verify production-readiness static gates
+        shell: pwsh
+        run: ./scripts/verify-production-readiness.ps1
+
   frontend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
-        with: { node-version: 22, cache: npm, cache-dependency-path: frontend/package-lock.json }
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
       - run: npm ci
         working-directory: frontend
       - run: npm run lint
@@ -55,22 +81,26 @@ jobs:
             frontend/playwright-report
             frontend/test-results
           if-no-files-found: ignore
+
   ai-service:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
-        with: { python-version: '3.12' }
+        with:
+          python-version: '3.12'
       - run: python -m pip install -r requirements.txt pytest
         working-directory: ai-service
       - run: pytest
         working-directory: ai-service
+
   data-engineering:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
-        with: { python-version: '3.12' }
+        with:
+          python-version: '3.12'
       - run: python -m pip install -e ".[test]"
         working-directory: data-engineering
       - run: pytest

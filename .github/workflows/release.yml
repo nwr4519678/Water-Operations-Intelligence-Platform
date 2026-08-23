@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version (for example 1.0.1)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet test backend/src/WaterOperations.slnx --configuration Release
+      - name: Verify production-readiness gates
+        shell: pwsh
+        run: ./scripts/verify-production-readiness.ps1
+
+  promote-staging:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v5
+      - name: Publish versioned release manifest
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          "version=$env:RELEASE_VERSION" | Out-File release-manifest.txt
+          "environment=staging" | Add-Content release-manifest.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ inputs.version }}-staging
+          path: release-manifest.txt
+
+  promote-production:
+    needs: promote-staging
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Approve production promotion
+        run: echo "Promoting ${{ inputs.version }} after staging approval"

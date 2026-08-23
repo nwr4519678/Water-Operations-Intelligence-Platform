@@ -1,113 +1,157 @@
 # Water Operations Intelligence Platform
 
-Foundation for a real-time water telemetry and operations intelligence platform.
+Production-oriented platform for water telemetry, operational intelligence, alerting, and AI-assisted analysis. It combines a .NET API, React operations UI, optional AI service, independent data workflows, and deployment assets.
 
-## Stack
+## Platform architecture
 
-- ASP.NET Core 10 / C# / Clean Architecture
-- React 19 / TypeScript / Vite / TanStack Query
-- PostgreSQL with TimescaleDB and Redis
-- Python 3.12 / FastAPI AI service
-- Hangfire for durable background jobs
-- Scalar OpenAPI reference for the API
+```mermaid
+flowchart LR
+  User[Viewer / Operator / Admin] --> UI[React Web App]
+  UI -->|REST + SignalR| API[ASP.NET Core API]
+  API --> APP[Application CQRS]
+  APP --> DOMAIN[Domain rules]
+  APP --> INFRA[Infrastructure adapters]
+  INFRA --> PG[(PostgreSQL / TimescaleDB)]
+  INFRA --> REDIS[(Redis)]
+  INFRA --> JOBS[Hangfire / Outbox]
+  DATA[Data pipelines] --> PG
+  UI -. optional .-> AI[FastAPI AI service]
+  API --> OBS[Health / metrics / logs]
+```
 
-## Run locally
+```mermaid
+mindmap
+  root((Water Operations))
+    backend
+      Api
+      Application
+      Domain
+      Infrastructure
+      tests
+    frontend
+      features
+      services
+      components
+    ai-service
+      app
+      tests
+    data-engineering
+      src
+      pipelines
+      configs
+    infrastructure
+      docker
+      database
+      deployment
+      monitoring
+```
 
-### Prerequisites
+## Technology stack
 
-The current implementation is the Phase 0 foundation. The Viewer read feature is the first vertical slice and is implemented behind the Application CQRS boundaries.
-- Docker Desktop with Compose v2.
-- .NET 10 SDK.
-- Node.js 20 or newer.
-- Python 3.12 only when running the AI service outside Docker.
+| Area | Technology | Responsibility |
+|---|---|---|
+| API | .NET 10, ASP.NET Core, MediatR | HTTP transport and use-case dispatch |
+| Architecture | Clean Architecture + vertical slices | Dependency and business boundaries |
+| Persistence | EF Core, PostgreSQL/TimescaleDB | Operational and time-series data |
+| Cache/jobs | Redis, Hangfire, outbox | Cache, recurring work, reliable delivery |
+| UI | React 19, TypeScript, Vite, TanStack Query | Operations and viewer experience |
+| AI | Python 3.12, FastAPI | Optional intelligence capabilities |
+| Delivery | Docker Compose, GitHub Actions | Local runtime and governed promotion |
 
-### Quick start
+## Request lifecycle
 
-1. Copy `.env.example` to `.env`. The committed example contains local development values only; never put real credentials in either file.
-2. Run the bootstrap command from the repository root:
+```mermaid
+sequenceDiagram
+  participant B as Browser
+  participant M as API middleware
+  participant C as Thin controller
+  participant V as ValidationBehavior
+  participant Z as AuthorizationBehavior
+  participant H as Handler
+  participant R as Repository port
+  participant DB as PostgreSQL
+  B->>M: HTTP request + bearer token
+  M->>C: route binding
+  C->>V: ISender.Send(command/query)
+  V->>Z: validated request
+  Z->>H: authorized request
+  H->>R: scoped data access
+  R->>DB: parameterized query
+  DB-->>R: data
+  R-->>H: DTO/result
+  H-->>C: typed Result
+  C-->>B: HTTP response
+```
 
-   ```powershell
-   .\scripts\dev.ps1
-   ```
+## Local quick start
 
-   On macOS/Linux, use `./scripts/dev.sh`. Add `-WithAi` or `--with-ai` to start the optional AI container.
-3. In a second terminal, start the API:
-
-   ```powershell
-   dotnet run --project backend/src/WaterOperations.Api --launch-profile http
-   ```
-
-4. In a third terminal, install and start the viewer shell:
-
-   ```powershell
-   npm --prefix frontend install
-   npm --prefix frontend run dev
-   ```
-
-The normal local URLs are the frontend at `http://localhost:5173`, API at `http://localhost:5102`, API liveness at `/health/live`, API readiness at `/health/ready`, Scalar at `/scalar`, and the optional AI service at `http://localhost:8000/health`.
-
-Startup order is: PostgreSQL/TimescaleDB and Redis, database migrations/seed when they are introduced, API, optional AI service, then React. The current Phase 0 foundation has no migrations or seed data yet, so the migration step is intentionally a no-op.
-
-### Configuration
-
-The API reads standard ASP.NET Core environment variables. `.env.example` documents the supported local values, including `ConnectionStrings__Default`, `ConnectionStrings__Redis`, `Cors__AllowedOrigins__0`, `VITE_API_BASE_URL`, and `AI_SERVICE_URL`. CORS is restricted to the local viewer origin by default.
-
-### Troubleshooting
-
-- **Docker is unavailable:** start Docker Desktop, then rerun `docker compose up -d postgres redis`.
-- **Port already in use:** change `POSTGRES_PORT`, `REDIS_PORT`, or `AI_SERVICE_PORT` in `.env`; update the matching connection string and service URL as well.
-- **API fails on startup:** confirm `.env` was copied and that `ConnectionStrings__Default` and `ConnectionStrings__Redis` are exported in the API terminal. The API fails fast when either value is missing.
-- **`/health/ready` is unhealthy:** run `docker compose ps` and `docker compose logs postgres redis`; both required services must report healthy before the API is ready.
-- **Frontend cannot call the API:** verify the API is running on port 5102 and that `Cors__AllowedOrigins__0` matches the browser origin exactly.
-- **AI features are unavailable:** AI is optional. Start it with `docker compose --profile ai up -d --build ai-service`, or run `python -m uvicorn app.main:app --app-dir ai-service --reload --port 8000`.
-- **Login/overview is not available yet:** the repository currently contains the viewer shell and platform foundation; product feature modules are added behind the Application CQRS boundaries.
-
-## Local viewer authentication
-
-The API exposes `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`, and authenticated `POST /api/v1/auth/logout`. Configure `DevelopmentViewer__Email` and `DevelopmentViewer__Password` through local environment variables; do not commit values. Optional `DevelopmentViewer__Organization` and `DevelopmentViewer__Region` define the viewer scope. These settings are for local testing only.
-
-## Architecture structure
-
-## Viewer backend foundation
-
-The API uses the dependency direction `Api -> Application -> Domain` and `Infrastructure -> Application + Domain`. Viewer read contracts are exposed under `/api/v1/viewer` and return the common `{ success, data, error, traceId }` envelope. No Admin or Operator module is included.
-
-### Local setup
-
-Requirements: .NET SDK 10 and Docker Desktop. From the repository root:
+Prerequisites: Docker Desktop with Compose v2, .NET 10 SDK, Node.js 20+ (Node 22 in CI), and Python 3.12 for AI/data services outside Docker.
 
 ```powershell
-docker compose up -d postgres redis
-$env:ConnectionStrings__Default = "Host=localhost;Port=5432;Database=water_operations;Username=postgres;Password=postgres"
-$env:ConnectionStrings__Redis = "localhost:6379"
-$env:Cors__AllowedOrigins__0 = "http://localhost:5173"
-dotnet restore WaterOperations.slnx
-dotnet ef database update --project backend/src/WaterOperations.Infrastructure --startup-project backend/src/WaterOperations.Api
-$env:ASPNETCORE_ENVIRONMENT = "Development"
-$env:Seed__Enabled = "true"
-dotnet run --project backend/src/WaterOperations.Api
+Copy-Item .env.example .env
+.\scripts\dev.ps1
+dotnet run --project backend/src/WaterOperations.Api --launch-profile http
+npm --prefix frontend ci
+npm --prefix frontend run dev
 ```
 
-The development seed is deterministic and idempotent: one synthetic organization, two regions, four stations, twelve measurements, and four alarms. It only runs when `Seed__Enabled=true` in Development. Re-running it does not add duplicates.
+Use `./scripts/dev.sh` on macOS/Linux. Add `-WithAi` to start the optional AI container.
 
-The API is available at `/health`, Scalar at `/scalar`, and the OpenAPI document at `/openapi/v1.json`. Configure production database and approved origins with environment variables; no production credentials are stored in the repository. Run verification with `dotnet build WaterOperations.slnx` and `dotnet test WaterOperations.slnx`.
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| API | http://localhost:5102 |
+| Liveness | http://localhost:5102/health/live |
+| Readiness | http://localhost:5102/health/ready |
+| Swagger/OpenAPI | http://localhost:5102/swagger |
+| Scalar | http://localhost:5102/scalar |
+| AI health | http://localhost:8000/health |
 
-```text
-backend/
-  src/
-    WaterOperations.Api/             # ASP.NET Core Web API controllers and composition root
-    WaterOperations.Application/     # Common plus vertical feature slices
-    WaterOperations.Domain/          # Pure business model and domain primitives
-    WaterOperations.Infrastructure/  # EF Core, Redis, Hangfire, security, integrations
-  tests/                              # Unit, integration, architecture, contract tests
-frontend/src/                         # app, components, features, lib, services, types
-ai-service/app/                       # Independent AI bounded component
-data-engineering/                     # Independent ingestion and transformation workflows
-  src/ pipelines/ tests/ configs/
-infrastructure/                       # docker, deployment, database, monitoring
-docs/                                  # architecture, api, development, deployment, adr
+## Configuration and security
+
+Inject `ConnectionStrings__Default`, `ConnectionStrings__Redis`, `Authentication__SigningKey`, `Cors__AllowedOrigins__0`, `VITE_API_BASE_URL`, and `AI_SERVICE_URL` through local environment files or deployment secret stores. Never commit credentials; frontend variables are public after bundling.
+
+```mermaid
+flowchart LR
+  Local[.env / user secrets] --> Dev[Local runtime]
+  CI[GitHub environments] --> Release[Release workflow]
+  Vault[Deployment secret store] --> Prod[Production runtime]
+  Release --> Prod
 ```
 
-## Architecture rules
+## Quality gates
 
-Domain contains business rules only. Application owns use cases, DTOs, validation, and interfaces. Features are vertical slices and own their internal contracts. Infrastructure owns EF Core, PostgreSQL, Redis, and Hangfire. API owns transport concerns and never accesses the database directly. The Viewer feature demonstrates this boundary with Application DTOs and Infrastructure projections.
+```mermaid
+flowchart LR
+  PR[Pull request] --> NET[.NET build + tests]
+  PR --> WEB[Frontend lint + unit + browser + build]
+  PR --> PY[AI + data pytest]
+  NET --> Gate[Production readiness gate]
+  WEB --> Gate
+  PY --> Gate
+  Gate --> Merge[Merge / release candidate]
+```
+
+```powershell
+dotnet build backend/src/WaterOperations.slnx --configuration Release
+dotnet test backend/src/WaterOperations.slnx --configuration Release
+./scripts/verify-production-readiness.ps1
+npm --prefix frontend run lint
+npm --prefix frontend run format:check
+npm --prefix frontend run test:unit -- --run
+npm --prefix frontend run build
+```
+
+## Documentation index
+
+- [Architecture](docs/architecture/README.md)
+- [API guide](docs/api/README.md)
+- [Development guide](docs/development/README.md)
+- [Deployment and promotion](docs/deployment/README.md)
+- [Backend](backend/README.md)
+- [Frontend](frontend/README.md)
+- [AI service](ai-service/README.md)
+- [Data engineering](data-engineering/README.md)
+- [Database operations](infrastructure/database/README.md)
+- [Docker runtime](infrastructure/docker/README.md)
+- [Production readiness](docs/production-readiness/release-governance.md)

@@ -1,4 +1,4 @@
-namespace WaterOperations.IntegrationTests;
+﻿namespace WaterOperations.IntegrationTests;
 
 public sealed class IntegrationTestHost
 {
