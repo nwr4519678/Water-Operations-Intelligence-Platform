@@ -15,9 +15,14 @@
     "test": "npm run lint && npm run test:unit"
   },
   "dependencies": {
+    "@deck.gl/aggregation-layers": "^9.3.10",
+    "@deck.gl/core": "^9.3.10",
+    "@deck.gl/layers": "^9.3.10",
+    "@deck.gl/mapbox": "^9.3.10",
     "@microsoft/signalr": "^10.0.11",
     "@tanstack/react-query": "^5.102.1",
     "@types/leaflet": "^1.9.22",
+    "@types/papaparse": "^5.5.2",
     "axios": "^1.19.0",
     "date-fns": "^4.4.0",
     "echarts": "^6.1.0",
@@ -25,6 +30,8 @@
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
     "lucide-react": "^1.33.0",
+    "maplibre-gl": "^6.5.0",
+    "papaparse": "^5.6.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.18.2",

@@ -1,7 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap');
-@import 'leaflet/dist/leaflet.css';
-@import 'leaflet.markercluster/dist/MarkerCluster.css';
-@import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+@import 'maplibre-gl/dist/maplibre-gl.css';
 @import 'tailwindcss';
 
 :root { color-scheme: light; --ink:#102136; --muted:#708096; --line:#e6ebf1; --canvas:#f8fafc; --panel:#fff; --sidebar:#fff; --blue:#1677f0; --navy:#071426; --soft:#f3f7fb; --green:#11ad68; --amber:#e6a00a; --red:#eb4747; }

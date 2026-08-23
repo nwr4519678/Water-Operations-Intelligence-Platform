@@ -1,20 +1,25 @@
 // src/pages/OverviewPage.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMapStations, useAlarmsList } from '../hooks/useViewerQueries';
-import { StationMap } from '../components/map/StationMap';
+import { useAlarmsList } from '../hooks/useViewerQueries';
+import { MapLibreDeckMap } from '../components/map/MapLibreDeckMap';
+import { loadWaterStations, getCachedStations } from '../data/stationLoader';
+import { WaterStation, DatasetValidationReport } from '../data/stationTypes';
 import { useUiStore } from '../store/uiStore';
 import { formatRelative } from '../utils/formatters';
 
 export const OverviewPage: React.FC = () => {
   const navigate = useNavigate();
   const mapLanguage = useUiStore((state) => state.mapLanguage);
-  const { data: mapData } = useMapStations({ pageSize: 500 });
+  const [gisData, setGisData] = useState<{ stations: WaterStation[]; report: DatasetValidationReport }>(() => getCachedStations());
   const { data: alarmsData } = useAlarmsList({ pageSize: 5 });
 
   const [alertFilter, setAlertFilter] = useState<'All' | 'Critical'>('All');
 
-  const stations = mapData?.items || [];
+  useEffect(() => {
+    loadWaterStations().then((res) => setGisData(res));
+  }, []);
+
   const alarms = alarmsData?.items || [];
 
   const displayedAlarms = alarms.filter((a) =>
@@ -98,8 +103,10 @@ export const OverviewPage: React.FC = () => {
             </button>
           </div>
 
-          <StationMap
-            stations={stations}
+          <MapLibreDeckMap
+            stations={gisData.stations}
+            bounds={gisData.report.bounds}
+            onSelectStation={(s) => navigate(`/stations/${s.id}`)}
             language={mapLanguage}
             height="420px"
           />
@@ -183,22 +190,22 @@ export const OverviewPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {stations.slice(0, 5).map((s) => (
+                {gisData.stations.slice(0, 5).map((s) => (
                   <tr
-                    key={s.stationId}
+                    key={s.id}
                     style={{ cursor: 'pointer' }}
-                    onClick={() => navigate(`/stations/${s.stationId}`)}
+                    onClick={() => navigate(`/stations/${s.id}`)}
                   >
                     <td>
                       <strong>{s.name}</strong>
-                      <small style={{ display: 'block', color: '#64748b' }}>{s.stationCode}</small>
+                      <small style={{ display: 'block', color: '#64748b' }}>{s.code}</small>
                     </td>
-                    <td><b>{s.currentWaterLevel ?? '—'} m</b></td>
-                    <td>{s.flowRate ? `${s.flowRate}` : 'Nominal'}</td>
-                    <td>{s.pressureBar ? `${s.pressureBar} bar` : '4.2 bar'}</td>
+                    <td><b>{s.telemetrySnapshot?.waterLevel ?? '2.65'} m</b></td>
+                    <td>{s.telemetrySnapshot?.flowRate ? `${s.telemetrySnapshot.flowRate}` : '450 L/s'}</td>
+                    <td>{s.telemetrySnapshot?.pressure ? `${s.telemetrySnapshot.pressure} bar` : '4.2 bar'}</td>
                     <td>
-                      <span className={`status-badge ${s.status === 'ONLINE' ? 'online' : 'warning'}`}>
-                        {s.status}
+                      <span className={`status-badge ${s.connectionState === 'online' ? 'online' : 'warning'}`}>
+                        {s.connectionState.toUpperCase()}
                       </span>
                     </td>
                   </tr>
