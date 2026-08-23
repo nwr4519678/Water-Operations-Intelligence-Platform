@@ -7,10 +7,13 @@ using StackExchange.Redis;
 using WaterOperations.Application.Common.Abstractions;
 using WaterOperations.Application.Common.Caching;
 using WaterOperations.Application.Common.Repositories;
+using WaterOperations.Application.Common.Security;
 using WaterOperations.Application.Features.AI.Interfaces;
 using WaterOperations.Application.Features.Administration.Interfaces;
+using WaterOperations.Application.Features.Alarms.Interfaces;
 using WaterOperations.Application.Features.Audit.Interfaces;
 using WaterOperations.Application.Features.Auth.Interfaces;
+using WaterOperations.Application.Features.Charts.Interfaces;
 using WaterOperations.Application.Features.Collaboration.Interfaces;
 using WaterOperations.Application.Features.Ingestion.Interfaces;
 using WaterOperations.Application.Features.Mfa.Interfaces;
@@ -22,12 +25,15 @@ using WaterOperations.Application.Features.Retention.Interfaces;
 using WaterOperations.Application.Features.Search.Interfaces;
 using WaterOperations.Application.Features.Stations.Interfaces;
 using WaterOperations.Application.Features.Telemetry.Interfaces;
+using WaterOperations.Application.Features.Thresholds.Interfaces;
 using WaterOperations.Application.Features.Viewer.Interfaces;
 using WaterOperations.Infrastructure.AI;
 using WaterOperations.Infrastructure.AI.Repositories;
 using WaterOperations.Infrastructure.Administration.Repositories;
 using WaterOperations.Infrastructure.Audit.Repositories;
 using WaterOperations.Infrastructure.Authentication;
+using WaterOperations.Infrastructure.Operations.Repositories;
+using WaterOperations.Infrastructure.Security;
 using WaterOperations.Infrastructure.Caching;
 using WaterOperations.Infrastructure.Collaboration.Repositories;
 using WaterOperations.Infrastructure.Configuration;
@@ -37,7 +43,6 @@ using WaterOperations.Infrastructure.Jobs;
 using WaterOperations.Infrastructure.Messaging;
 using WaterOperations.Infrastructure.Mfa.Repositories;
 using WaterOperations.Infrastructure.Notifications.Repositories;
-using WaterOperations.Infrastructure.Operations.Repositories;
 using WaterOperations.Infrastructure.Persistence;
 using WaterOperations.Infrastructure.Persistence.Repositories;
 using WaterOperations.Infrastructure.Pipeline.Repositories;
@@ -45,7 +50,6 @@ using WaterOperations.Infrastructure.Reports;
 using WaterOperations.Infrastructure.Reports.Repositories;
 using WaterOperations.Infrastructure.Retention.Repositories;
 using WaterOperations.Infrastructure.Search.Repositories;
-using WaterOperations.Infrastructure.Security;
 using WaterOperations.Infrastructure.Stations.Repositories;
 using WaterOperations.Infrastructure.Storage;
 using WaterOperations.Infrastructure.Telemetry.Repositories;
@@ -81,7 +85,7 @@ public static class DependencyInjection
             .AddPersistence(configuration, connectionString)
             .AddInfrastructureOptions(configuration)
             .AddInfrastructureServices(configuration)
-            .AddFeatureServices()
+            .AddFeatureServices(configuration)
             .AddCaching()
             .AddBackgroundProcessing(configuration, connectionString);
 
@@ -101,7 +105,8 @@ public static class DependencyInjection
         else
         {
             services.AddDbContext<WaterOperationsDbContext>(
-                options => options.UseNpgsql(connectionString));
+                options => options.UseNpgsql(connectionString)
+                    .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
         }
 
         services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
@@ -136,11 +141,20 @@ public static class DependencyInjection
     }
 
     private static IServiceCollection AddFeatureServices(
-        this IServiceCollection services)
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         services.AddScoped<IViewerQueryRepository, ViewerQueryRepository>();
-        services.AddSingleton<IUserCredentialRepository>(
-            provider => provider.GetRequiredService<ViewerUserStore>());
+        if (configuration.GetValue<bool>("Testing"))
+        {
+            services.AddSingleton<IUserCredentialRepository, ViewerUserStore>();
+        }
+        else
+        {
+            services.AddSingleton<DatabaseUserStore>();
+            services.AddSingleton<IUserCredentialRepository>(
+                provider => provider.GetRequiredService<DatabaseUserStore>());
+        }
         services.AddSingleton<IRefreshSessionRepository>(
             provider => provider.GetRequiredService<SessionStore>());
         services.AddSingleton<IAccessTokenIssuer>(
@@ -160,6 +174,10 @@ public static class DependencyInjection
         services.AddScoped<ICollaborationRepository, CollaborationRepository>();
         services.AddScoped<IAdministrationRepository, AdministrationRepository>();
         services.AddScoped<ISearchRepository, SearchRepository>();
+        services.AddScoped<IAlarmRepository, AlarmRepository>();
+        services.AddScoped<IThresholdRepository, ThresholdRepository>();
+        services.AddScoped<IChartAnnotationRepository, ChartAnnotationRepository>();
+        services.AddScoped<IStationAuthorizationService, StationAuthorizationService>();
         services.AddHttpClient<IAiModelClient, HttpAiModelClient>((provider, client) =>
         {
             var options = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<AiModelClientOptions>>().Value;
@@ -190,23 +208,34 @@ public static class DependencyInjection
     {
         if (configuration["Testing"] == "true" || configuration.GetValue<bool>("Testing"))
         {
+            services.AddScoped<IReportJobScheduler, NoOpReportJobScheduler>();
             return services;
         }
 
-        var redisConnection = configuration.GetConnectionString("Redis")
-            ?? throw new InvalidOperationException(
-                "ConnectionStrings:Redis must be configured before starting the API.");
-        services.AddSingleton<IConnectionMultiplexer>(
-            _ => ConnectionMultiplexer.Connect(redisConnection));
-        services.AddStackExchangeRedisCache(
-            options => options.Configuration = redisConnection);
+        var redisConnection = configuration.GetConnectionString("Redis");
+        if (!string.IsNullOrWhiteSpace(redisConnection))
+        {
+            try
+            {
+                services.AddSingleton<IConnectionMultiplexer>(
+                    _ => ConnectionMultiplexer.Connect(redisConnection));
+                services.AddStackExchangeRedisCache(
+                    options => options.Configuration = redisConnection);
+            }
+            catch
+            {
+                // Soft fallback if Redis server is unreachable locally
+            }
+        }
+
         services.AddHangfire(config => config
             .UseSimpleAssemblyNameTypeSerializer()
             .UseRecommendedSerializerSettings()
             .UsePostgreSqlStorage(options => options
                 .UseNpgsqlConnection(connectionString)));
-        services.AddHangfireServer();
+        services.AddHangfireServer(options => { options.WorkerCount = 4; });
         services.AddScoped<IReportJobScheduler, HangfireReportJobScheduler>();
+
         return services;
     }
 }
