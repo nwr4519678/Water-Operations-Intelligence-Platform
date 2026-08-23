@@ -1,9 +1,15 @@
-# Database
+# Database operations
 
-Database initialization scripts, extensions, migrations support, seed policies, and operational database notes belong here.
+PostgreSQL/TimescaleDB is the system of record for operational and time-series data. EF Core migrations are owned by `WaterOperations.Infrastructure`; backup, restore, and release migration wrappers live beside this README.
 
-## PostgreSQL bootstrap
+```mermaid
+flowchart TB
+  Change[Schema change] --> Migration[EF migration]
+  Migration --> Backup[Pre-migration backup]
+  Backup --> Apply[Apply migration]
+  Apply --> Verify[Readiness + release smoke]
+  Verify -->|pass| Promote[Promote release]
+  Verify -->|fail| Restore[Restore backup / rollback]
+```
 
-The project uses PostgreSQL/TimescaleDB exclusively. The canonical schema is produced by the EF Core PostgreSQL migration and exported to [WaterOperations.PostgreSql.sql](./WaterOperations.PostgreSql.sql).
-
-For existing environments, apply versioned EF migrations. For a new environment, start PostgreSQL/TimescaleDB using the repository Docker Compose configuration, then apply the migration or the generated PostgreSQL script.
+Use `release-migration.ps1` for governed releases, `backup.ps1` before destructive maintenance, and `restore.ps1` only with an explicitly supplied restore connection. Never commit database credentials or generated local dumps.
