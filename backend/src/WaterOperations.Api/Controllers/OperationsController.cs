@@ -25,17 +25,4 @@ public sealed class OperationsController(ISender sender) : ControllerBase
         return result.ToActionResult(this);
     }
 
-    [HttpGet("ai/data/quality")]
-    public async Task<IActionResult> DataQuality(
-        [FromQuery] DateTimeOffset? from,
-        [FromQuery] DateTimeOffset? to,
-        [FromQuery] PaginationRequest pagination,
-        CancellationToken cancellationToken)
-    {
-        var result = await sender.Send(
-            new GetDataQualityQuery(from, to, pagination),
-            cancellationToken);
-
-        return result.ToActionResult(this);
-    }
 }

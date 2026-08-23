@@ -140,16 +140,15 @@ public static class DependencyInjection
     private static IServiceCollection AddRateLimiting(
         this IServiceCollection services)
     {
-        services.AddRateLimiter(options => options.AddPolicy(
-            "auth",
-            context => RateLimitPartition.GetFixedWindowLimiter(
+        services.AddRateLimiter(options =>
+        {
+            options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
                 context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 10,
-                    Window = TimeSpan.FromMinutes(1),
-                    QueueLimit = 0
-                })));
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+            options.AddPolicy("search", context => RateLimitPartition.GetFixedWindowLimiter(
+                context.User.FindFirst("organization")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+        });
 
         return services;
     }
