@@ -63,6 +63,18 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException(
                 "ConnectionStrings:Default must be configured before starting the API.");
 
+        if (string.IsNullOrWhiteSpace(connectionString)
+            && configuration["Testing"] == "true")
+        {
+            connectionString = "Host=localhost;Database=water_operations_tests;Username=test;Password=test";
+        }
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                "ConnectionStrings:Default must be configured through environment variables or user secrets.");
+        }
+
         services
             .AddPersistence(configuration, connectionString)
             .AddInfrastructureOptions(configuration)
@@ -167,6 +179,7 @@ public static class DependencyInjection
     private static IServiceCollection AddCaching(
         this IServiceCollection services)
     {
+        services.AddDistributedMemoryCache();
         services.AddHybridCache();
         services.AddSingleton<ICacheService, HybridCacheService>();
         services.AddSingleton<OutboxPayloadSerializer>();

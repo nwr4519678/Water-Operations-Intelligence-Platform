@@ -77,8 +77,11 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         options.MapInboundClaims = false;
-        var signingKey = configuration["Authentication:SigningKey"]
-            ?? "development-only-signing-key-change-me-please";
+        var signingKey = configuration["Authentication:SigningKey"];
+        if (string.IsNullOrWhiteSpace(signingKey))
+        {
+            signingKey = "development-only-signing-key-change-me-please";
+        }
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -173,7 +176,15 @@ public static class DependencyInjection
     {
         services.AddControllers();
         services.AddOpenApi();
-        services.AddSwaggerGen();
+        services.AddSwaggerGen(options =>
+        {
+            options.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo
+            {
+                Title = "Water Operations API",
+                Version = "v1",
+                Description = "Versioned API contract for the Water Operations platform."
+            });
+        });
         services.AddProblemDetails();
         return services;
     }

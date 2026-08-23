@@ -11,6 +11,13 @@ public static class ApiPipeline
     {
         app.UseMiddleware<TraceIdMiddleware>();
         app.UseMiddleware<ExceptionHandlingMiddleware>();
+        app.UseMiddleware<SecurityHeadersMiddleware>();
+        app.UseMiddleware<IdempotencyMiddleware>();
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseHsts();
+            app.UseHttpsRedirection();
+        }
         app.UseSerilogRequestLogging();
         app.UseCors("Web");
         app.UseAuthentication();
