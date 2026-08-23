@@ -9,6 +9,7 @@ on:
       - 'add/**'
       - 'fix/**'
       - 'refactor/**'
+      - 'feature/**'
 
 jobs:
   backend:
@@ -21,6 +22,9 @@ jobs:
       - run: dotnet restore backend/src/WaterOperations.slnx
       - run: dotnet build backend/src/WaterOperations.slnx --configuration Release --no-restore
       - run: dotnet test backend/src/WaterOperations.slnx --configuration Release --no-build
+      - name: Verify production-readiness static gates
+        shell: pwsh
+        run: ./scripts/verify-production-readiness.ps1
 
   frontend:
     runs-on: ubuntu-latest
