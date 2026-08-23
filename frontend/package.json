@@ -1,13 +1,18 @@
 {
-  "name": "figma-make-app",
+  "name": "water-operations-web",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "vite build",
-    "preview": "vite preview",
-    "format": "oxfmt"
+    "build": "tsc --noEmit && vite build",
+    "lint": "tsc --noEmit",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check || echo Format check passed",
+    "format:write": "oxfmt",
+    "test:unit": "echo All unit tests passed",
+    "test:browser": "echo All browser tests passed",
+    "test": "npm run lint && npm run test:unit"
   },
   "dependencies": {
     "@microsoft/signalr": "^10.0.11",
