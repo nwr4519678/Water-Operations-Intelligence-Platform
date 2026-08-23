@@ -10,6 +10,7 @@ using WaterOperations.Infrastructure.Authentication;
 using WaterOperations.Infrastructure.Messaging;
 using WaterOperations.Infrastructure.Persistence;
 using WaterOperations.Infrastructure.Security;
+using WaterOperations.Api.Observability;
 
 namespace WaterOperations.Api;
 
@@ -53,6 +54,7 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.AddHttpContextAccessor();
+        services.AddSingleton<ApiMetrics>();
         services.AddScoped<ICurrentUser, HttpCurrentUser>();
         services.AddSingleton<SessionStore>();
         services.AddSingleton<ViewerUserStore>();

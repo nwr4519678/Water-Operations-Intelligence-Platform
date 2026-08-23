@@ -1,6 +1,7 @@
 using Scalar.AspNetCore;
 using Serilog;
 using WaterOperations.Api.Middleware;
+using WaterOperations.Api.Observability;
 using WaterOperations.Infrastructure.Messaging;
 
 namespace WaterOperations.Api.Hosting;
@@ -13,6 +14,7 @@ public static class ApiPipeline
         app.UseMiddleware<ExceptionHandlingMiddleware>();
         app.UseMiddleware<SecurityHeadersMiddleware>();
         app.UseMiddleware<IdempotencyMiddleware>();
+        app.UseMiddleware<ApiMetricsMiddleware>();
         if (!app.Environment.IsDevelopment())
         {
             app.UseHsts();
@@ -32,6 +34,12 @@ public static class ApiPipeline
         app.MapHealthChecks("/health");
         app.MapOpenApi();
         app.MapScalarApiReference(options => options.WithTitle("Water Operations API"));
+        app.MapGet(
+            "/metrics",
+            (ApiMetrics metrics) => Results.Text(
+                metrics.RenderPrometheus(),
+                "text/plain; version=0.0.4"))
+            .RequireAuthorization();
         app.MapGet(
             "/health/live",
             () => Results.Ok(new { status = "healthy", service = "api" }));
