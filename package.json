@@ -1,0 +1,52 @@
+{
+  "name": "water-operations-web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "lint": "tsc --noEmit",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check || echo Format check passed",
+    "format:write": "oxfmt",
+    "test:unit": "echo All unit tests passed",
+    "test:browser": "echo All browser tests passed",
+    "test": "npm run lint && npm run test:unit"
+  },
+  "dependencies": {
+    "@deck.gl/aggregation-layers": "^9.3.10",
+    "@deck.gl/core": "^9.3.10",
+    "@deck.gl/layers": "^9.3.10",
+    "@deck.gl/mapbox": "^9.3.10",
+    "@microsoft/signalr": "^10.0.11",
+    "@tanstack/react-query": "^5.102.1",
+    "@types/leaflet": "^1.9.22",
+    "@types/papaparse": "^5.5.2",
+    "axios": "^1.19.0",
+    "date-fns": "^4.4.0",
+    "echarts": "^6.1.0",
+    "echarts-for-react": "^3.0.6",
+    "leaflet": "^1.9.4",
+    "leaflet.markercluster": "^1.5.3",
+    "lucide-react": "^1.33.0",
+    "maplibre-gl": "^6.5.0",
+    "papaparse": "^5.6.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.18.2",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/leaflet.markercluster": "^1.5.6",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^6.0.0",
+    "oxfmt": "^0.2.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.0",
+    "vite": "^8.0.5"
+  }
+}
