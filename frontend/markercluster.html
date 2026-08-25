@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منظومة التليميتري الذكية بمصر - تقنية المجموعات الديناميكية</title>
+
+    <!-- مكتبة الخرائط Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- مكتبة تجميع الدبابيس MarkerCluster CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --panel-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        #app-header {
+            background-color: var(--panel-bg);
+            height: 70px;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+            z-index: 1000;
+        }
+
+        .brand-title h1 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        #stat-badge {
+            background-color: #3b82f6;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        }
+
+        #map-container {
+            width: 100vw;
+            height: calc(100vh - 70px);
+        }
+
+        /* تخصيص مظهر النوافذ المنبثقة Popups */
+        .leaflet-popup-content-wrapper {
+            background: var(--panel-bg) !important;
+            color: var(--text-main) !important;
+            border-radius: 10px !important;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow) !important;
+            padding: 4px;
+        }
+
+        .popup-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 4px;
+            margin-bottom: 6px;
+        }
+
+        .popup-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 3px 0;
+        }
+
+        /* تخصيص الوان المجموعات الذكية لتناسب الثيم الفاتح التقني */
+        .marker-cluster-small {
+            background-color: rgba(16, 185, 129, 0.2) !important;
+        }
+
+        .marker-cluster-small div {
+            background-color: rgba(16, 185, 129, 0.7) !important;
+            color: white !important;
+            font-weight: bold;
+        }
+
+        .marker-cluster-medium {
+            background-color: rgba(59, 130, 246, 0.2) !important;
+        }
+
+        .marker-cluster-medium div {
+            background-color: rgba(59, 130, 246, 0.7) !important;
+            color: white !important;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header id="app-header">
+        <div class="brand-title">
+            <h1>منظومة التليميتري الذكية - إدارة المجموعات الحية</h1>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">تحليل جغرافي مرن ومباشر لكافة نقاط الرصد بالجمهورية عبر الـ Markercluster</div>
+        </div>
+        <div id="stat-badge">الشبكة كاملة: 410 محطة متصلة الآن</div>
+    </header>
+
+    <div id="map-container"></div>
+
+    <!-- مكتبة الخرائط الأساسية Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- مكتبة تجميع الخرائط الذكية MarkerCluster JS -->
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+    <script>
+        // 1. تهيئة الخريطة على النطاق الجغرافي الشامل لمصر
+        const map = L.map('map-container').setView([28.2000, 31.0000], 6.5);
+
+        // 2. تحميل خريطة الأساس التقنية الفاتحة والنظيفة
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> &copy; <a href="https://carto.com">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 18
+        }).addTo(map);
+
+        // 3. دالة تصميم الأيقونات الفردية بدقة برمجية سريعة وعالية الأداء
+        function createNodeIcon(color, size = 11) {
+            return L.divIcon({
+                className: "custom-node-marker",
+                iconAnchor: [size / 2, size / 2],
+                popupAnchor: [0, -size / 2],
+                html: `<span style="background-color: ${color}; width: ${size}px; height: ${size}px; display: block; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.25);"></span>`
+            });
+        }
+
+        const iconCenter = createNodeIcon('#ef4444', 16);  // أحمر رئيسي
+        const iconMaster = createNodeIcon('#3b82f6', 13);  // أزرق قيادي
+        const iconField = createNodeIcon('#10b981', 9);    // أخضر حقلي فرعي
+
+        // 4. تهيئة طبقة المجموعات الذكية (Marker Cluster Group)
+        const markersClusterGroup = L.markerClusterGroup({
+            showCoverageOnHover: false,
+            maxClusterRadius: 45,
+            disableClusteringAtZoom: 14
+        });
+
+        // 5. إضافة المركز الرئيسي للوزارة (أحمر) - يتم إضافته مباشرة للخريطة خارج التجميع لأنه سيادي وثابت
+        L.marker([30.0165, 31.2095], { icon: iconCenter }).addTo(map)
+            .bindPopup("<div class='popup-title' style='color:#ef4444;'>المقر القومي الشامل للتحكم</div><div class='popup-meta'><b>المستوى:</b> الإدارة العليا للوزارة</div><div class='popup-meta'><b>الاستقبال:</b> بث فضائي ولحظي مباشر</div>");
+
+        // 6. إضافة المحطات القيادية الـ 9 الكبرى (أزرق) إلى طبقة التجميع
+        const masterStations = [
+            { name: "محطة السد العالي (خزان أسوان)", lat: 23.9700, lng: 32.8800 },
+            { name: "محطة قناطر الدلتا الاستراتيجية", lat: 30.1900, lng: 31.1300 },
+            { name: "محطة آبار واحة سيوة المركزية", lat: 29.2032, lng: 25.5189 },
+            { name: "محطة قناطر أسيوط الجديدة", lat: 27.2000, lng: 31.1900 },
+            { name: "محطة مخرج بحيرة المنزلة الرئيسية", lat: 31.2500, lng: 32.1500 },
+            { name: "محطة مخرج بحيرة البرلس الرئيسية", lat: 31.4800, lng: 30.9800 },
+            { name: "محطة آبار الخارجة الجوفية", lat: 25.4400, lng: 30.5500 },
+            { name: "محطة مفيض وقناطر توشكى", lat: 22.5000, lng: 31.5000 },
+            { name: "محطة مأخذ وادي النطرون المحورية", lat: 30.4100, lng: 30.3500 }
+        ];
+
+        masterStations.forEach(m => {
+            const marker = L.marker([m.lat, m.lng], { icon: iconMaster })
+                .bindPopup(`<div class='popup-title' style='color:#3b82f6;'>${m.name}</div><div class='popup-meta'><b>المستوى:</b> محطة مرجعية كبرى Master</div><div class='popup-meta'><b>الوظيفة:</b> موازنة مائية استراتيجية</div>`);
+            markersClusterGroup.addLayer(marker);
+        });
+
+        // 7. خوارزمية حقن وتوليد الـ 400 محطة حقلية بالكامل (أخضر) وتوزيعها على شبكات الري الحقيقية
+        let totalFieldStations = 0;
+
+        function injectFieldData(count, centerLat, centerLng, spreadLat, spreadLng, regionName) {
+            for (let i = 0; i < count; i++) {
+                const lat = centerLat + (Math.random() - 0.5) * spreadLat;
+                const lng = centerLng + (Math.random() - 0.5) * spreadLng;
+                totalFieldStations++;
+
+                const marker = L.marker([lat, lng], { icon: iconField });
+
+                const popupContent = `
+                    <div class='popup-title' style='color:#10b981;'>محطة رصد حقلية RTU-${2000 + totalFieldStations}</div>
+                    <div class='popup-meta'><b>المنطقة والفرع:</b> ${regionName}</div>
+                    <div class='popup-meta'><b>آلية القياس:</b> مستشعرات الموجات فوق الصوتية</div>
+                    <div class='popup-meta'><b>بيانات حية:</b> المنسوب، التصرف، نسبة الملوحة</div>
+                    <div class='popup-meta'><b>تحديث الإشارة:</b> مستقر (GSM/GPRS)</div>
+                `;
+                marker.bindPopup(popupContent);
+
+                markersClusterGroup.addLayer(marker);
+            }
+        }
+
+        // توزيع وضخ الـ 400 محطة حقلية عبر الأقاليم المائية بمصر بالتفصيل:
+        injectFieldData(180, 30.85, 31.15, 0.8, 1.5, "إقليم شبكات ري ومصارف الدلتا");
+        injectFieldData(60, 29.30, 30.84, 0.3, 0.4, "نطاق إدارة ري الفيوم وبحر يوسف الحرج");
+        injectFieldData(80, 26.50, 31.50, 2.4, 0.8, "قطاع وادي النيل ومناسي الصعيد");
+        injectFieldData(30, 24.50, 32.90, 1.0, 0.5, "توزيعات ري خزان أسوان وكوم أمبو");
+        injectFieldData(25, 25.00, 29.00, 2.8, 1.8, "الخزان الجوفي بالوادي الجديد والواحات");
+        injectFieldData(25, 22.60, 31.70, 0.5, 0.8, "محور توشكى والزراعات الاستثمارية لجنوب الوادي");
+
+        // 8. إضافة مجموعة التجميع بالكامل بعد امتلائها بالـ 400 محطة إلى الخريطة الرئيسية
+        map.addLayer(markersClusterGroup);
+
+    </script>
+</body>
+
+</html>
