@@ -1,0 +1,63 @@
+{
+  "model_name": "EnhancedWaterLevelModel",
+  "model_version": "1.1.0",
+  "artifact_format": "joblib",
+  "framework": "python/scikit-learn",
+  "trained_at": "2026-08-28T18:55:53.874536+00:00",
+  "input_schema_version": "1.0",
+  "features": [
+    "wse",
+    "wse_lag1",
+    "wse_lag3",
+    "wse_lag7",
+    "wse_lag14",
+    "wse_lag30",
+    "upstream_wse",
+    "sin_month",
+    "cos_month",
+    "day_of_year"
+  ],
+  "targets": [
+    "target_wse_1d",
+    "target_wse_7d",
+    "target_wse_14d",
+    "target_wse_30d",
+    "water_level_state"
+  ],
+  "state_labels": [
+    "Low_Water",
+    "Normal",
+    "High_Water",
+    "Critical_Flood"
+  ],
+  "random_forest_config": {
+    "n_estimators": 100,
+    "max_depth": 12,
+    "min_samples_leaf": 10,
+    "n_jobs": 1
+  },
+  "training_dataset": {
+    "name": "dahiti_egypt_water_level_training_dataset.csv",
+    "sha256": "e5781c5a14798d353c28ea86b612d551f7ebe5727bba8c6439e48dd91baffd9a",
+    "row_count": 4050,
+    "source": "original DAHITI observations; no interpolation or aggregation",
+    "forecast_target": "7th-next observation within the same station",
+    "time_semantics": "irregular observation horizon; use horizon_days for elapsed-time analysis"
+  },
+  "evaluation": {
+    "training_rows": 4050,
+    "trained_estimators": [
+      "target_wse_14d",
+      "target_wse_1d",
+      "target_wse_30d",
+      "target_wse_3d",
+      "target_wse_7d"
+    ],
+    "evaluation_source": "ai-service/app/pipelines/benchmark.py"
+  },
+  "evaluation_notes": {
+    "forecasting": "Forecast metrics must be compared with the time-based benchmark, not the in-model random split.",
+    "state_classification": "State labels are deterministic threshold policies and are reported separately from forecasting quality.",
+    "generalization": "Model complexity is regularized. The latest temporal holdout beats persistence, but early-history walk-forward evaluation remains a known limitation."
+  }
+}

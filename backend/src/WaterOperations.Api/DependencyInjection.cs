@@ -1,19 +1,20 @@
-﻿using System.Text;
+using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
-using Scalar.AspNetCore;
+using WaterOperations.Api.Observability;
 using WaterOperations.Application.Common.Abstractions;
-using WaterOperations.Infrastructure.HealthChecks;
 using WaterOperations.Infrastructure.Authentication;
+using WaterOperations.Infrastructure.HealthChecks;
 using WaterOperations.Infrastructure.Messaging;
 using WaterOperations.Infrastructure.Persistence;
 using WaterOperations.Infrastructure.Security;
-using WaterOperations.Api.Observability;
 
 namespace WaterOperations.Api;
 
+/// <summary>
+/// Dependency injection registrations for the API presentation layer.
+/// </summary>
 public static class DependencyInjection
 {
     public static IServiceCollection AddApiHealthChecks(
@@ -23,6 +24,7 @@ public static class DependencyInjection
         var healthChecks = services
             .AddHealthChecks()
             .AddDbContextCheck<WaterOperationsDbContext>(tags: ["ready"]);
+
         if (configuration["Testing"] != "true")
         {
             healthChecks
@@ -82,8 +84,9 @@ public static class DependencyInjection
         var signingKey = configuration["Authentication:SigningKey"];
         if (string.IsNullOrWhiteSpace(signingKey))
         {
-            signingKey = "development-only-signing-key-change-me-please";
+            signingKey = JwtAuthenticationOptions.DevSigningKey;
         }
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -96,6 +99,7 @@ public static class DependencyInjection
             ClockSkew = TimeSpan.FromSeconds(30),
             RoleClaimType = "role"
         };
+
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context => SetSignalRAccessToken(context)
@@ -105,8 +109,7 @@ public static class DependencyInjection
     private static Task SetSignalRAccessToken(MessageReceivedContext context)
     {
         var accessToken = context.Request.Query["access_token"];
-        if (!string.IsNullOrWhiteSpace(accessToken)
-            && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+        if (!string.IsNullOrWhiteSpace(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
         {
             context.Token = accessToken;
         }
@@ -122,7 +125,7 @@ public static class DependencyInjection
                 AuthorizationPolicies.ViewerOnly,
                 policy => policy
                     .RequireAuthenticatedUser()
-                    .RequireRole(AuthorizationPolicies.ViewerRole)));
+                    .RequireRole("VIEWER", "OPERATOR", "ADMIN")));
 
         return services;
     }
@@ -157,6 +160,7 @@ public static class DependencyInjection
                     detail: "Please retry after the rate limit window resets.")
                     .ExecuteAsync(context.HttpContext);
             };
+
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(
                 context => RateLimitPartition.GetFixedWindowLimiter(
                     context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -166,9 +170,11 @@ public static class DependencyInjection
                         Window = TimeSpan.FromMinutes(1),
                         QueueLimit = 0
                     }));
+
             options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
                 context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+
             options.AddPolicy("search", context => RateLimitPartition.GetFixedWindowLimiter(
                 context.User.FindFirst("organization")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
@@ -183,8 +189,8 @@ public static class DependencyInjection
     {
         var signalR = services.AddSignalR();
         var redisConnection = configuration.GetConnectionString("Redis");
-        if (configuration["Testing"] != "true"
-            && !string.IsNullOrWhiteSpace(redisConnection))
+
+        if (configuration["Testing"] != "true" && !string.IsNullOrWhiteSpace(redisConnection))
         {
             signalR.AddStackExchangeRedis(redisConnection);
         }

@@ -2,7 +2,7 @@
 import axios, { type InternalAxiosRequestConfig } from "axios"
 import { useAuthStore } from "../store/authStore"
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "https://localhost:7048"
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5102"
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,

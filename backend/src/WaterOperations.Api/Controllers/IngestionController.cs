@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WaterOperations.Api.Extensions;
+using WaterOperations.Application.Common.Contracts;
 using WaterOperations.Application.Features.Ingestion.Commands;
 using WaterOperations.Application.Features.Ingestion.DTOs;
 using WaterOperations.Infrastructure.Security;
@@ -48,7 +49,7 @@ public sealed class IngestionController(
     {
         if (file is null)
         {
-            return BadRequest(new { error = "invalid_file" });
+            return BadRequest(new ErrorResponse("invalid_file"));
         }
 
         await using var content = file.OpenReadStream();

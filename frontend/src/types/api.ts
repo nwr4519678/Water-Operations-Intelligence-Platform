@@ -239,6 +239,26 @@ export interface AiInsightDto {
   modelVersion: string | null
 }
 
+export interface AiTelemetryObservation {
+  timestampUtc: string
+  value: number
+  uncertaintyMeters?: number | null
+}
+
+export interface AiWaterLevelPayload {
+  dahiti_id: number
+  current_wse: number
+  forecasts: {
+    target_wse_1d: number
+    target_wse_7d: number
+    target_wse_14d: number
+    target_wse_30d: number
+  }
+  water_level_state: string
+  forecast_semantics: string
+  evaluation?: Record<string, unknown>
+}
+
 export interface AiForecastPayload {
   forecastPoints: Array<{
     timestampUtc: string

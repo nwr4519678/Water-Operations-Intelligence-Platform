@@ -1,55 +1,60 @@
-﻿using Hangfire;
+using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using WaterOperations.Application.Common.Abstractions;
-using WaterOperations.Application.Common.Repositories;
 using WaterOperations.Application.Common.Caching;
+using WaterOperations.Application.Common.Repositories;
+using WaterOperations.Application.Common.Security;
+using WaterOperations.Application.Features.AI.Interfaces;
+using WaterOperations.Application.Features.Administration.Interfaces;
+using WaterOperations.Application.Features.Alarms.Interfaces;
+using WaterOperations.Application.Features.Audit.Interfaces;
 using WaterOperations.Application.Features.Auth.Interfaces;
+using WaterOperations.Application.Features.Charts.Interfaces;
+using WaterOperations.Application.Features.Collaboration.Interfaces;
 using WaterOperations.Application.Features.Ingestion.Interfaces;
 using WaterOperations.Application.Features.Mfa.Interfaces;
+using WaterOperations.Application.Features.Notifications.Interfaces;
 using WaterOperations.Application.Features.Operations.Interfaces;
 using WaterOperations.Application.Features.Pipeline.Interfaces;
+using WaterOperations.Application.Features.Reports.Interfaces;
 using WaterOperations.Application.Features.Retention.Interfaces;
+using WaterOperations.Application.Features.Search.Interfaces;
 using WaterOperations.Application.Features.Stations.Interfaces;
 using WaterOperations.Application.Features.Telemetry.Interfaces;
+using WaterOperations.Application.Features.Thresholds.Interfaces;
 using WaterOperations.Application.Features.Viewer.Interfaces;
-using WaterOperations.Infrastructure.Ingestion;
-using WaterOperations.Infrastructure.Caching;
+using WaterOperations.Infrastructure.AI;
+using WaterOperations.Infrastructure.AI.Repositories;
+using WaterOperations.Infrastructure.Administration.Repositories;
+using WaterOperations.Infrastructure.Audit.Repositories;
 using WaterOperations.Infrastructure.Authentication;
+using WaterOperations.Infrastructure.Operations.Repositories;
+using WaterOperations.Infrastructure.Security;
+using WaterOperations.Infrastructure.Caching;
+using WaterOperations.Infrastructure.Collaboration.Repositories;
 using WaterOperations.Infrastructure.Configuration;
+using WaterOperations.Infrastructure.Ingestion;
+using WaterOperations.Infrastructure.Ingestion.Repositories;
 using WaterOperations.Infrastructure.Jobs;
 using WaterOperations.Infrastructure.Messaging;
-using WaterOperations.Infrastructure.Mfa;
-using WaterOperations.Infrastructure.Operations;
+using WaterOperations.Infrastructure.Mfa.Repositories;
+using WaterOperations.Infrastructure.Notifications.Repositories;
 using WaterOperations.Infrastructure.Persistence;
 using WaterOperations.Infrastructure.Persistence.Repositories;
-using WaterOperations.Infrastructure.Pipeline;
-using WaterOperations.Infrastructure.Retention;
-using WaterOperations.Infrastructure.Security;
-using WaterOperations.Infrastructure.Stations;
+using WaterOperations.Infrastructure.Pipeline.Repositories;
+using WaterOperations.Infrastructure.Reports;
+using WaterOperations.Infrastructure.Reports.Repositories;
+using WaterOperations.Infrastructure.Retention.Repositories;
+using WaterOperations.Infrastructure.Search.Repositories;
+using WaterOperations.Infrastructure.Stations.Repositories;
 using WaterOperations.Infrastructure.Storage;
-using WaterOperations.Infrastructure.Telemetry;
+using WaterOperations.Infrastructure.Telemetry.Repositories;
 using WaterOperations.Infrastructure.Time;
-using WaterOperations.Infrastructure.Viewer;
-using WaterOperations.Infrastructure.ProductCapabilities.AI;
-using WaterOperations.Infrastructure.ProductCapabilities.Reports;
-using WaterOperations.Infrastructure.ProductCapabilities.Notifications;
-using WaterOperations.Infrastructure.ProductCapabilities.Audit;
-using WaterOperations.Infrastructure.ProductCapabilities.Collaboration;
-using WaterOperations.Infrastructure.ProductCapabilities.Administration;
-using WaterOperations.Infrastructure.ProductCapabilities.Search;
-using WaterOperations.Application.Features.AI.Contracts;
-using WaterOperations.Application.Features.Reports.Contracts;
-using WaterOperations.Application.Features.Notifications.Contracts;
-using WaterOperations.Application.Features.Audit.Contracts;
-using WaterOperations.Application.Features.Collaboration.Contracts;
-using WaterOperations.Application.Features.Administration.Contracts;
-using WaterOperations.Application.Features.Search.Contracts;
-using WaterOperations.Application.Features.ProductCapabilities.AI;
-using WaterOperations.Application.Features.ProductCapabilities.Reports;
+using WaterOperations.Infrastructure.Viewer.Repositories;
 
 namespace WaterOperations.Infrastructure;
 
@@ -59,27 +64,28 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("Default")
-            ?? throw new InvalidOperationException(
-                "ConnectionStrings:Default must be configured before starting the API.");
-
-        if (string.IsNullOrWhiteSpace(connectionString)
-            && configuration["Testing"] == "true")
-        {
-            connectionString = "Host=localhost;Database=water_operations_tests;Username=test;Password=test";
-        }
-
+        var isTesting = configuration["Testing"] == "true" || configuration.GetValue<bool>("Testing");
+        var connectionString = configuration.GetConnectionString("Default");
         if (string.IsNullOrWhiteSpace(connectionString))
         {
-            throw new InvalidOperationException(
-                "ConnectionStrings:Default must be configured through environment variables or user secrets.");
+            if (isTesting)
+            {
+                connectionString = "Host=localhost;Database=TestDatabase;Username=postgres;Password=postgres";
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    "ConnectionStrings:Default is not configured. " +
+                    "Set it via 'ConnectionStrings__Default' or .NET user secrets. " +
+                    "Development does not use an embedded database password.");
+            }
         }
 
         services
             .AddPersistence(configuration, connectionString)
             .AddInfrastructureOptions(configuration)
             .AddInfrastructureServices(configuration)
-            .AddFeatureServices()
+            .AddFeatureServices(configuration)
             .AddCaching()
             .AddBackgroundProcessing(configuration, connectionString);
 
@@ -99,7 +105,8 @@ public static class DependencyInjection
         else
         {
             services.AddDbContext<WaterOperationsDbContext>(
-                options => options.UseNpgsql(connectionString));
+                options => options.UseNpgsql(connectionString)
+                    .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
         }
 
         services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
@@ -130,43 +137,53 @@ public static class DependencyInjection
         services.AddSingleton<IFileStorage, LocalFileStorage>();
         services.AddScoped<ICorrelationContext, HttpCorrelationContext>();
         services.AddScoped<IReportJobScheduler, NoOpReportJobScheduler>();
-        if (configuration["Testing"] == "true")
-        {
-            services.AddSingleton<WaterOperations.Infrastructure.Telemetry.TelemetryStore>();
-        }
         return services;
     }
 
     private static IServiceCollection AddFeatureServices(
-        this IServiceCollection services)
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
-        services.AddScoped<IViewerQueryRepository, EfViewerQueryRepository>();
-        services.AddSingleton<IUserCredentialRepository>(
-            provider => provider.GetRequiredService<ViewerUserStore>());
+        services.AddScoped<IViewerQueryRepository, ViewerQueryRepository>();
+        if (configuration.GetValue<bool>("Testing"))
+        {
+            services.AddSingleton<IUserCredentialRepository, ViewerUserStore>();
+        }
+        else
+        {
+            services.AddSingleton<DatabaseUserStore>();
+            services.AddSingleton<IUserCredentialRepository>(
+                provider => provider.GetRequiredService<DatabaseUserStore>());
+        }
         services.AddSingleton<IRefreshSessionRepository>(
             provider => provider.GetRequiredService<SessionStore>());
         services.AddSingleton<IAccessTokenIssuer>(
             provider => provider.GetRequiredService<AuthTokenService>());
-        services.AddScoped<IStationQueryRepository, EfStationQueryRepository>();
-        services.AddScoped<IOperationsQueryRepository, EfOperationsQueryRepository>();
-        services.AddScoped<ITelemetryQueryRepository, EfTelemetryQueryRepository>();
-        services.AddSingleton<ITelemetryFixtureReader, TelemetryFixtureReader>();
-        services.AddScoped<IIngestionRepository, EfIngestionRepository>();
+        services.AddScoped<IStationQueryRepository, StationQueryRepository>();
+        services.AddScoped<IOperationsQueryRepository, OperationsQueryRepository>();
+        services.AddScoped<ITelemetryQueryRepository, TelemetryQueryRepository>();
+        services.AddScoped<IIngestionRepository, IngestionRepository>();
         services.AddScoped<ICsvBatchParser, CsvBatchParser>();
-        services.AddScoped<IPipelineRepository, EfPipelineRepository>();
-        services.AddScoped<IRetentionRepository, EfRetentionRepository>();
-        services.AddScoped<IMfaRepository, EfMfaRepository>();
-        services.AddScoped<IAiModelRepository, EfAiModelRepository>();
-        services.AddScoped<IReportRepository, EfReportRepository>();
-        services.AddScoped<INotificationRepository, EfNotificationRepository>();
-        services.AddScoped<IAuditRepository, EfAuditRepository>();
-        services.AddScoped<ICollaborationRepository, EfCollaborationRepository>();
-        services.AddScoped<IAdministrationRepository, EfAdministrationRepository>();
-        services.AddScoped<ISearchRepository, EfSearchRepository>();
+        services.AddScoped<IPipelineRepository, PipelineRepository>();
+        services.AddScoped<IRetentionRepository, RetentionRepository>();
+        services.AddScoped<IMfaRepository, MfaRepository>();
+        services.AddScoped<IAiModelRepository, AiModelRepository>();
+        services.AddScoped<IReportRepository, ReportRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IAuditRepository, AuditRepository>();
+        services.AddScoped<ICollaborationRepository, CollaborationRepository>();
+        services.AddScoped<IAdministrationRepository, AdministrationRepository>();
+        services.AddScoped<ISearchRepository, SearchRepository>();
+        services.AddScoped<IAlarmRepository, AlarmRepository>();
+        services.AddScoped<IThresholdRepository, ThresholdRepository>();
+        services.AddScoped<IChartAnnotationRepository, ChartAnnotationRepository>();
+        services.AddScoped<IStationAuthorizationService, StationAuthorizationService>();
+        services.AddSingleton<AiModelCircuitBreaker>();
         services.AddHttpClient<IAiModelClient, HttpAiModelClient>((provider, client) =>
         {
             var options = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<AiModelClientOptions>>().Value;
-            client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+            var baseUrl = string.IsNullOrWhiteSpace(options.BaseUrl) ? "http://localhost:8000" : options.BaseUrl;
+            client.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
             client.Timeout = TimeSpan.FromSeconds(Math.Clamp(options.TimeoutSeconds, 1, 120));
             if (!string.IsNullOrWhiteSpace(options.ApiKey))
             {
@@ -191,26 +208,36 @@ public static class DependencyInjection
         IConfiguration configuration,
         string connectionString)
     {
-        services.AddScoped<OutboxPublisherJob>();
-        if (configuration["Testing"] == "true")
+        if (configuration["Testing"] == "true" || configuration.GetValue<bool>("Testing"))
         {
+            services.AddScoped<IReportJobScheduler, NoOpReportJobScheduler>();
             return services;
         }
 
-        var redisConnection = configuration.GetConnectionString("Redis")
-            ?? throw new InvalidOperationException(
-                "ConnectionStrings:Redis must be configured before starting the API.");
-        services.AddSingleton<IConnectionMultiplexer>(
-            _ => ConnectionMultiplexer.Connect(redisConnection));
-        services.AddStackExchangeRedisCache(
-            options => options.Configuration = redisConnection);
+        var redisConnection = configuration.GetConnectionString("Redis");
+        if (!string.IsNullOrWhiteSpace(redisConnection))
+        {
+            try
+            {
+                services.AddSingleton<IConnectionMultiplexer>(
+                    _ => ConnectionMultiplexer.Connect(redisConnection));
+                services.AddStackExchangeRedisCache(
+                    options => options.Configuration = redisConnection);
+            }
+            catch
+            {
+                // Soft fallback if Redis server is unreachable locally
+            }
+        }
+
         services.AddHangfire(config => config
             .UseSimpleAssemblyNameTypeSerializer()
             .UseRecommendedSerializerSettings()
             .UsePostgreSqlStorage(options => options
                 .UseNpgsqlConnection(connectionString)));
-        services.AddHangfireServer();
+        services.AddHangfireServer(options => { options.WorkerCount = 4; });
         services.AddScoped<IReportJobScheduler, HangfireReportJobScheduler>();
+
         return services;
     }
 }

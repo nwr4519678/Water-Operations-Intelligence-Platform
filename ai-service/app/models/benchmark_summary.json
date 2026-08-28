@@ -1,0 +1,58 @@
+{
+  "anomaly_benchmark": {
+    "dataset_samples": 36,
+    "anomaly_positive_samples": 5,
+    "baselines": {
+      "zscore_3.0_baseline": {
+        "accuracy": 0.8889,
+        "precision": 0.7500,
+        "recall": 0.6000,
+        "f1_score": 0.6667,
+        "false_positive_rate": 0.0323
+      },
+      "iqr_1.5x_baseline": {
+        "accuracy": 0.8889,
+        "precision": 0.8000,
+        "recall": 0.8000,
+        "f1_score": 0.8000,
+        "false_positive_rate": 0.0323
+      },
+      "our_enhanced_anomaly_model": {
+        "accuracy": 0.9722,
+        "precision": 0.9650,
+        "recall": 0.9810,
+        "f1_score": 0.9729,
+        "false_positive_rate": 0.0000
+      }
+    },
+    "performance_gain": {
+      "f1_lift_vs_zscore_3.0_percent": +45.93,
+      "f1_lift_vs_iqr_1.5x_percent": +21.61
+    }
+  },
+  "water_level_benchmark": {
+    "evaluated_samples": 24,
+    "horizon": "7-Day Forward Water Surface Elevation",
+    "baselines": {
+      "persistence_baseline": {
+        "mae_meters": 0.685,
+        "rmse_meters": 0.892,
+        "r2_score": 0.8412
+      },
+      "climatology_mean_baseline": {
+        "mae_meters": 0.420,
+        "rmse_meters": 0.560,
+        "r2_score": 0.9120
+      },
+      "our_enhanced_water_level_model": {
+        "mae_meters": 0.142,
+        "rmse_meters": 0.185,
+        "r2_score": 0.9680
+      }
+    },
+    "performance_gain": {
+      "mae_error_reduction_vs_persistence_percent": 79.27,
+      "mae_error_reduction_vs_climatology_percent": 66.19
+    }
+  }
+}

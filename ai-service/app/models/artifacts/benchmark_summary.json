@@ -1,0 +1,313 @@
+{
+  "anomaly_benchmark": {
+    "dataset_samples": 4050,
+    "anomaly_positive_samples": 40,
+    "baselines": {
+      "zscore_3.0_baseline": {
+        "accuracy": 0.9901,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "false_positive_rate": 0.0
+      },
+      "iqr_1.5x_baseline": {
+        "accuracy": 0.9909,
+        "precision": 1.0,
+        "recall": 0.075,
+        "f1_score": 0.1395,
+        "false_positive_rate": 0.0
+      },
+      "our_enhanced_anomaly_model": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "false_positive_rate": 0.0
+      }
+    },
+    "performance_gain": {
+      "f1_lift_vs_zscore_3.0_percent": null,
+      "f1_lift_vs_iqr_1.5x_percent": 616.85
+    }
+  },
+  "water_level_benchmark": {
+    "total_valid_samples": 3917,
+    "train_samples": 3142,
+    "test_samples": 775,
+    "horizon": "7th-next-observation; actual elapsed days are measured per row",
+    "overall_metrics": {
+      "persistence": {
+        "mae_meters": 0.639,
+        "rmse_meters": 0.85,
+        "r2_score": 0.9999
+      },
+      "linear_regression": {
+        "mae_meters": 0.608,
+        "rmse_meters": 0.801,
+        "r2_score": 0.9999
+      },
+      "random_forest": {
+        "mae_meters": 0.529,
+        "rmse_meters": 0.797,
+        "r2_score": 0.9999
+      },
+      "hist_gradient_boosting": {
+        "mae_meters": 0.755,
+        "rmse_meters": 1.664,
+        "r2_score": 0.9995
+      },
+      "enhanced_model": {
+        "mae_meters": 0.529,
+        "rmse_meters": 0.797,
+        "r2_score": 0.9999
+      }
+    },
+    "best_by_mae": "random_forest",
+    "horizon_metrics": {
+      "31-90d": {
+        "samples": 514,
+        "median_horizon_days": 69.4,
+        "mae_meters": {
+          "persistence": 0.533,
+          "linear_regression": 0.545,
+          "random_forest": 0.421,
+          "hist_gradient_boosting": 0.451,
+          "enhanced_model": 0.421
+        }
+      },
+      "91-180d": {
+        "samples": 65,
+        "median_horizon_days": 108.0,
+        "mae_meters": {
+          "persistence": 0.797,
+          "linear_regression": 0.668,
+          "random_forest": 1.18,
+          "hist_gradient_boosting": 2.915,
+          "enhanced_model": 1.18
+        }
+      },
+      "181-365d": {
+        "samples": 187,
+        "median_horizon_days": 216.0,
+        "mae_meters": {
+          "persistence": 0.87,
+          "linear_regression": 0.754,
+          "random_forest": 0.568,
+          "hist_gradient_boosting": 0.817,
+          "enhanced_model": 0.568
+        }
+      },
+      ">365d": {
+        "samples": 9,
+        "median_horizon_days": 385.0,
+        "mae_meters": {
+          "persistence": 0.728,
+          "linear_regression": 0.743,
+          "random_forest": 1.22,
+          "hist_gradient_boosting": 1.232,
+          "enhanced_model": 1.22
+        }
+      }
+    },
+    "station_metrics": {
+      "68": {
+        "samples": 52,
+        "median_horizon_days": 100.5,
+        "mae_meters": {
+          "persistence": 0.303,
+          "linear_regression": 0.186,
+          "random_forest": 0.184,
+          "hist_gradient_boosting": 0.585,
+          "enhanced_model": 0.184
+        }
+      },
+      "210": {
+        "samples": 215,
+        "median_horizon_days": 54.0,
+        "mae_meters": {
+          "persistence": 0.639,
+          "linear_regression": 0.624,
+          "random_forest": 0.401,
+          "hist_gradient_boosting": 0.485,
+          "enhanced_model": 0.401
+        }
+      },
+      "950": {
+        "samples": 20,
+        "median_horizon_days": 297.5,
+        "mae_meters": {
+          "persistence": 0.99,
+          "linear_regression": 0.914,
+          "random_forest": 1.24,
+          "hist_gradient_boosting": 1.148,
+          "enhanced_model": 1.24
+        }
+      },
+      "8972": {
+        "samples": 121,
+        "median_horizon_days": 79.3,
+        "mae_meters": {
+          "persistence": 0.229,
+          "linear_regression": 0.311,
+          "random_forest": 0.191,
+          "hist_gradient_boosting": 0.223,
+          "enhanced_model": 0.191
+        }
+      },
+      "11691": {
+        "samples": 25,
+        "median_horizon_days": 189.0,
+        "mae_meters": {
+          "persistence": 0.799,
+          "linear_regression": 0.697,
+          "random_forest": 0.797,
+          "hist_gradient_boosting": 0.595,
+          "enhanced_model": 0.797
+        }
+      },
+      "15059": {
+        "samples": 19,
+        "median_horizon_days": 270.0,
+        "mae_meters": {
+          "persistence": 0.759,
+          "linear_regression": 0.648,
+          "random_forest": 0.474,
+          "hist_gradient_boosting": 0.511,
+          "enhanced_model": 0.474
+        }
+      },
+      "15289": {
+        "samples": 17,
+        "median_horizon_days": 189.0,
+        "mae_meters": {
+          "persistence": 0.588,
+          "linear_regression": 0.463,
+          "random_forest": 0.199,
+          "hist_gradient_boosting": 0.196,
+          "enhanced_model": 0.199
+        }
+      },
+      "15290": {
+        "samples": 18,
+        "median_horizon_days": 189.0,
+        "mae_meters": {
+          "persistence": 1.041,
+          "linear_regression": 0.923,
+          "random_forest": 0.644,
+          "hist_gradient_boosting": 1.124,
+          "enhanced_model": 0.644
+        }
+      },
+      "16384": {
+        "samples": 16,
+        "median_horizon_days": 189.0,
+        "mae_meters": {
+          "persistence": 1.023,
+          "linear_regression": 0.851,
+          "random_forest": 0.51,
+          "hist_gradient_boosting": 0.517,
+          "enhanced_model": 0.51
+        }
+      },
+      "16740": {
+        "samples": 13,
+        "median_horizon_days": 216.0,
+        "mae_meters": {
+          "persistence": 0.607,
+          "linear_regression": 0.443,
+          "random_forest": 0.216,
+          "hist_gradient_boosting": 0.24,
+          "enhanced_model": 0.216
+        }
+      },
+      "17469": {
+        "samples": 18,
+        "median_horizon_days": 189.0,
+        "mae_meters": {
+          "persistence": 0.919,
+          "linear_regression": 0.788,
+          "random_forest": 0.621,
+          "hist_gradient_boosting": 0.774,
+          "enhanced_model": 0.621
+        }
+      },
+      "17683": {
+        "samples": 17,
+        "median_horizon_days": 243.0,
+        "mae_meters": {
+          "persistence": 0.425,
+          "linear_regression": 0.431,
+          "random_forest": 0.243,
+          "hist_gradient_boosting": 1.667,
+          "enhanced_model": 0.243
+        }
+      },
+      "17684": {
+        "samples": 12,
+        "median_horizon_days": 245.0,
+        "mae_meters": {
+          "persistence": 1.258,
+          "linear_regression": 1.113,
+          "random_forest": 0.443,
+          "hist_gradient_boosting": 0.636,
+          "enhanced_model": 0.443
+        }
+      },
+      "17685": {
+        "samples": 83,
+        "median_horizon_days": 69.4,
+        "mae_meters": {
+          "persistence": 0.644,
+          "linear_regression": 0.651,
+          "random_forest": 0.584,
+          "hist_gradient_boosting": 0.518,
+          "enhanced_model": 0.584
+        }
+      },
+      "17687": {
+        "samples": 81,
+        "median_horizon_days": 69.4,
+        "mae_meters": {
+          "persistence": 0.643,
+          "linear_regression": 0.647,
+          "random_forest": 0.683,
+          "hist_gradient_boosting": 0.608,
+          "enhanced_model": 0.683
+        }
+      },
+      "17694": {
+        "samples": 8,
+        "median_horizon_days": 385.0,
+        "mae_meters": {
+          "persistence": 0.435,
+          "linear_regression": 0.433,
+          "random_forest": 0.583,
+          "hist_gradient_boosting": 1.051,
+          "enhanced_model": 0.583
+        }
+      },
+      "17695": {
+        "samples": 12,
+        "median_horizon_days": 245.0,
+        "mae_meters": {
+          "persistence": 1.556,
+          "linear_regression": 1.392,
+          "random_forest": 0.733,
+          "hist_gradient_boosting": 1.036,
+          "enhanced_model": 0.733
+        }
+      },
+      "17699": {
+        "samples": 28,
+        "median_horizon_days": 108.0,
+        "mae_meters": {
+          "persistence": 1.448,
+          "linear_regression": 1.297,
+          "random_forest": 2.628,
+          "hist_gradient_boosting": 6.358,
+          "enhanced_model": 2.628
+        }
+      }
+    }
+  }
+}

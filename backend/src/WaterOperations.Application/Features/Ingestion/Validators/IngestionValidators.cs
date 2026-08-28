@@ -13,7 +13,8 @@ public sealed class IngestBatchCommandValidator : AbstractValidator<IngestBatchC
             {
                 request.RuleFor(x => x.Readings)
                     .NotEmpty()
-                    .Must(x => x.Count <= 10_000);
+                    .Must(x => x.Count <= 5_000)
+                    .WithMessage("Ingestion batch cannot exceed 5000 items.");
             });
     }
 }

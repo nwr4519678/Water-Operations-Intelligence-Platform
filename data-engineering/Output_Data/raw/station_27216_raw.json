@@ -1,0 +1,83 @@
+{
+  "code": 200,
+  "message": "Request successful",
+  "target": {
+    "id": "27216",
+    "target_name": "Toshka (South), Lake",
+    "location": null,
+    "country": "Egypt",
+    "continent": "Africa",
+    "longitude": 30.7795,
+    "latitude": 23.1391,
+    "software": "8.0",
+    "download": "2026-08-28 18:02:40"
+  },
+  "data": [
+    {
+      "date": "2018-09-06 19:41:55",
+      "wse": 145.212,
+      "wse_u": 0.011,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-02-28 19:42:00",
+      "wse": 137.025,
+      "wse_u": 0.003,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-10-01 19:42:05",
+      "wse": 140.008,
+      "wse_u": 0.034,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-10-28 19:42:06",
+      "wse": 143.672,
+      "wse_u": 0.007,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-11-24 19:42:02",
+      "wse": 143.57,
+      "wse_u": 0.036,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-12-21 19:42:00",
+      "wse": 142.576,
+      "wse_u": 0.006,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-01-17 19:42:06",
+      "wse": 141.317,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-02-13 19:42:07",
+      "wse": 140.671,
+      "wse_u": 0.02,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-05-05 19:42:12",
+      "wse": 139.506,
+      "wse_u": 0.007,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-06-01 19:42:11",
+      "wse": 139.405,
+      "wse_u": 0.003,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-08-21 19:42:09",
+      "wse": 139.729,
+      "wse_u": 0.004,
+      "data": "water-level-altimetry"
+    }
+  ]
+}

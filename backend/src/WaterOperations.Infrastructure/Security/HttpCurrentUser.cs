@@ -10,15 +10,17 @@ public sealed class HttpCurrentUser(IHttpContextAccessor accessor) : ICurrentUse
 
     public bool IsAuthenticated => Principal?.Identity?.IsAuthenticated == true;
 
-    public Guid? OrganizationId => Parse("organization");
+    public Guid? UserId => Parse(ClaimTypes.NameIdentifier);
 
-    public Guid? RegionId => Parse("region");
+    public string? Email => Principal?.FindFirstValue(ClaimTypes.Email);
+
+    public Guid? OrganizationId => Parse("organization");
 
     public string? Organization => Principal?.FindFirstValue("organization");
 
-    public string? Region => Principal?.FindFirstValue("region");
+    public Guid? RegionId => Parse("region");
 
-    public Guid? UserId => Parse(ClaimTypes.NameIdentifier);
+    public string? Region => Principal?.FindFirstValue("region");
 
     public IReadOnlyCollection<string> Roles =>
         Principal?.FindAll("role").Select(x => x.Value).ToArray() ?? [];

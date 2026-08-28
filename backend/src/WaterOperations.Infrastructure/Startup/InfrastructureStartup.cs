@@ -17,21 +17,17 @@ public static class InfrastructureStartup
         this WebApplication app,
         CancellationToken cancellationToken = default)
     {
-        if (app.Configuration["Testing"] != "true"
-            && !(app.Environment.IsDevelopment()
-                && app.Configuration.GetValue<bool>("Seed:Enabled")))
-        {
-            return;
-        }
-
         await using var scope = app.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<WaterOperationsDbContext>();
+
         if (app.Configuration["Testing"] == "true")
         {
+            // Integration tests: schema-only, no migration history table needed.
             await db.Database.EnsureCreatedAsync(cancellationToken);
         }
         else
         {
+            // All non-test environments (including production) apply pending migrations.
             await db.Database.MigrateAsync(cancellationToken);
         }
 
@@ -48,10 +44,18 @@ public static class InfrastructureStartup
             return;
         }
 
-        var recurringJobs = app.Services.GetRequiredService<IRecurringJobManager>();
+        var recurringJobs = app.Services.GetService<IRecurringJobManager>();
+        if (recurringJobs is null)
+        {
+            return;
+        }
         recurringJobs.AddOrUpdate<SignalROutboxPublisherJob>(
             "outbox-publisher",
             job => job.PublishAsync(CancellationToken.None),
+            "*/1 * * * *");
+        recurringJobs.AddOrUpdate<ThresholdReevaluationJob>(
+            "threshold-reevaluation",
+            job => job.EvaluateAsync(CancellationToken.None),
             "*/1 * * * *");
         recurringJobs.AddOrUpdate<NotificationDeliveryJob>(
             "notification-delivery",

@@ -1,7 +1,6 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WaterOperations.Api.Contracts;
 using WaterOperations.Api.Extensions;
 using WaterOperations.Application.Common.Pagination;
 using WaterOperations.Application.Features.Operations.Queries;
@@ -78,10 +77,7 @@ public sealed class ViewerController(
             new GetOrganizationsQuery(),
             cancellationToken);
 
-        return Ok(
-            ApiEnvelope.Ok(
-                result,
-                HttpContext.TraceIdentifier));
+        return result.ToActionResult(this);
     }
 
     [HttpGet("organizations/{organizationId:guid}/regions")]
@@ -91,13 +87,10 @@ public sealed class ViewerController(
         CancellationToken cancellationToken)
     {
         var result = await sender.Send(
-            new GetRegionsQuery(organizationId),
+            new GetRegionsQuery(),
             cancellationToken);
 
-        return Ok(
-            ApiEnvelope.Ok(
-                result,
-                HttpContext.TraceIdentifier));
+        return result.ToActionResult(this);
     }
 
     [HttpGet("regions/{regionId:guid}/stations")]
@@ -110,10 +103,7 @@ public sealed class ViewerController(
             new GetStationsQuery(regionId),
             cancellationToken);
 
-        return Ok(
-            ApiEnvelope.Ok(
-                result,
-                HttpContext.TraceIdentifier));
+        return result.ToActionResult(this);
     }
 
     [HttpGet("stations/{stationId:guid}/measurements")]
@@ -130,7 +120,7 @@ public sealed class ViewerController(
             new GetTelemetryQuery(from, to, stationId, parameterId, limit),
             cancellationToken);
 
-        return result.ToTelemetryResult(this);
+        return result.ToActionResult(this);
     }
 
     [HttpGet("stations/{stationId:guid}/alarms")]
@@ -143,9 +133,6 @@ public sealed class ViewerController(
             new GetAlarmsQuery(stationId),
             cancellationToken);
 
-        return Ok(
-            ApiEnvelope.Ok(
-                result,
-                HttpContext.TraceIdentifier));
+        return result.ToActionResult(this);
     }
 }

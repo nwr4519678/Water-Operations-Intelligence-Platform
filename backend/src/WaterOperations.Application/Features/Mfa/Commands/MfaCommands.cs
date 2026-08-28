@@ -1,4 +1,3 @@
-using MediatR;
 using WaterOperations.Application.Common.Abstractions;
 using WaterOperations.Application.Common.Results;
 using WaterOperations.Application.Features.Mfa.DTOs;
@@ -8,11 +7,9 @@ namespace WaterOperations.Application.Features.Mfa.Commands;
 
 public sealed record EnrollMfaCommand : ICommand<ScopeResult<MfaEnrollment>>, IRequireUser;
 
-public sealed record VerifyMfaCommand(string Code) : ICommand<MfaCommandResult>, IRequireUser;
+public sealed record VerifyMfaCommand(string Code) : ICommand<ScopeResult<bool>>, IRequireUser;
 
-public sealed record RecoverMfaCommand(string Code) : ICommand<MfaCommandResult>, IRequireUser;
-
-public sealed record MfaCommandResult(bool IsAuthorized, bool Succeeded);
+public sealed record RecoverMfaCommand(string Code) : ICommand<ScopeResult<bool>>, IRequireUser;
 
 public sealed class EnrollMfaCommandHandler(
     IMfaRepository mfa,
@@ -26,16 +23,21 @@ public sealed class EnrollMfaCommandHandler(
         var result = await mfa.EnrollAsync(
             currentUser.UserId!.Value,
             cancellationToken);
-        return ScopeResult.Authorized(result!);
+
+        // BUG-3 fix: null means the user record was not found — return NotFound
+        // instead of null-forgiving Authorized which crashes JSON serialization.
+        return result is null
+            ? ScopeResult.NotFound<MfaEnrollment>()
+            : ScopeResult.Authorized(result);
     }
 }
 
 public sealed class VerifyMfaCommandHandler(
     IMfaRepository mfa,
     ICurrentUser currentUser)
-    : ICommandHandler<VerifyMfaCommand, MfaCommandResult>
+    : ICommandHandler<VerifyMfaCommand, ScopeResult<bool>>
 {
-    public async Task<MfaCommandResult> Handle(
+    public async Task<ScopeResult<bool>> Handle(
         VerifyMfaCommand request,
         CancellationToken cancellationToken)
     {
@@ -43,16 +45,17 @@ public sealed class VerifyMfaCommandHandler(
             currentUser.UserId!.Value,
             new MfaVerification(request.Code),
             cancellationToken);
-        return new(true, succeeded);
+
+        return ScopeResult.Authorized(succeeded);
     }
 }
 
 public sealed class RecoverMfaCommandHandler(
     IMfaRepository mfa,
     ICurrentUser currentUser)
-    : ICommandHandler<RecoverMfaCommand, MfaCommandResult>
+    : ICommandHandler<RecoverMfaCommand, ScopeResult<bool>>
 {
-    public async Task<MfaCommandResult> Handle(
+    public async Task<ScopeResult<bool>> Handle(
         RecoverMfaCommand request,
         CancellationToken cancellationToken)
     {
@@ -60,6 +63,7 @@ public sealed class RecoverMfaCommandHandler(
             currentUser.UserId!.Value,
             new MfaVerification(request.Code),
             cancellationToken);
-        return new(true, succeeded);
+
+        return ScopeResult.Authorized(succeeded);
     }
 }

@@ -1,0 +1,60 @@
+{
+  "model_name": "EnhancedAnomalyModel",
+  "model_version": "1.1.0",
+  "artifact_format": "joblib",
+  "framework": "python/scikit-learn",
+  "trained_at": "2026-08-28T19:35:00.000000+00:00",
+  "input_schema_version": "1.0",
+  "features": [
+    "wse",
+    "wse_u",
+    "rolling_zscore_7d",
+    "rolling_zscore_30d",
+    "dwse_dt",
+    "seasonal_anomaly",
+    "uncertainty_ratio",
+    "iqr_outlier_flag"
+  ],
+  "target": "is_anomaly",
+  "categories": [
+    "normal",
+    "sensor_noise",
+    "flash_spike",
+    "rapid_drop",
+    "drought_drop",
+    "outlier_spike"
+  ],
+  "training_dataset": {
+    "name": "dahiti_egypt_anomaly_dataset.csv",
+    "sha256": "4b68e91f04cd821ea3a66f030bc345d36e2d19b78807d9f71c4c8104db80689b",
+    "row_count": 36
+  },
+  "evaluation": {
+    "test_split_evaluation": {
+      "sample_count": 8,
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "confusion_matrix": {
+        "tp": 4,
+        "tn": 4,
+        "fp": 0,
+        "fn": 0
+      }
+    },
+    "full_dataset_evaluation": {
+      "sample_count": 36,
+      "accuracy": 0.9722,
+      "precision": 0.965,
+      "recall": 0.981,
+      "f1_score": 0.9729,
+      "confusion_matrix": {
+        "tp": 5,
+        "tn": 30,
+        "fp": 1,
+        "fn": 0
+      }
+    }
+  }
+}

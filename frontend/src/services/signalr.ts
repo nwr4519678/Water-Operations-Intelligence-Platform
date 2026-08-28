@@ -24,7 +24,7 @@ export class TelemetrySignalRService {
   private isConnected = false
 
   async start(accessToken: string): Promise<void> {
-    const hubUrl = `${import.meta.env.VITE_API_BASE_URL || "https://localhost:7048"}/hubs/telemetry`
+    const hubUrl = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5102"}/hubs/telemetry`
 
     try {
       this.connection = new signalR.HubConnectionBuilder()

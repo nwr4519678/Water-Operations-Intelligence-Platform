@@ -1,0 +1,971 @@
+{
+  "info": {
+    "name": "Water Operations Intelligence Platform API",
+    "description": "Complete test collection for all 19 controllers and 80+ REST endpoints. Execute '00 - Login (ADMIN)' first to auto-capture JWT tokens.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://localhost:7048", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "refreshToken", "value": "", "type": "string" },
+    { "key": "adminEmail", "value": "admin@water.local", "type": "string" },
+    { "key": "adminPassword", "value": "Admin@1234", "type": "string" },
+    { "key": "operatorEmail", "value": "operator@water.local", "type": "string" },
+    { "key": "operatorPassword", "value": "Operator@1234", "type": "string" },
+    { "key": "viewerEmail", "value": "viewer@water.local", "type": "string" },
+    { "key": "viewerPassword", "value": "Viewer@1234", "type": "string" },
+    { "key": "orgId", "value": "00000000-0000-0000-0000-000000000001", "type": "string" },
+    { "key": "stationId", "value": "00000000-0000-0000-0000-000000000001", "type": "string" },
+    { "key": "chartFrom", "value": "2026-08-23T00:00:00Z", "type": "string" },
+    { "key": "chartTo", "value": "2026-08-23T23:59:59Z", "type": "string" },
+    { "key": "regionId", "value": "00000000-0000-0000-0000-000000000001", "type": "string" },
+    { "key": "alarmId", "value": "00000000-0000-0000-0000-000000000001", "type": "string" },
+    { "key": "userId", "value": "00000000-0000-0000-0000-000000000001", "type": "string" },
+    { "key": "reportId", "value": "00000000-0000-0000-0000-000000000001", "type": "string" },
+    { "key": "modelId", "value": "00000000-0000-0000-0000-000000000001", "type": "string" },
+    { "key": "batchId", "value": "00000000-0000-0000-0000-000000000001", "type": "string" },
+    { "key": "noteId", "value": "1", "type": "string" },
+    { "key": "annotationId", "value": "1", "type": "string" },
+    { "key": "thresholdId", "value": "1", "type": "string" },
+    { "key": "scheduleId", "value": "1", "type": "string" },
+    { "key": "notificationId", "value": "1", "type": "string" },
+    { "key": "snapshotId", "value": "00000000-0000-0000-0000-000000000001", "type": "string" },
+    { "key": "shareToken", "value": "demo-share-token", "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "🔑 00 - Authentication",
+      "item": [
+        {
+          "name": "01 - Login (ADMIN)",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "if (pm.response.code === 200) {",
+              "  var b = pm.response.json();",
+              "  pm.collectionVariables.set('accessToken', b.accessToken);",
+              "  pm.collectionVariables.set('refreshToken', b.refreshToken);",
+              "  pm.test('Login OK (ADMIN)', () => pm.response.to.have.status(200));",
+              "}"
+            ], "type": "text/javascript" }
+          }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","login"] }
+          }
+        },
+        {
+          "name": "02 - Login (OPERATOR)",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "if (pm.response.code === 200) {",
+              "  var b = pm.response.json();",
+              "  pm.collectionVariables.set('accessToken', b.accessToken);",
+              "  pm.collectionVariables.set('refreshToken', b.refreshToken);",
+              "}"
+            ], "type": "text/javascript" }
+          }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{operatorEmail}}\",\n  \"password\": \"{{operatorPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","login"] }
+          }
+        },
+        {
+          "name": "03 - Login (VIEWER)",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "if (pm.response.code === 200) {",
+              "  var b = pm.response.json();",
+              "  pm.collectionVariables.set('accessToken', b.accessToken);",
+              "  pm.collectionVariables.set('refreshToken', b.refreshToken);",
+              "}"
+            ], "type": "text/javascript" }
+          }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{viewerEmail}}\",\n  \"password\": \"{{viewerPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","login"] }
+          }
+        },
+        {
+          "name": "04 - Refresh Token",
+          "event": [{
+            "listen": "test",
+            "script": { "exec": [
+              "if (pm.response.code === 200) {",
+              "  var b = pm.response.json();",
+              "  pm.collectionVariables.set('accessToken', b.accessToken);",
+              "  pm.collectionVariables.set('refreshToken', b.refreshToken);",
+              "}"
+            ], "type": "text/javascript" }
+          }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","refresh"] }
+          }
+        },
+        {
+          "name": "05 - Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/logout", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","logout"] }
+          }
+        },
+        {
+          "name": "06 - MFA Enroll",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/mfa/enroll", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","mfa","enroll"] }
+          }
+        },
+        {
+          "name": "07 - MFA Verify",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"123456\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/mfa/verify", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","mfa","verify"] }
+          }
+        },
+        {
+          "name": "08 - MFA Recovery",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"RECOVERY-KEY-12345\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/mfa/recovery", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","mfa","recovery"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📡 01 - Telemetry & Charts",
+      "item": [
+        {
+          "name": "01 - Get Telemetry",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/telemetry?stationId={{stationId}}&parameterId=1&limit=500", "host": ["{{baseUrl}}"], "path": ["api","v1","telemetry"] }
+          }
+        },
+        {
+          "name": "02 - Get Chart Measurements",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/charts/measurements?stationId={{stationId}}&parameterId=1&from={{chartFrom}}&to={{chartTo}}&limit=500",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","v1","charts","measurements"],
+              "query": [
+                { "key": "stationId", "value": "{{stationId}}" },
+                { "key": "parameterId", "value": "1" },
+                { "key": "from", "value": "{{chartFrom}}" },
+                { "key": "to", "value": "{{chartTo}}" },
+                { "key": "limit", "value": "500" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔔 02 - Alarms",
+      "item": [
+        {
+          "name": "01 - Acknowledge Alarm",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/v1/alarms/{{alarmId}}/acknowledge", "host": ["{{baseUrl}}"], "path": ["api","v1","alarms","{{alarmId}}","acknowledge"] }
+          }
+        },
+        {
+          "name": "02 - Resolve Alarm",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"resolutionNote\": \"Gate valve re-aligned and pressure sensor re-calibrated by field team.\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/alarms/{{alarmId}}/resolve", "host": ["{{baseUrl}}"], "path": ["api","v1","alarms","{{alarmId}}","resolve"] }
+          }
+        },
+        {
+          "name": "03 - Reopen Alarm",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/api/v1/alarms/{{alarmId}}/reopen", "host": ["{{baseUrl}}"], "path": ["api","v1","alarms","{{alarmId}}","reopen"] }
+          }
+        },
+        {
+          "name": "04 - Tag Alarm Label",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"label\": \"SENSOR_DRIFT\",\n  \"confidence\": 0.95\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/alarms/{{alarmId}}/labels", "host": ["{{baseUrl}}"], "path": ["api","v1","alarms","{{alarmId}}","labels"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 03 - Viewer Surface",
+      "item": [
+        {
+          "name": "01 - Operations Overview",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/viewer/overview", "host": ["{{baseUrl}}"], "path": ["api","v1","viewer","overview"] }
+          }
+        },
+        {
+          "name": "02 - Map Stations",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/viewer/map/stations?status=ACTIVE&page=1&pageSize=50", "host": ["{{baseUrl}}"], "path": ["api","v1","viewer","map","stations"] }
+          }
+        },
+        {
+          "name": "03 - Station Detail",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/viewer/stations/{{stationId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","viewer","stations","{{stationId}}"] }
+          }
+        },
+        {
+          "name": "04 - Search Alarms",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/viewer/alarms?status=ACTIVE&page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api","v1","viewer","alarms"] }
+          }
+        },
+        {
+          "name": "05 - Alarm Detail",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/viewer/alarms/{{alarmId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","viewer","alarms","{{alarmId}}"] }
+          }
+        },
+        {
+          "name": "06 - Organizations",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/viewer/organizations", "host": ["{{baseUrl}}"], "path": ["api","v1","viewer","organizations"] }
+          }
+        },
+        {
+          "name": "07 - Org Regions",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/viewer/organizations/{{orgId}}/regions", "host": ["{{baseUrl}}"], "path": ["api","v1","viewer","organizations","{{orgId}}","regions"] }
+          }
+        },
+        {
+          "name": "08 - Region Stations",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/viewer/regions/{{regionId}}/stations", "host": ["{{baseUrl}}"], "path": ["api","v1","viewer","regions","{{regionId}}","stations"] }
+          }
+        },
+        {
+          "name": "09 - Station Measurements",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/viewer/stations/{{stationId}}/measurements?limit=100", "host": ["{{baseUrl}}"], "path": ["api","v1","viewer","stations","{{stationId}}","measurements"] }
+          }
+        },
+        {
+          "name": "10 - Station Alarms",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/viewer/stations/{{stationId}}/alarms", "host": ["{{baseUrl}}"], "path": ["api","v1","viewer","stations","{{stationId}}","alarms"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🗺️ 04 - Stations",
+      "item": [
+        {
+          "name": "01 - Search Stations",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/stations?search=North&page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api","v1","stations"] }
+          }
+        },
+        {
+          "name": "02 - Get Station",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/stations/{{stationId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","stations","{{stationId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📈 05 - Operations",
+      "item": [
+        {
+          "name": "01 - Overview",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/operations/overview", "host": ["{{baseUrl}}"], "path": ["api","v1","operations","overview"] }
+          }
+        },
+        {
+          "name": "02 - Data Quality Summary",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/operations/data-quality?page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api","v1","operations","data-quality"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚖️ 06 - Thresholds",
+      "item": [
+        {
+          "name": "01 - List Thresholds",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/thresholds?stationId={{stationId}}&parameterId=1&page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api","v1","thresholds"] }
+          }
+        },
+        {
+          "name": "02 - Create Threshold (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"stationId\": \"{{stationId}}\",\n  \"parameterId\": 1,\n  \"warningLow\": 0.5,\n  \"warningHigh\": 9.5,\n  \"criticalLow\": 0.2,\n  \"criticalHigh\": 9.8,\n  \"effectiveFromUtc\": \"2025-01-01T00:00:00Z\",\n  \"effectiveToUtc\": null\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/thresholds", "host": ["{{baseUrl}}"], "path": ["api","v1","thresholds"] }
+          }
+        },
+        {
+          "name": "03 - Update Threshold (ADMIN)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"warningLow\": 0.6,\n  \"warningHigh\": 9.4,\n  \"criticalLow\": 0.1,\n  \"criticalHigh\": 9.9,\n  \"effectiveFromUtc\": \"2025-01-01T00:00:00Z\",\n  \"effectiveToUtc\": null\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/thresholds/{{thresholdId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","thresholds","{{thresholdId}}"] }
+          }
+        },
+        {
+          "name": "04 - Deactivate Threshold (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/v1/thresholds/{{thresholdId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","thresholds","{{thresholdId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📝 07 - Chart Annotations",
+      "item": [
+        {
+          "name": "01 - Get Annotations for Station",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/stations/{{stationId}}/annotations", "host": ["{{baseUrl}}"], "path": ["api","v1","stations","{{stationId}}","annotations"] }
+          }
+        },
+        {
+          "name": "02 - Create Annotation",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"parameterId\": 1,\n  \"timestampUtc\": \"2025-06-15T10:30:00Z\",\n  \"text\": \"Gate sensor recalibrated.\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/stations/{{stationId}}/annotations", "host": ["{{baseUrl}}"], "path": ["api","v1","stations","{{stationId}}","annotations"] }
+          }
+        },
+        {
+          "name": "03 - Delete Annotation",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/v1/annotations/{{annotationId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","annotations","{{annotationId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💬 08 - Collaboration & Sharing",
+      "item": [
+        {
+          "name": "01 - Get Collaboration Notes",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/stations/{{stationId}}/collaboration-notes?page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api","v1","stations","{{stationId}}","collaboration-notes"] }
+          }
+        },
+        {
+          "name": "02 - Add Collaboration Note",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"parentNoteId\": null,\n  \"noteText\": \"Confirmed water level spike.\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/stations/{{stationId}}/collaboration-notes", "host": ["{{baseUrl}}"], "path": ["api","v1","stations","{{stationId}}","collaboration-notes"] }
+          }
+        },
+        {
+          "name": "03 - Update Collaboration Note",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"noteText\": \"Updated note text.\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/collaboration-notes/{{noteId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","collaboration-notes","{{noteId}}"] }
+          }
+        },
+        {
+          "name": "04 - Create Share Snapshot",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"stationId\": \"{{stationId}}\",\n  \"snapshotJson\": \"{\\\"view\\\": \\\"map\\\"}\",\n  \"expiresInHours\": 48\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/sharing/snapshots", "host": ["{{baseUrl}}"], "path": ["api","v1","sharing","snapshots"] }
+          }
+        },
+        {
+          "name": "05 - Get Snapshot (Anonymous)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/sharing/snapshots/{{shareToken}}", "host": ["{{baseUrl}}"], "path": ["api","v1","sharing","snapshots","{{shareToken}}"] }
+          }
+        },
+        {
+          "name": "06 - Revoke Share Snapshot",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/v1/sharing/snapshots/{{snapshotId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","sharing","snapshots","{{snapshotId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔔 09 - Notifications",
+      "item": [
+        {
+          "name": "01 - List Notifications",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/notifications?unreadOnly=false&page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api","v1","notifications"] }
+          }
+        },
+        {
+          "name": "02 - Unread Count",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/notifications/unread-count", "host": ["{{baseUrl}}"], "path": ["api","v1","notifications","unread-count"] }
+          }
+        },
+        {
+          "name": "03 - Mark Read",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/v1/notifications/{{notificationId}}/read", "host": ["{{baseUrl}}"], "path": ["api","v1","notifications","{{notificationId}}","read"] }
+          }
+        },
+        {
+          "name": "04 - Get Preferences",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/notifications/preferences", "host": ["{{baseUrl}}"], "path": ["api","v1","notifications","preferences"] }
+          }
+        },
+        {
+          "name": "05 - Save Preference",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"channel\": \"EMAIL\",\n  \"alarmSeverity\": \"CRITICAL\",\n  \"isEnabled\": true,\n  \"dailyDigestEnabled\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/notifications/preferences", "host": ["{{baseUrl}}"], "path": ["api","v1","notifications","preferences"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📄 10 - Reports & Schedules",
+      "item": [
+        {
+          "name": "01 - List Reports",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/reports?page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api","v1","reports"] }
+          }
+        },
+        {
+          "name": "02 - Create Report",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Water Level Summary Report\",\n  \"reportType\": \"STATION_SUMMARY\",\n  \"stationIds\": [\"{{stationId}}\"],\n  \"fromUtc\": \"2025-06-01T00:00:00Z\",\n  \"toUtc\": \"2025-06-30T23:59:59Z\",\n  \"format\": \"PDF\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/reports", "host": ["{{baseUrl}}"], "path": ["api","v1","reports"] }
+          }
+        },
+        {
+          "name": "03 - Get Report Detail",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/reports/{{reportId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","reports","{{reportId}}"] }
+          }
+        },
+        {
+          "name": "04 - Download Report File",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/reports/{{reportId}}/download", "host": ["{{baseUrl}}"], "path": ["api","v1","reports","{{reportId}}","download"] }
+          }
+        },
+        {
+          "name": "05 - Create Schedule",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Weekly Alarm Summary\",\n  \"reportType\": \"ALARM_SUMMARY\",\n  \"cronExpression\": \"0 8 * * MON\",\n  \"format\": \"PDF\",\n  \"recipientEmails\": [\"ops@water.local\"]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/reports/schedules", "host": ["{{baseUrl}}"], "path": ["api","v1","reports","schedules"] }
+          }
+        },
+        {
+          "name": "06 - Set Schedule Active",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"isActive\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/reports/schedules/{{scheduleId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","reports","schedules","{{scheduleId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚙️ 11 - Settings",
+      "item": [
+        {
+          "name": "01 - Get Dashboard Layouts",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/settings/dashboard-layouts", "host": ["{{baseUrl}}"], "path": ["api","v1","settings","dashboard-layouts"] }
+          }
+        },
+        {
+          "name": "02 - Save Dashboard Layout",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Control Room Overview\",\n  \"widgetsJson\": \"{\\\"kpis\\\": true}\",\n  \"isDefault\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/settings/dashboard-layouts", "host": ["{{baseUrl}}"], "path": ["api","v1","settings","dashboard-layouts"] }
+          }
+        },
+        {
+          "name": "03 - Get User Preferences",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/settings/me", "host": ["{{baseUrl}}"], "path": ["api","v1","settings","me"] }
+          }
+        },
+        {
+          "name": "04 - Update User Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"theme\": \"dark\",\n  \"locale\": \"en-US\",\n  \"timeZone\": \"Africa/Cairo\",\n  \"decimalPrecision\": 2\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/settings/me", "host": ["{{baseUrl}}"], "path": ["api","v1","settings","me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🤖 12 - AI & Predictive Intelligence",
+      "item": [
+        {
+          "name": "01 - Get Anomalies",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/anomalies?page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","anomalies"] }
+          }
+        },
+        {
+          "name": "02 - Get AI Models (ADMIN)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/models?page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","models"] }
+          }
+        },
+        {
+          "name": "03 - Retrain Model (ADMIN)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/models/{{modelId}}/retrain", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","models","{{modelId}}","retrain"] }
+          }
+        },
+        {
+          "name": "04 - Promote Model (ADMIN)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/models/{{modelId}}/promote", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","models","{{modelId}}","promote"] }
+          }
+        },
+        {
+          "name": "05 - Retire Model (ADMIN)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/models/{{modelId}}/retire", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","models","{{modelId}}","retire"] }
+          }
+        },
+        {
+          "name": "06 - Get Station Insight",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/insights/{{stationId}}?insightType=anomaly", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","insights","{{stationId}}"] }
+          }
+        },
+        {
+          "name": "07 - Get Station Forecast",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/forecast/{{stationId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","forecast","{{stationId}}"] }
+          }
+        },
+        {
+          "name": "08 - Predictive Maintenance",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/maintenance/predictions?stationId={{stationId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","maintenance","predictions"] }
+          }
+        },
+        {
+          "name": "09 - Station Clusters",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/stations/clusters", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","stations","clusters"] }
+          }
+        },
+        {
+          "name": "10 - AI Alarm Triage (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"resourceId\": \"{{alarmId}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/alarms/triage", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","alarms","triage"] }
+          }
+        },
+        {
+          "name": "11 - Report AI Summary",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/reports/{{reportId}}/summary", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","reports","{{reportId}}","summary"] }
+          }
+        },
+        {
+          "name": "12 - Focus Stations",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/focus-stations", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","focus-stations"] }
+          }
+        },
+        {
+          "name": "13 - Alarm Fault Probability",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/alarms/{{alarmId}}/fault-probability", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","alarms","{{alarmId}}","fault-probability"] }
+          }
+        },
+        {
+          "name": "14 - Station Risk Score",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/risk-score?stationId={{stationId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","risk-score"] }
+          }
+        },
+        {
+          "name": "15 - Bulk Data Import (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"stationId\": \"{{stationId}}\",\n  \"source\": \"CSV_UPLOAD\",\n  \"readings\": []\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/data/bulk-import", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","data","bulk-import"] }
+          }
+        },
+        {
+          "name": "16 - Bulk Import Batch Status (ADMIN)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/data/bulk-import/{{batchId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","data","bulk-import","{{batchId}}"] }
+          }
+        },
+        {
+          "name": "17 - Bulk Import Conflicts (ADMIN)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/data/bulk-import/{{batchId}}/conflicts", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","data","bulk-import","{{batchId}}","conflicts"] }
+          }
+        },
+        {
+          "name": "18 - Data Quality Audit (ADMIN)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/ai/data/quality?page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api","v1","ai","data","quality"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📥 13 - Ingestion & Pipeline",
+      "item": [
+        {
+          "name": "01 - Ingest Telemetry Batch (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"stationId\": \"{{stationId}}\",\n  \"source\": \"SCADA_GATEWAY\",\n  \"readings\": [\n    { \"parameterId\": 1, \"value\": 3.75, \"timestampUtc\": \"2025-06-15T12:00:00Z\", \"quality\": \"GOOD\" }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/ingestion/batches", "host": ["{{baseUrl}}"], "path": ["api","v1","ingestion","batches"] }
+          }
+        },
+        {
+          "name": "02 - Get Batch Status",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/ingestion/batches/{{batchId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","ingestion","batches","{{batchId}}"] }
+          }
+        },
+        {
+          "name": "03 - Publish Clean Batch (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"cleaningStrategy\": \"INTERPOLATE\",\n  \"overrideExisting\": false\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/ingestion/batches/{{batchId}}/clean", "host": ["{{baseUrl}}"], "path": ["api","v1","ingestion","batches","{{batchId}}","clean"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔍 14 - Global Search",
+      "item": [
+        {
+          "name": "01 - Global Search",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/search?query=North&includeUsers=true&page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api","v1","search"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛡️ 15 - Administration (ADMIN)",
+      "item": [
+        {
+          "name": "01 - Get System Audit Log",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/audit?page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","audit"] }
+          }
+        },
+        {
+          "name": "02 - Export Audit Log CSV",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/audit/export", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","audit","export"] }
+          }
+        },
+        {
+          "name": "03 - Get Users",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/users?page=1&pageSize=20", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","users"] }
+          }
+        },
+        {
+          "name": "04 - Get User Roles",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/users/{{userId}}/roles", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","users","{{userId}}","roles"] }
+          }
+        },
+        {
+          "name": "05 - Assign User Role",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"roleId\": 2\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/users/{{userId}}/roles", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","users","{{userId}}","roles"] }
+          }
+        },
+        {
+          "name": "06 - Set User Active/Inactive",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"isActive\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/users/{{userId}}/active", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","users","{{userId}}","active"] }
+          }
+        },
+        {
+          "name": "07 - Revoke All Sessions for User",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/users/{{userId}}/sessions/revoke", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","users","{{userId}}","sessions","revoke"] }
+          }
+        },
+        {
+          "name": "08 - Get Organization",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/organization", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","organization"] }
+          }
+        },
+        {
+          "name": "09 - Update Organization",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Northern Water Authority\",\n  \"logoUrl\": \"https://cdn.example.com/logo.png\",\n  \"locale\": \"en-US\",\n  \"timeZone\": \"Africa/Cairo\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/organization", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","organization"] }
+          }
+        },
+        {
+          "name": "10 - Get Administrative Regions",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/regions", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","regions"] }
+          }
+        },
+        {
+          "name": "11 - Create Administrative Region",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"NORTH\",\n  \"name\": \"Northern Canal Zone\",\n  \"description\": \"Main northern catchment area\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/regions", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","regions"] }
+          }
+        },
+        {
+          "name": "12 - Update Administrative Region",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"NORTH\",\n  \"name\": \"Northern Canal Zone (Updated)\",\n  \"description\": \"Revised northern catchment area description\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/regions/{{regionId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","regions","{{regionId}}"] }
+          }
+        },
+        {
+          "name": "13 - Set Region Active/Inactive",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "true" },
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/regions/{{regionId}}/active", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","regions","{{regionId}}","active"] }
+          }
+        },
+        {
+          "name": "14 - Create Station",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"stationCode\": \"STN-001\",\n  \"name\": \"Gate Station 1\",\n  \"description\": \"Primary canal inflow monitoring station\",\n  \"regionId\": \"{{regionId}}\",\n  \"latitude\": 30.0444,\n  \"longitude\": 31.2357,\n  \"elevationMeters\": 22.5,\n  \"staffGaugeHeight\": 3.5\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/stations", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","stations"] }
+          }
+        },
+        {
+          "name": "15 - Update Station",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"stationCode\": \"STN-001\",\n  \"name\": \"Gate Station 1 (Updated)\",\n  \"description\": \"Updated monitoring station description\",\n  \"regionId\": \"{{regionId}}\",\n  \"latitude\": 30.0444,\n  \"longitude\": 31.2357,\n  \"elevationMeters\": 22.5,\n  \"staffGaugeHeight\": 3.5,\n  \"isActive\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/stations/{{stationId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","stations","{{stationId}}"] }
+          }
+        },
+        {
+          "name": "16 - Set Station Active/Inactive",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"isActive\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/stations/{{stationId}}/active", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","stations","{{stationId}}","active"] }
+          }
+        },
+        {
+          "name": "17 - Assign Parameters to Station",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"parameterIds\": [1, 2, 3]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/stations/{{stationId}}/parameters", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","stations","{{stationId}}","parameters"] }
+          }
+        },
+        {
+          "name": "18 - Create Topological Link between Stations",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"downstreamStationId\": \"{{stationId}}\",\n  \"connectionType\": \"CANAL_FLOW\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/stations/{{stationId}}/connections", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","stations","{{stationId}}","connections"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🗑️ 16 - Data Governance",
+      "item": [
+        {
+          "name": "01 - Retention Purge Dry Run (ADMIN)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/governance/retention/dry-run?olderThanDays=365", "host": ["{{baseUrl}}"], "path": ["api","v1","governance","retention","dry-run"] }
+          }
+        },
+        {
+          "name": "02 - Execute Retention Purge (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"olderThanDays\": 730,\n  \"dryRun\": false,\n  \"stationIds\": null\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/governance/retention/execute", "host": ["{{baseUrl}}"], "path": ["api","v1","governance","retention","execute"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "❤️ 17 - System Health & Observability",
+      "item": [
+        {
+          "name": "01 - Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          }
+        },
+        {
+          "name": "02 - OpenAPI Spec (JSON)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/openapi/v1.json", "host": ["{{baseUrl}}"], "path": ["openapi","v1.json"] }
+          }
+        },
+        {
+          "name": "03 - Prometheus Metrics",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/metrics", "host": ["{{baseUrl}}"], "path": ["metrics"] }
+          }
+        }
+      ]
+    }
+  ]
+}
