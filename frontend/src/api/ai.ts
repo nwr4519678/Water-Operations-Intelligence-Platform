@@ -10,6 +10,7 @@ import {
   AiClusterPayload,
   PagedResult,
   AiAnomalyItem,
+  AiWaterLevelPayload,
 } from "../types/api"
 import { allStations } from "../data/stationsData"
 
@@ -185,7 +186,21 @@ export const aiApi = {
         `/api/v1/ai/forecast/${stationId}`,
         { params: { asOfUtc } },
       )
-      return res.data
+      const data = res.data
+      const payload = data.payload as { forecasts?: AiWaterLevelPayload["forecasts"] } | undefined
+      if (!payload?.forecasts) return data
+      const forecasts = payload.forecasts
+      return {
+        ...data,
+        payload: {
+          forecastPoints: [
+            { timestampUtc: data.generatedAtUtc, predictedValue: forecasts.target_wse_1d, upperConfidenceBound: forecasts.target_wse_1d, lowerConfidenceBound: forecasts.target_wse_1d },
+            { timestampUtc: data.generatedAtUtc, predictedValue: forecasts.target_wse_7d, upperConfidenceBound: forecasts.target_wse_7d, lowerConfidenceBound: forecasts.target_wse_7d },
+            { timestampUtc: data.generatedAtUtc, predictedValue: forecasts.target_wse_14d, upperConfidenceBound: forecasts.target_wse_14d, lowerConfidenceBound: forecasts.target_wse_14d },
+            { timestampUtc: data.generatedAtUtc, predictedValue: forecasts.target_wse_30d, upperConfidenceBound: forecasts.target_wse_30d, lowerConfidenceBound: forecasts.target_wse_30d },
+          ],
+        } satisfies AiForecastPayload,
+      }
     } catch {
       const now = Date.now()
       const forecastPoints = []

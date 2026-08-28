@@ -70,20 +70,22 @@ public sealed class AiController(ISender sender) : ControllerBase
     public async Task<IActionResult> Insight(
         Guid stationId,
         [FromQuery] string insightType,
+        [FromQuery] int? parameterId,
         [FromQuery] DateTimeOffset? asOfUtc,
         CancellationToken cancellationToken)
     {
-        var result = await sender.Send(new GetAiInsightQuery(stationId, insightType, asOfUtc), cancellationToken);
+        var result = await sender.Send(new GetAiInsightQuery(stationId, insightType, asOfUtc, parameterId), cancellationToken);
         return result.ToActionResult(this);
     }
 
     [HttpGet("ai/forecast/{stationId:guid}")]
     public async Task<IActionResult> Forecast(
         Guid stationId,
+        [FromQuery] int? parameterId,
         [FromQuery] DateTimeOffset? asOfUtc,
         CancellationToken cancellationToken)
     {
-        var result = await sender.Send(new GetAiInsightQuery(stationId, "forecast", asOfUtc), cancellationToken);
+        var result = await sender.Send(new GetAiInsightQuery(stationId, "forecast", asOfUtc, parameterId), cancellationToken);
         return result.ToActionResult(this);
     }
 
@@ -170,6 +172,16 @@ public sealed class AiController(ISender sender) : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await sender.Send(new GetBatchQuery(batchId), cancellationToken);
+        return result.ToActionResult(this);
+    }
+
+    [HttpGet("ai/data/bulk-import/{batchId:guid}/conflicts")]
+    [Authorize(Roles = "ADMIN")]
+    public async Task<IActionResult> BulkImportConflicts(
+        Guid batchId,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetBulkImportConflictsQuery(batchId), cancellationToken);
         return result.ToActionResult(this);
     }
 

@@ -59,6 +59,30 @@ public sealed class ExceptionHandlingMiddleware(
             await context.Response.WriteAsync(JsonSerializer.Serialize(
                 ApiEnvelope.Fail<object>("FORBIDDEN", "Access to the requested resource is forbidden.", context.TraceIdentifier), JsonOptions));
         }
+        catch (DomainConflictException exception)
+        {
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/json";
+
+            await context.Response.WriteAsync(JsonSerializer.Serialize(
+                ApiEnvelope.Fail<object>(exception.ErrorCode, exception.Message, context.TraceIdentifier), JsonOptions));
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+        {
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/json";
+
+            await context.Response.WriteAsync(JsonSerializer.Serialize(
+                ApiEnvelope.Fail<object>("alarm_state_conflict", "The resource was modified concurrently by another operation.", context.TraceIdentifier), JsonOptions));
+        }
+        catch (UnprocessableEntityException exception)
+        {
+            context.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+            context.Response.ContentType = "application/json";
+
+            await context.Response.WriteAsync(JsonSerializer.Serialize(
+                ApiEnvelope.Fail<object>(exception.ErrorCode, exception.Message, context.TraceIdentifier), JsonOptions));
+        }
         catch (Exception exception)
         {
             Log.Error(exception, "Unhandled exception for trace {TraceId}", context.TraceIdentifier);

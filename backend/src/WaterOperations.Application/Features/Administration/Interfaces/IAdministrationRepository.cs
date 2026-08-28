@@ -1,5 +1,6 @@
 using WaterOperations.Application.Common.Pagination;
 using WaterOperations.Application.Features.Administration.DTOs;
+using WaterOperations.Application.Features.Stations.DTOs;
 
 namespace WaterOperations.Application.Features.Administration.Interfaces;
 
@@ -92,5 +93,40 @@ public interface IAdministrationRepository
     Task<int> RevokeUserSessionsAsync(
         Guid organizationId,
         Guid userId,
+        CancellationToken cancellationToken);
+
+    Task<StationDetailsDto> CreateStationAsync(
+        Guid organizationId,
+        Guid userId,
+        CreateStationRequest request,
+        CancellationToken cancellationToken);
+
+    Task<StationDetailsDto?> UpdateStationAsync(
+        Guid organizationId,
+        Guid userId,
+        Guid stationId,
+        UpdateStationRequest request,
+        CancellationToken cancellationToken);
+
+    Task<bool> SetStationActiveAsync(
+        Guid organizationId,
+        Guid userId,
+        Guid stationId,
+        bool isActive,
+        CancellationToken cancellationToken);
+
+    Task<bool> AssignStationParametersAsync(
+        Guid organizationId,
+        Guid userId,
+        Guid stationId,
+        IReadOnlyList<int> parameterIds,
+        CancellationToken cancellationToken);
+
+    Task<bool> CreateStationConnectionAsync(
+        Guid organizationId,
+        Guid userId,
+        Guid upstreamStationId,
+        Guid downstreamStationId,
+        string connectionType,
         CancellationToken cancellationToken);
 }

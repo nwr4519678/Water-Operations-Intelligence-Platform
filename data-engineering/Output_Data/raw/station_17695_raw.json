@@ -1,0 +1,425 @@
+{
+  "code": 200,
+  "message": "Request successful",
+  "target": {
+    "id": "17695",
+    "target_name": "Nile, River",
+    "location": null,
+    "country": "Egypt",
+    "continent": "Africa",
+    "longitude": 32.7056,
+    "latitude": 25.7789,
+    "software": "8.0",
+    "download": "2026-08-28 18:02:46"
+  },
+  "data": [
+    {
+      "date": "2002-10-15 08:05:54",
+      "wse": 69.385,
+      "wse_u": 0.043,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2002-12-24 08:05:51",
+      "wse": 68.816,
+      "wse_u": 0.148,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2003-01-28 08:05:52",
+      "wse": 69.123,
+      "wse_u": 0.048,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2003-05-13 08:05:51",
+      "wse": 70.794,
+      "wse_u": 0.119,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2003-06-17 08:05:56",
+      "wse": 71.765,
+      "wse_u": 0.017,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2003-08-26 08:06:04",
+      "wse": 71.139,
+      "wse_u": 0.044,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2003-11-04 08:05:57",
+      "wse": 69.784,
+      "wse_u": 0.046,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2004-01-13 08:05:59",
+      "wse": 68.742,
+      "wse_u": 0.026,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2004-02-17 08:05:58",
+      "wse": 69.675,
+      "wse_u": 0.033,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2004-03-23 08:06:01",
+      "wse": 70.501,
+      "wse_u": 0.188,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2004-04-27 08:05:58",
+      "wse": 71.551,
+      "wse_u": 0.076,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2004-06-01 08:06:03",
+      "wse": 71.976,
+      "wse_u": 0.083,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2004-07-06 08:06:02",
+      "wse": 71.784,
+      "wse_u": 0.011,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2004-08-10 08:06:02",
+      "wse": 71.856,
+      "wse_u": 0.01,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2004-09-14 08:06:00",
+      "wse": 70.065,
+      "wse_u": 0.076,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2004-10-19 08:06:03",
+      "wse": 69.809,
+      "wse_u": 0.129,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2004-12-28 08:05:56",
+      "wse": 68.866,
+      "wse_u": 0.016,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2005-02-01 08:05:59",
+      "wse": 69.256,
+      "wse_u": 0.082,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2005-03-08 08:05:58",
+      "wse": 70.024,
+      "wse_u": 0.025,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2005-04-12 08:06:02",
+      "wse": 70.515,
+      "wse_u": 0.087,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2005-05-17 08:06:05",
+      "wse": 71.136,
+      "wse_u": 0.045,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2005-06-21 08:06:05",
+      "wse": 72.114,
+      "wse_u": 0.059,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2005-07-26 08:06:04",
+      "wse": 72.072,
+      "wse_u": 0.036,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2005-08-30 08:06:00",
+      "wse": 71.41,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2005-11-08 08:06:02",
+      "wse": 70.063,
+      "wse_u": 0.019,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2005-12-13 08:05:56",
+      "wse": 68.857,
+      "wse_u": 0.053,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2006-02-21 08:05:51",
+      "wse": 69.949,
+      "wse_u": 0.223,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2006-06-06 08:05:56",
+      "wse": 72.122,
+      "wse_u": 0.138,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2006-07-11 08:06:02",
+      "wse": 72.21,
+      "wse_u": 0.008,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2006-08-15 08:06:00",
+      "wse": 71.548,
+      "wse_u": 0.101,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2006-09-19 08:05:55",
+      "wse": 69.613,
+      "wse_u": 0.02,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2006-10-24 08:06:00",
+      "wse": 70.24,
+      "wse_u": 0.02,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2007-01-02 08:05:56",
+      "wse": 69.03,
+      "wse_u": 0.054,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2007-02-06 08:05:53",
+      "wse": 69.427,
+      "wse_u": 0.059,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2007-03-13 08:05:54",
+      "wse": 70.292,
+      "wse_u": 0.008,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2007-04-17 08:05:54",
+      "wse": 70.399,
+      "wse_u": 0.062,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2007-05-22 08:05:56",
+      "wse": 71.519,
+      "wse_u": 0.027,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2007-06-26 08:05:58",
+      "wse": 71.933,
+      "wse_u": 0.056,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2007-07-31 08:05:58",
+      "wse": 72.221,
+      "wse_u": 0.012,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2007-09-04 08:05:55",
+      "wse": 71.559,
+      "wse_u": 0.019,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2007-10-09 08:05:52",
+      "wse": 71.574,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2007-11-13 08:05:51",
+      "wse": 71.176,
+      "wse_u": 0.353,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2008-01-22 08:05:51",
+      "wse": 69.079,
+      "wse_u": 0.057,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2008-02-26 08:05:51",
+      "wse": 70.193,
+      "wse_u": 0.036,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2008-05-06 08:05:50",
+      "wse": 71.152,
+      "wse_u": 0.06,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2008-06-10 08:05:52",
+      "wse": 72.261,
+      "wse_u": 0.032,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2008-07-15 08:05:52",
+      "wse": 72.299,
+      "wse_u": 0.066,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2008-08-19 08:05:50",
+      "wse": 71.884,
+      "wse_u": 0.01,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2008-09-23 08:05:49",
+      "wse": 70.617,
+      "wse_u": 0.06,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2008-10-28 08:05:48",
+      "wse": 70.09,
+      "wse_u": 0.107,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2008-12-02 08:05:48",
+      "wse": 69.692,
+      "wse_u": 0.299,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2009-01-06 08:05:48",
+      "wse": 69.237,
+      "wse_u": 0.011,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2009-02-10 08:05:48",
+      "wse": 69.737,
+      "wse_u": 0.091,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2009-03-17 08:05:49",
+      "wse": 70.534,
+      "wse_u": 0.073,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2009-04-21 08:05:47",
+      "wse": 70.896,
+      "wse_u": 0.078,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2009-05-26 08:05:50",
+      "wse": 71.674,
+      "wse_u": 0.037,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2009-06-30 08:05:51",
+      "wse": 72.08,
+      "wse_u": 0.046,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2009-08-04 08:05:50",
+      "wse": 71.733,
+      "wse_u": 0.044,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2009-09-08 08:05:47",
+      "wse": 70.749,
+      "wse_u": 0.191,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2009-10-13 08:05:44",
+      "wse": 70.138,
+      "wse_u": 0.079,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2009-11-17 08:05:44",
+      "wse": 69.607,
+      "wse_u": 0.063,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2009-12-22 08:05:43",
+      "wse": 68.839,
+      "wse_u": 0.007,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2010-01-26 08:05:44",
+      "wse": 69.465,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2010-03-02 08:05:42",
+      "wse": 69.847,
+      "wse_u": 0.065,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2010-05-11 08:05:41",
+      "wse": 70.663,
+      "wse_u": 0.012,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2010-06-15 08:05:41",
+      "wse": 71.715,
+      "wse_u": 0.012,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2010-07-20 08:05:41",
+      "wse": 71.667,
+      "wse_u": 0.016,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2010-08-24 08:05:42",
+      "wse": 71.346,
+      "wse_u": 0.078,
+      "data": "water-level-altimetry"
+    }
+  ]
+}

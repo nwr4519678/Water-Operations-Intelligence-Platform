@@ -178,10 +178,12 @@ public static class DependencyInjection
         services.AddScoped<IThresholdRepository, ThresholdRepository>();
         services.AddScoped<IChartAnnotationRepository, ChartAnnotationRepository>();
         services.AddScoped<IStationAuthorizationService, StationAuthorizationService>();
+        services.AddSingleton<AiModelCircuitBreaker>();
         services.AddHttpClient<IAiModelClient, HttpAiModelClient>((provider, client) =>
         {
             var options = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<AiModelClientOptions>>().Value;
-            client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+            var baseUrl = string.IsNullOrWhiteSpace(options.BaseUrl) ? "http://localhost:8000" : options.BaseUrl;
+            client.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
             client.Timeout = TimeSpan.FromSeconds(Math.Clamp(options.TimeoutSeconds, 1, 120));
             if (!string.IsNullOrWhiteSpace(options.ApiKey))
             {

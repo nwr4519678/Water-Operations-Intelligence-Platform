@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace WaterOperations.Application.Features.AI.DTOs;
 
 /// <summary>
@@ -41,7 +43,14 @@ public sealed record AiInsightRequest(
     Guid OrganizationId,
     Guid StationId,
     string InsightType,
-    DateTimeOffset? AsOfUtc);
+    DateTimeOffset? AsOfUtc,
+    int? ParameterId = null,
+    IReadOnlyList<AiTelemetryObservation>? Observations = null);
+
+public sealed record AiTelemetryObservation(
+    DateTimeOffset TimestampUtc,
+    double Value,
+    double? UncertaintyMeters = null);
 
 /// <summary>
 /// Response returned from an AI model service.
@@ -57,4 +66,14 @@ public sealed record AiInsightResponse(
 /// </summary>
 public sealed record AiInsightResult(
     string Status,
-    AiInsightResponse? Response);
+    AiInsightResponse? Response,
+    Guid? StationId = null)
+{
+    public string? InsightType => Response?.InsightType;
+    public string? ModelVersion => Response?.ModelVersion;
+    public bool IsFallback => Response?.IsFallback ?? true;
+    public DateTimeOffset GeneratedAtUtc { get; } = DateTimeOffset.UtcNow;
+    public JsonElement? Payload => Response is null
+        ? null
+        : JsonSerializer.Deserialize<JsonElement>(Response.PayloadJson);
+}

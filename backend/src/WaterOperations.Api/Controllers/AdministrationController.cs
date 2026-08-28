@@ -137,4 +137,53 @@ public sealed class AdministrationController(ISender sender) : ControllerBase
         var result = await sender.Send(new SetRegionActiveCommand(regionId, isActive), cancellationToken);
         return result.ToActionResult(this);
     }
+
+    [HttpPost("stations")]
+    public async Task<IActionResult> CreateStation(
+        [FromBody] CreateStationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new WaterOperations.Application.Features.Stations.Commands.CreateStationCommand(request), cancellationToken);
+        return result.ToActionResult(this);
+    }
+
+    [HttpPut("stations/{stationId:guid}")]
+    public async Task<IActionResult> UpdateStation(
+        Guid stationId,
+        [FromBody] UpdateStationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new WaterOperations.Application.Features.Stations.Commands.UpdateStationCommand(stationId, request), cancellationToken);
+        return result.ToActionResult(this);
+    }
+
+    [HttpPatch("stations/{stationId:guid}/active")]
+    public async Task<IActionResult> SetStationActive(
+        Guid stationId,
+        [FromBody] SetUserActiveRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new WaterOperations.Application.Features.Stations.Commands.SetStationActiveCommand(stationId, request.IsActive), cancellationToken);
+        return result.ToActionResult(this);
+    }
+
+    [HttpPost("stations/{stationId:guid}/parameters")]
+    public async Task<IActionResult> AssignStationParameters(
+        Guid stationId,
+        [FromBody] AssignStationParametersRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new WaterOperations.Application.Features.Stations.Commands.AssignStationParametersCommand(stationId, request.ParameterIds), cancellationToken);
+        return result.ToActionResult(this);
+    }
+
+    [HttpPost("stations/{upstreamStationId:guid}/connections")]
+    public async Task<IActionResult> CreateStationConnection(
+        Guid upstreamStationId,
+        [FromBody] CreateStationConnectionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new WaterOperations.Application.Features.Stations.Commands.CreateStationConnectionCommand(upstreamStationId, request.DownstreamStationId, request.ConnectionType), cancellationToken);
+        return result.ToActionResult(this);
+    }
 }

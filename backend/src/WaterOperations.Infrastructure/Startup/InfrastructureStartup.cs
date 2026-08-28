@@ -44,10 +44,18 @@ public static class InfrastructureStartup
             return;
         }
 
-        var recurringJobs = app.Services.GetRequiredService<IRecurringJobManager>();
+        var recurringJobs = app.Services.GetService<IRecurringJobManager>();
+        if (recurringJobs is null)
+        {
+            return;
+        }
         recurringJobs.AddOrUpdate<SignalROutboxPublisherJob>(
             "outbox-publisher",
             job => job.PublishAsync(CancellationToken.None),
+            "*/1 * * * *");
+        recurringJobs.AddOrUpdate<ThresholdReevaluationJob>(
+            "threshold-reevaluation",
+            job => job.EvaluateAsync(CancellationToken.None),
             "*/1 * * * *");
         recurringJobs.AddOrUpdate<NotificationDeliveryJob>(
             "notification-delivery",

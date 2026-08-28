@@ -8,4 +8,5 @@ public sealed class AiModelClientOptions
     public string? ApiKey { get; set; }
     public int TimeoutSeconds { get; set; } = 30;
     public int CircuitFailureThreshold { get; set; } = 5;
+    public int CircuitBreakDurationSeconds { get; set; } = 30;
 }

@@ -94,3 +94,35 @@ public sealed record UserPreferencesDto(
     string Locale,
     string TimeZone,
     byte DecimalPrecision);
+
+public sealed record CreateStationRequest(
+    string StationCode,
+    string Name,
+    string? Description,
+    Guid? RegionId,
+    decimal? Latitude,
+    decimal? Longitude,
+    decimal? ElevationMeters,
+    decimal? StaffGaugeHeight,
+    int? CommunicationIntervalSeconds,
+    string? MetadataJson);
+
+public sealed record UpdateStationRequest(
+    string StationCode,
+    string Name,
+    string? Description,
+    Guid? RegionId,
+    decimal? Latitude,
+    decimal? Longitude,
+    decimal? ElevationMeters,
+    decimal? StaffGaugeHeight,
+    int? CommunicationIntervalSeconds,
+    string? MetadataJson,
+    bool IsActive);
+
+public sealed record AssignStationParametersRequest(
+    IReadOnlyList<int> ParameterIds);
+
+public sealed record CreateStationConnectionRequest(
+    Guid DownstreamStationId,
+    string ConnectionType);

@@ -128,6 +128,21 @@ public sealed class AdministrationCommandTests
 
         public Task<int> RevokeUserSessionsAsync(Guid organizationId, Guid targetUserId, CancellationToken cancellationToken) =>
             Task.FromResult(3);
+
+        public Task<WaterOperations.Application.Features.Stations.DTOs.StationDetailsDto> CreateStationAsync(Guid organizationId, Guid userId, CreateStationRequest request, CancellationToken cancellationToken) =>
+            Task.FromResult(new WaterOperations.Application.Features.Stations.DTOs.StationDetailsDto(Guid.NewGuid(), organizationId, request.RegionId, request.StationCode, request.Name, request.Description, request.Latitude, request.Longitude, request.ElevationMeters, "ACTIVE", DateTime.UtcNow, true, []));
+
+        public Task<WaterOperations.Application.Features.Stations.DTOs.StationDetailsDto?> UpdateStationAsync(Guid organizationId, Guid userId, Guid stationId, UpdateStationRequest request, CancellationToken cancellationToken) =>
+            Task.FromResult<WaterOperations.Application.Features.Stations.DTOs.StationDetailsDto?>(new WaterOperations.Application.Features.Stations.DTOs.StationDetailsDto(stationId, organizationId, request.RegionId, request.StationCode, request.Name, request.Description, request.Latitude, request.Longitude, request.ElevationMeters, "ACTIVE", DateTime.UtcNow, request.IsActive, []));
+
+        public Task<bool> SetStationActiveAsync(Guid organizationId, Guid userId, Guid stationId, bool isActive, CancellationToken cancellationToken) =>
+            Task.FromResult(true);
+
+        public Task<bool> AssignStationParametersAsync(Guid organizationId, Guid userId, Guid stationId, IReadOnlyList<int> parameterIds, CancellationToken cancellationToken) =>
+            Task.FromResult(true);
+
+        public Task<bool> CreateStationConnectionAsync(Guid organizationId, Guid userId, Guid upstreamStationId, Guid downstreamStationId, string connectionType, CancellationToken cancellationToken) =>
+            Task.FromResult(true);
     }
 
     private sealed class FakeCurrentUser(Guid orgId) : ICurrentUser

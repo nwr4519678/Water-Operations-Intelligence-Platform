@@ -40,15 +40,37 @@ public sealed class AiModelClientContractTests
         Assert.Null(result);
     }
 
+    [Fact]
+    public async Task OpensCircuitAfterConfiguredFailureThreshold()
+    {
+        var handler = new RecordingHandler(_ => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        var client = new HttpAiModelClient(
+            new HttpClient(handler) { BaseAddress = new Uri("http://ai.internal/") },
+            Options.Create(new AiModelClientOptions { CircuitFailureThreshold = 1, CircuitBreakDurationSeconds = 30 }),
+            NullLogger<HttpAiModelClient>.Instance,
+            new AiModelCircuitBreaker());
+        var request = new AiInsightRequest(Guid.NewGuid(), Guid.NewGuid(), "forecast", null);
+
+        Assert.Null(await client.GetInsightAsync(request, null, CancellationToken.None));
+        Assert.Null(await client.GetInsightAsync(request, null, CancellationToken.None));
+        Assert.Equal(1, handler.RequestCount);
+    }
+
     private static HttpAiModelClient CreateClient(HttpMessageHandler handler) =>
-        new(new HttpClient(handler) { BaseAddress = new Uri("http://ai.internal/") }, Options.Create(new AiModelClientOptions { CircuitFailureThreshold = 5 }), NullLogger<HttpAiModelClient>.Instance);
+        new(
+            new HttpClient(handler) { BaseAddress = new Uri("http://ai.internal/") },
+            Options.Create(new AiModelClientOptions { CircuitFailureThreshold = 5 }),
+            NullLogger<HttpAiModelClient>.Instance,
+            new AiModelCircuitBreaker());
 
     private sealed class RecordingHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) : HttpMessageHandler
     {
         public HttpRequestMessage? Request { get; private set; }
+        public int RequestCount { get; private set; }
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Request = request;
+            RequestCount++;
             return Task.FromResult(responseFactory(request));
         }
     }

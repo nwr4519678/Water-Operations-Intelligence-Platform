@@ -10,7 +10,8 @@ namespace WaterOperations.Infrastructure.AI;
 public sealed partial class HttpAiModelClient(
     HttpClient httpClient,
     IOptions<AiModelClientOptions> options,
-    ILogger<HttpAiModelClient> logger)
+    ILogger<HttpAiModelClient> logger,
+    AiModelCircuitBreaker circuitBreaker)
     : IAiModelClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -25,11 +26,20 @@ public sealed partial class HttpAiModelClient(
     [LoggerMessage(EventId = 3, Level = LogLevel.Error, Message = "AI Service client communication error")]
     private partial void LogCommunicationError(Exception exception);
 
+    [LoggerMessage(EventId = 4, Level = LogLevel.Warning, Message = "AI Service circuit is open; inference request skipped")]
+    private partial void LogCircuitOpen();
+
     public async Task<AiInsightResponse?> GetInsightAsync(
         AiInsightRequest request,
         string? correlationId,
         CancellationToken cancellationToken)
     {
+        if (circuitBreaker.IsOpen(DateTimeOffset.UtcNow))
+        {
+            LogCircuitOpen();
+            return null;
+        }
+
         try
         {
             using var message = new HttpRequestMessage(HttpMethod.Post, "insights")
@@ -46,6 +56,7 @@ public sealed partial class HttpAiModelClient(
             if (!response.IsSuccessStatusCode)
             {
                 LogHttpWarning(response.StatusCode);
+                RecordFailure();
                 return null;
             }
 
@@ -57,17 +68,25 @@ public sealed partial class HttpAiModelClient(
 
             // Validate that payloadJson is valid JSON
             using var _ = JsonDocument.Parse(result.PayloadJson);
+            circuitBreaker.RecordSuccess();
             return result;
         }
         catch (JsonException ex)
         {
             LogJsonParseWarning(ex);
+            RecordFailure();
             return null;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             LogCommunicationError(ex);
+            RecordFailure();
             return null;
         }
     }
+
+    private void RecordFailure() => circuitBreaker.RecordFailure(
+        settings.CircuitFailureThreshold,
+        TimeSpan.FromSeconds(Math.Clamp(settings.CircuitBreakDurationSeconds, 1, 300)),
+        DateTimeOffset.UtcNow);
 }
