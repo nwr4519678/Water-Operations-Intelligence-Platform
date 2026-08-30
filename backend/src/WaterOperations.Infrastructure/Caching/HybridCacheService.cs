@@ -1,17 +1,36 @@
+using System.Text.Json;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Hybrid;
 using WaterOperations.Application.Common.Caching;
 
 namespace WaterOperations.Infrastructure.Caching;
 
-public sealed class HybridCacheService(HybridCache cache) : ICacheService
+public sealed class HybridCacheService(
+    HybridCache cache,
+    IDistributedCache distributedCache)
+    : ICacheService
 {
-    public ValueTask<T?> GetAsync<T>(
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    public async ValueTask<T?> GetAsync<T>(
         string key,
-        CancellationToken cancellationToken = default) =>
-        cache.GetOrCreateAsync<T?>(
-            key,
-            static _ => new ValueTask<T?>((T?)default),
-            cancellationToken: cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        var bytes = await distributedCache.GetAsync(key, cancellationToken);
+        if (bytes is null || bytes.Length == 0)
+        {
+            return default;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<T>(bytes, JsonOptions);
+        }
+        catch
+        {
+            return default;
+        }
+    }
 
     public ValueTask SetAsync<T>(
         string key,

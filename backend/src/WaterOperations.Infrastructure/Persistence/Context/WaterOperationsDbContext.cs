@@ -117,22 +117,12 @@ public partial class WaterOperationsDbContext : DbContext, IUnitOfWork
         modelBuilder.Entity<Alarm>(entity =>
         {
             entity.HasKey(e => e.AlarmId);
-
-            entity.ToTable("Alarm", "Operations");
-
-            entity.HasIndex(e => new { e.OrganizationId, e.Status, e.Severity, e.RaisedAtUtc }, "IX_Alarm_Open").IsDescending(false, false, false, true);
-
-            entity.HasIndex(e => new { e.StationId, e.RaisedAtUtc }, "IX_Alarm_Station_Date").IsDescending(false, true);
-
-            entity.Property(e => e.AlarmId).HasDefaultValueSql("gen_random_uuid()");
-            entity.Property(e => e.AcknowledgedAtUtc).HasPrecision(3);
-            entity.Property(e => e.CreatedAtUtc)
+            entity.Property(e => e.RaisedAtUtc)
                 .HasPrecision(3)
                 .HasDefaultValueSql("timezone('utc', now())");
             entity.Property(e => e.Message)
                 .IsRequired()
                 .HasMaxLength(1000);
-            entity.Property(e => e.RaisedAtUtc).HasPrecision(3);
             entity.Property(e => e.ResolutionNote).HasMaxLength(2000);
             entity.Property(e => e.ResolvedAtUtc).HasPrecision(3);
             entity.Property(e => e.Severity)

@@ -2,3 +2,8 @@ fastapi==0.116.1
 uvicorn[standard]==0.35.0
 pydantic-settings==2.10.1
 numpy==2.3.2
+pandas>=2.2.0
+joblib>=1.4.0
+scikit-learn>=1.4.0
+pytest>=8.3.0
+httpx>=0.28.0,<1

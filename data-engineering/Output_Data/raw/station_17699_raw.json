@@ -1,0 +1,917 @@
+{
+  "code": 200,
+  "message": "Request successful",
+  "target": {
+    "id": "17699",
+    "target_name": "Toshka (East), Lake",
+    "location": null,
+    "country": "Egypt",
+    "continent": "Africa",
+    "longitude": 31.2534,
+    "latitude": 23.105,
+    "software": "8.0",
+    "download": "2026-08-28 18:02:40"
+  },
+  "data": [
+    {
+      "date": "2019-12-06 08:09:58",
+      "wse": 153.068,
+      "wse_u": 0.004,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2019-12-23 19:39:52",
+      "wse": 155.128,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-01-02 08:10:01",
+      "wse": 155.46,
+      "wse_u": 0.003,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-01-19 19:39:50",
+      "wse": 155.081,
+      "wse_u": 0.008,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-01-29 08:10:02",
+      "wse": 154.492,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-02-15 19:39:50",
+      "wse": 153.622,
+      "wse_u": 0.02,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-02-25 08:10:02",
+      "wse": 153.194,
+      "wse_u": 0.0,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-03-13 19:39:53",
+      "wse": 152.924,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-03-23 08:10:03",
+      "wse": 152.716,
+      "wse_u": 0.0,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-04-09 19:39:53",
+      "wse": 152.502,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-04-19 08:10:08",
+      "wse": 152.316,
+      "wse_u": 0.004,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-05-06 19:39:58",
+      "wse": 152.139,
+      "wse_u": 0.01,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-06-02 19:40:00",
+      "wse": 152.757,
+      "wse_u": 0.022,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-06-12 08:10:08",
+      "wse": 152.945,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-06-29 19:40:03",
+      "wse": 153.278,
+      "wse_u": 0.004,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-07-09 08:10:08",
+      "wse": 153.186,
+      "wse_u": 0.0,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-08-05 08:10:07",
+      "wse": 152.82,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-08-22 19:40:04",
+      "wse": 152.514,
+      "wse_u": 0.007,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-09-01 08:10:04",
+      "wse": 152.265,
+      "wse_u": 0.021,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-09-18 19:40:01",
+      "wse": 154.808,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-10-15 19:40:00",
+      "wse": 157.945,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-10-25 08:10:07",
+      "wse": 157.874,
+      "wse_u": 0.007,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-11-11 19:40:05",
+      "wse": 157.732,
+      "wse_u": 0.0,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-12-08 19:40:04",
+      "wse": 156.32,
+      "wse_u": 0.019,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2020-12-18 08:10:01",
+      "wse": 155.868,
+      "wse_u": 0.013,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-01-04 19:40:04",
+      "wse": 154.768,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-01-14 08:10:07",
+      "wse": 154.31,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-01-31 19:40:00",
+      "wse": 153.699,
+      "wse_u": 0.003,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-02-10 08:10:09",
+      "wse": 153.407,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-02-27 19:40:03",
+      "wse": 153.219,
+      "wse_u": 0.007,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-03-26 19:40:03",
+      "wse": 152.86,
+      "wse_u": 0.009,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-04-05 08:10:09",
+      "wse": 152.616,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-04-22 19:40:03",
+      "wse": 152.671,
+      "wse_u": 0.019,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-05-02 08:10:13",
+      "wse": 152.507,
+      "wse_u": 0.0,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-05-19 19:40:06",
+      "wse": 152.426,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-05-29 08:10:13",
+      "wse": 152.341,
+      "wse_u": 0.004,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-06-15 19:40:11",
+      "wse": 152.146,
+      "wse_u": 0.004,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-07-12 19:40:13",
+      "wse": 152.005,
+      "wse_u": 0.003,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-07-22 08:10:13",
+      "wse": 152.337,
+      "wse_u": 0.0,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-08-08 19:40:14",
+      "wse": 153.28,
+      "wse_u": 0.004,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-08-18 08:10:10",
+      "wse": 154.164,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-09-04 19:40:14",
+      "wse": 155.977,
+      "wse_u": 0.004,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-09-14 08:10:09",
+      "wse": 156.338,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-10-01 19:40:10",
+      "wse": 157.337,
+      "wse_u": 0.008,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-10-11 08:10:12",
+      "wse": 157.623,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-10-28 19:40:09",
+      "wse": 157.898,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-11-07 08:10:10",
+      "wse": 157.951,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-11-24 19:40:10",
+      "wse": 157.255,
+      "wse_u": 0.013,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-12-04 08:10:09",
+      "wse": 156.503,
+      "wse_u": 0.008,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2021-12-21 19:40:11",
+      "wse": 155.264,
+      "wse_u": 0.013,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-01-17 19:40:08",
+      "wse": 153.735,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-01-27 08:10:15",
+      "wse": 153.367,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-02-13 19:40:08",
+      "wse": 153.033,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-02-23 08:10:12",
+      "wse": 152.787,
+      "wse_u": 0.0,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-03-12 19:40:09",
+      "wse": 152.778,
+      "wse_u": 0.011,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-03-22 08:10:13",
+      "wse": 152.595,
+      "wse_u": 0.009,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-04-08 19:40:09",
+      "wse": 152.44,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-04-18 08:10:15",
+      "wse": 152.363,
+      "wse_u": 0.0,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-05-05 19:40:15",
+      "wse": 152.301,
+      "wse_u": 0.017,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-06-01 19:40:19",
+      "wse": 152.192,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-06-28 19:40:20",
+      "wse": 152.341,
+      "wse_u": 0.013,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-07-08 08:10:13",
+      "wse": 152.973,
+      "wse_u": 0.003,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-07-25 19:40:24",
+      "wse": 154.273,
+      "wse_u": 0.006,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-08-04 08:10:10",
+      "wse": 154.316,
+      "wse_u": 0.006,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-08-21 19:40:23",
+      "wse": 154.511,
+      "wse_u": 0.007,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-08-31 08:10:08",
+      "wse": 154.892,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-09-17 19:40:21",
+      "wse": 156.11,
+      "wse_u": 0.003,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-09-27 08:10:10",
+      "wse": 156.578,
+      "wse_u": 0.004,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-10-24 08:10:09",
+      "wse": 157.608,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-11-10 19:40:24",
+      "wse": 158.004,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-11-20 08:10:06",
+      "wse": 158.058,
+      "wse_u": 0.008,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-12-07 19:40:24",
+      "wse": 158.523,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2022-12-17 08:10:06",
+      "wse": 158.6,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-01-03 19:40:21",
+      "wse": 159.045,
+      "wse_u": 0.009,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-01-13 08:10:08",
+      "wse": 159.201,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-01-30 19:40:20",
+      "wse": 159.59,
+      "wse_u": 0.009,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-02-09 08:10:09",
+      "wse": 159.511,
+      "wse_u": 0.004,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-02-26 19:40:23",
+      "wse": 159.401,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-03-08 08:10:08",
+      "wse": 159.422,
+      "wse_u": 0.007,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-03-25 19:40:21",
+      "wse": 159.402,
+      "wse_u": 0.007,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-04-04 08:10:12",
+      "wse": 159.145,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-04-21 19:40:23",
+      "wse": 159.211,
+      "wse_u": 0.004,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-05-01 08:10:13",
+      "wse": 159.049,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-05-18 19:40:27",
+      "wse": 159.293,
+      "wse_u": 0.02,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-05-28 08:10:12",
+      "wse": 159.389,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-06-14 19:40:30",
+      "wse": 159.531,
+      "wse_u": 0.014,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-06-24 08:10:09",
+      "wse": 159.2,
+      "wse_u": 0.004,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-07-11 19:40:32",
+      "wse": 159.296,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-07-21 08:10:06",
+      "wse": 159.004,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-08-07 19:40:32",
+      "wse": 158.98,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-08-17 08:10:01",
+      "wse": 158.98,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-09-03 19:40:31",
+      "wse": 158.862,
+      "wse_u": 0.004,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-09-13 08:10:06",
+      "wse": 158.69,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-09-30 19:40:29",
+      "wse": 158.388,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-10-10 08:10:06",
+      "wse": 158.407,
+      "wse_u": 0.007,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-10-27 19:40:34",
+      "wse": 158.171,
+      "wse_u": 0.004,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-11-06 08:10:04",
+      "wse": 158.133,
+      "wse_u": 0.007,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-11-23 19:40:35",
+      "wse": 158.074,
+      "wse_u": 0.011,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-12-03 08:10:03",
+      "wse": 157.959,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-12-20 19:40:33",
+      "wse": 158.102,
+      "wse_u": 0.01,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2023-12-30 08:10:07",
+      "wse": 158.329,
+      "wse_u": 0.008,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-01-16 19:40:27",
+      "wse": 158.321,
+      "wse_u": 0.008,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-02-12 19:40:33",
+      "wse": 157.836,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-02-22 08:10:08",
+      "wse": 158.046,
+      "wse_u": 0.0,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-03-20 08:10:08",
+      "wse": 157.903,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-04-06 19:40:33",
+      "wse": 157.93,
+      "wse_u": 0.015,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-04-16 08:10:13",
+      "wse": 157.647,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-05-03 19:40:39",
+      "wse": 157.752,
+      "wse_u": 0.003,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-05-13 08:10:13",
+      "wse": 157.683,
+      "wse_u": 0.003,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-05-30 19:40:42",
+      "wse": 157.539,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-06-09 08:10:14",
+      "wse": 157.387,
+      "wse_u": 0.0,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-06-26 19:40:45",
+      "wse": 157.34,
+      "wse_u": 0.02,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-07-23 19:40:46",
+      "wse": 157.196,
+      "wse_u": 0.01,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-08-02 08:10:10",
+      "wse": 157.017,
+      "wse_u": 0.0,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-08-19 19:40:44",
+      "wse": 156.837,
+      "wse_u": 0.018,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-08-29 08:10:06",
+      "wse": 156.814,
+      "wse_u": 0.0,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-09-15 19:40:43",
+      "wse": 156.685,
+      "wse_u": 0.006,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-09-25 08:10:08",
+      "wse": 156.483,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-10-12 19:40:41",
+      "wse": 156.751,
+      "wse_u": 0.012,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-11-08 19:40:45",
+      "wse": 157.17,
+      "wse_u": 0.014,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-11-18 08:10:07",
+      "wse": 157.55,
+      "wse_u": 0.003,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-12-05 19:40:44",
+      "wse": 158.065,
+      "wse_u": 0.003,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2024-12-15 08:10:03",
+      "wse": 158.372,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-01-01 19:40:43",
+      "wse": 158.902,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-01-11 08:10:08",
+      "wse": 159.165,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-01-28 19:40:39",
+      "wse": 159.946,
+      "wse_u": 0.007,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-02-07 08:10:10",
+      "wse": 160.324,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-02-24 19:40:43",
+      "wse": 160.867,
+      "wse_u": 0.02,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-03-06 08:10:08",
+      "wse": 161.001,
+      "wse_u": 0.003,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-03-23 19:40:44",
+      "wse": 161.334,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-04-02 08:10:10",
+      "wse": 161.361,
+      "wse_u": 0.007,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-04-19 19:40:44",
+      "wse": 161.482,
+      "wse_u": 0.004,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-04-29 08:10:15",
+      "wse": 161.399,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-05-16 19:40:48",
+      "wse": 161.544,
+      "wse_u": 0.016,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-06-12 19:40:53",
+      "wse": 161.544,
+      "wse_u": 0.029,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-06-22 08:10:17",
+      "wse": 161.401,
+      "wse_u": 0.006,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-07-09 19:40:57",
+      "wse": 161.395,
+      "wse_u": 0.026,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-07-19 08:10:17",
+      "wse": 161.276,
+      "wse_u": 0.003,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-08-05 19:40:58",
+      "wse": 161.231,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-09-01 19:40:59",
+      "wse": 160.863,
+      "wse_u": 0.006,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-09-11 08:10:12",
+      "wse": 160.896,
+      "wse_u": 0.003,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-09-28 19:40:56",
+      "wse": 160.712,
+      "wse_u": 0.007,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-10-08 08:10:15",
+      "wse": 160.614,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-10-25 19:40:57",
+      "wse": 160.352,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-11-04 08:10:17",
+      "wse": 160.35,
+      "wse_u": 0.003,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-11-21 19:40:59",
+      "wse": 160.261,
+      "wse_u": 0.001,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-12-01 08:10:14",
+      "wse": 160.975,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-12-18 19:41:00",
+      "wse": 162.007,
+      "wse_u": 0.005,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2025-12-28 08:10:14",
+      "wse": 162.348,
+      "wse_u": 0.002,
+      "data": "water-level-altimetry"
+    },
+    {
+      "date": "2026-04-15 08:10:23",
+      "wse": 161.626,
+      "wse_u": 0.067,
+      "data": "water-level-altimetry"
+    }
+  ]
+}

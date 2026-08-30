@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using WaterOperations.Api.Controllers;
 using WaterOperations.Application.Features.Viewer.DTOs;
 using WaterOperations.Application.Features.Viewer.Interfaces;
@@ -15,7 +15,7 @@ public sealed class LayerBoundaryTests
         var forbidden = ReferencedAssemblyNames(typeof(Organization).Assembly)
             .Where(name => name.StartsWith("Microsoft.", StringComparison.Ordinal)
                 || name.StartsWith("System.Data", StringComparison.Ordinal)
-                || name is "WaterOperations.Api" or "WaterOperations.Infrastructure")
+                || name is "WaterOperations.Api" or "WaterOperations.Infrastructure" or "WaterOperations.Application")
             .ToArray();
 
         Assert.Empty(forbidden);
@@ -29,6 +29,14 @@ public sealed class LayerBoundaryTests
         Assert.DoesNotContain("WaterOperations.Infrastructure", references);
         Assert.DoesNotContain("WaterOperations.Api", references);
         Assert.DoesNotContain("Microsoft.EntityFrameworkCore", references);
+    }
+
+    [Fact]
+    public void InfrastructureDoesNotReferenceApi()
+    {
+        var references = ReferencedAssemblyNames(typeof(WaterOperationsDbContext).Assembly);
+
+        Assert.DoesNotContain("WaterOperations.Api", references);
     }
 
     [Fact]

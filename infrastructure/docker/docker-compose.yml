@@ -11,12 +11,16 @@ services:
       Authentication__SigningKey: ${Authentication__SigningKey:?Set Authentication__SigningKey in .env}
       Authentication__Issuer: ${Authentication__Issuer:-water-operations}
       Authentication__Audience: ${Authentication__Audience:-water-operations-web}
+      AiModelClient__BaseUrl: http://ai-service:8000
+      AiModelClient__ApiKey: ${AI_SERVICE_API_KEY:?Set AI_SERVICE_API_KEY in .env}
     ports:
       - "${API_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      ai-service:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health/live"]
@@ -53,12 +57,13 @@ services:
 
   ai-service:
     build: ../../ai-service
-    profiles: ["ai"]
     restart: unless-stopped
-    ports:
-      - "${AI_SERVICE_PORT:-8000}:8000"
+    environment:
+      AI_SERVICE_API_KEY: ${AI_SERVICE_API_KEY:?Set AI_SERVICE_API_KEY in .env}
+    expose:
+      - "8000"
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready')"]
       interval: 10s
       timeout: 5s
       retries: 5

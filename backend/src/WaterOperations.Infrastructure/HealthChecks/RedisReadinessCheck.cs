@@ -1,9 +1,10 @@
-﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using StackExchange.Redis;
 
 namespace WaterOperations.Infrastructure.HealthChecks;
 
-public sealed class RedisReadinessCheck(IConnectionMultiplexer redis) : IHealthCheck
+public sealed class RedisReadinessCheck(IServiceProvider serviceProvider) : IHealthCheck
 {
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context,
@@ -11,6 +12,12 @@ public sealed class RedisReadinessCheck(IConnectionMultiplexer redis) : IHealthC
     {
         try
         {
+            var redis = serviceProvider.GetService<IConnectionMultiplexer>();
+            if (redis is null)
+            {
+                return HealthCheckResult.Healthy("Redis is disabled.");
+            }
+
             await redis.GetDatabase().PingAsync();
             return HealthCheckResult.Healthy("Redis is reachable.");
         }

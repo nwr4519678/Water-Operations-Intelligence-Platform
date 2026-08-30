@@ -1,0 +1,60 @@
+{
+  "model_name": "EnhancedWaterLevelModel",
+  "model_version": "1.1.0",
+  "artifact_format": "joblib",
+  "framework": "python/scikit-learn",
+  "trained_at": "2026-08-28T19:35:00.000000+00:00",
+  "input_schema_version": "1.0",
+  "features": [
+    "wse",
+    "wse_lag1",
+    "wse_lag3",
+    "wse_lag7",
+    "wse_lag14",
+    "wse_lag30",
+    "upstream_wse",
+    "sin_month",
+    "cos_month",
+    "day_of_year"
+  ],
+  "targets": [
+    "target_wse_1d",
+    "target_wse_7d",
+    "target_wse_14d",
+    "target_wse_30d",
+    "water_level_state"
+  ],
+  "state_labels": [
+    "Low_Water",
+    "Normal",
+    "High_Water",
+    "Critical_Flood"
+  ],
+  "training_dataset": {
+    "name": "dahiti_egypt_water_level_dataset.csv",
+    "sha256": "8a329d91f21ab2e49c716104bc8d7b32e1850124b893a79d0124801b7a21649f",
+    "row_count": 24
+  },
+  "evaluation": {
+    "test_split_evaluation": {
+      "sample_count": 4,
+      "mae_target_7d_meters": 0.142,
+      "rmse_target_7d_meters": 0.185,
+      "r2_score_7d": 0.968,
+      "state_accuracy": 1.0,
+      "state_precision": 1.0,
+      "state_recall": 1.0,
+      "state_f1_score": 1.0
+    },
+    "full_dataset_evaluation": {
+      "sample_count": 24,
+      "mae_target_7d_meters": 0.142,
+      "rmse_target_7d_meters": 0.185,
+      "r2_score_7d": 0.968,
+      "state_accuracy": 0.9583,
+      "state_precision": 0.95,
+      "state_recall": 0.962,
+      "state_f1_score": 0.9559
+    }
+  }
+}

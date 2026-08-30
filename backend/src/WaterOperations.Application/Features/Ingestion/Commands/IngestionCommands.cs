@@ -1,4 +1,3 @@
-using MediatR;
 using WaterOperations.Application.Common.Abstractions;
 using WaterOperations.Application.Common.Repositories;
 using WaterOperations.Application.Common.Results;
@@ -44,30 +43,35 @@ public sealed class IngestBatchCommandHandler(
     {
         var organizationId = currentUser.OrganizationId!.Value;
         var batchId = request.Request.BatchId ?? Guid.NewGuid();
+
         if (await ingestion.ExistsAsync(organizationId, batchId, cancellationToken))
         {
-            return new(
-                true,
-                true,
-                new IngestionResult(batchId, "duplicate", 0, 0, 0, true));
+            return new IngestionCommandResult(
+                IsAuthorized: true,
+                IsValid: true,
+                Value: new IngestionResult(batchId, "duplicate", 0, 0, 0, true));
         }
 
         var stationIds = request.Request.Readings
             .Select(reading => reading.StationId)
             .Distinct()
             .ToArray();
+
         var activeStationIds = await ingestion.GetActiveStationIdsAsync(
             organizationId,
             stationIds,
             cancellationToken);
+
         var now = DateTime.UtcNow;
         var nowOffset = new DateTimeOffset(now, TimeSpan.Zero);
+
         var accepted = request.Request.Readings
             .Where(reading =>
                 activeStationIds.Contains(reading.StationId) &&
                 reading.TimestampUtc <= nowOffset.AddMinutes(5) &&
                 reading.TimestampUtc >= nowOffset.AddYears(-10))
             .ToArray();
+
         var batch = new IngestionBatch
         {
             IngestionBatchId = batchId,
@@ -76,22 +80,25 @@ public sealed class IngestBatchCommandHandler(
             SourceName = request.Request.SourceName,
             SchemaVersion = request.Request.SchemaVersion
         };
+
         var completion = batch.Complete(
             request.Request.Readings.Count,
             accepted.Length,
             now,
             now);
+
         if (!completion.IsSuccess)
         {
-            return new(true, false, null, completion.Error);
+            return new IngestionCommandResult(true, false, null, completion.Error);
         }
 
         ingestion.AddBatch(batch, accepted, now);
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        return new(
-            true,
-            true,
-            new IngestionResult(
+
+        return new IngestionCommandResult(
+            IsAuthorized: true,
+            IsValid: true,
+            Value: new IngestionResult(
                 batchId,
                 batch.Status,
                 batch.TotalRows,
@@ -102,8 +109,10 @@ public sealed class IngestBatchCommandHandler(
 }
 
 public sealed class ImportCsvCommandHandler(
-    ISender sender,
-    ICsvBatchParser parser)
+    IIngestionRepository ingestion,
+    IUnitOfWork unitOfWork,
+    ICsvBatchParser parser,
+    ICurrentUser currentUser)
     : ICommandHandler<ImportCsvCommand, IngestionCommandResult>
 {
     public async Task<IngestionCommandResult> Handle(
@@ -114,14 +123,17 @@ public sealed class ImportCsvCommandHandler(
             request.Content,
             request.FileName,
             cancellationToken);
+
         if (batch is null)
         {
-            return new(true, false, null, "missing_header");
+            return new IngestionCommandResult(true, false, null, "missing_header");
         }
 
-        return await sender.Send(
-            new IngestBatchCommand(batch),
-            cancellationToken);
+        // BUG-4 fix: inline ingestion logic directly instead of dispatching
+        // through ISender, which would execute the entire MediatR pipeline again
+        // (authorization + validation) on an already-authorized+validated request.
+        var handler = new IngestBatchCommandHandler(ingestion, unitOfWork, currentUser);
+        return await handler.Handle(new IngestBatchCommand(batch), cancellationToken);
     }
 }
 
@@ -138,6 +150,7 @@ public sealed class GetBatchQueryHandler(
             currentUser.OrganizationId!.Value,
             request.BatchId,
             cancellationToken);
+
         return result is null
             ? ScopeResult.NotFound<BatchDetails>()
             : ScopeResult.Authorized(result);

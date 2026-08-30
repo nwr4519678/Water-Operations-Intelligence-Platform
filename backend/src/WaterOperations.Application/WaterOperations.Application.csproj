@@ -1,10 +1,16 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\WaterOperations.Domain\WaterOperations.Domain.csproj" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
     <PackageReference Include="MediatR" Version="12.5.0" />
     <PackageReference Include="AutoMapper" Version="16.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+
+    <Compile Remove="Features\ProductCapabilities\**\*" />
+    <Compile Remove="**\*ProductCapability*.cs" />
   </ItemGroup>
 
   <PropertyGroup>

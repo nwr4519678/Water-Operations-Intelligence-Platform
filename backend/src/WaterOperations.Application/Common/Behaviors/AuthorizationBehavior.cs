@@ -8,7 +8,7 @@ public sealed class AuthorizationBehavior<TRequest, TResponse>(ICurrentUser curr
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
-    public Task<TResponse> Handle(
+    public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
@@ -23,6 +23,6 @@ public sealed class AuthorizationBehavior<TRequest, TResponse>(ICurrentUser curr
             throw new ForbiddenAccessException("An authenticated user is required.");
         }
 
-        return next(cancellationToken);
+        return await next(cancellationToken);
     }
 }
