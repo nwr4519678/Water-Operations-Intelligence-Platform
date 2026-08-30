@@ -20,17 +20,14 @@ import { TimeRangeSelector } from '../components/charts/TimeRangeSelector';
 import { ChartAnnotationsList } from '../components/station/ChartAnnotationsList';
 import { ThreadedNotesList } from '../components/station/ThreadedNotesList';
 import { StationAlarmList } from '../components/station/StationAlarmList';
-import { useUiStore } from '../store/uiStore';
 import { AiForecastPayload, AiRiskScorePayload } from '../types/api';
+import { ArrowLeft, Activity, Radio, Droplets, Gauge, ShieldCheck, MapPin } from 'lucide-react';
 
 export const StationDetailPage: React.FC = () => {
   const { stationId = 'MST-01' } = useParams<{ stationId: string }>();
   const [timeRange, setTimeRange] = useState('24H');
   const [showForecast, setShowForecast] = useState(true);
   const [activeTab, setActiveTab] = useState<'annotations' | 'collaboration' | 'thresholds' | 'alarms'>('annotations');
-
-  const mapLanguage = useUiStore((state) => state.mapLanguage);
-  const isAr = mapLanguage === 'ar';
 
   const { data: station, isLoading: isStationLoading } = useStationDetail(stationId);
 
@@ -75,8 +72,8 @@ export const StationDetailPage: React.FC = () => {
     );
   }
 
-  const name = isAr ? station.nameAr || station.name : station.nameEn || station.name;
-  const zone = isAr ? station.zoneAr || station.regionId : station.zoneEn || station.regionId;
+  const name = station.nameEn || station.name;
+  const zone = station.zoneEn || station.regionId;
 
   return (
     <section className="dashboard">
@@ -85,7 +82,7 @@ export const StationDetailPage: React.FC = () => {
           to="/map"
           style={{ fontSize: 11, fontWeight: 700, color: '#1677f0', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
         >
-          ← Back to GIS Telemetry Map
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to GIS Telemetry Map
         </Link>
       </div>
 
@@ -110,9 +107,9 @@ export const StationDetailPage: React.FC = () => {
             </h2>
 
             <div style={{ display: 'flex', gap: 16, fontSize: 11, color: '#64748b', marginTop: 6, flexWrap: 'wrap' }}>
-              <span>📍 {station.latitude.toFixed(4)}, {station.longitude.toFixed(4)}</span>
-              <span>⛰ Elevation: {station.elevationMeters}m ASL</span>
-              <span>⌁ Interval: {station.communicationIntervalSeconds || 60}s</span>
+              <span><MapPin className="w-3.5 h-3.5 inline mr-1" />{station.latitude.toFixed(4)}°N, {station.longitude.toFixed(4)}°E</span>
+              <span>Elevation: {station.elevationMeters}m ASL</span>
+              <span>Interval: {station.communicationIntervalSeconds || 60}s</span>
             </div>
           </div>
         </div>
@@ -121,7 +118,7 @@ export const StationDetailPage: React.FC = () => {
       {/* Metrics Row */}
       <div className="metrics" style={{ marginBottom: 14 }}>
         <article className="metric-card blue">
-          <span className="metric-icon">◉</span>
+          <span className="metric-icon"><Droplets className="w-4 h-4" /></span>
           <div>
             <p>Water Level</p>
             <strong>{station.staffGaugeHeight || '2.65'}<small style={{ fontSize: 12 }}> m</small></strong>
@@ -130,7 +127,7 @@ export const StationDetailPage: React.FC = () => {
         </article>
 
         <article className="metric-card green">
-          <span className="metric-icon">◈</span>
+          <span className="metric-icon"><Activity className="w-4 h-4" /></span>
           <div>
             <p>Flow Rate</p>
             <strong>{station.category === 'master' ? '1,200' : '450'}<small style={{ fontSize: 12 }}> {station.category === 'master' ? 'm³/s' : 'L/s'}</small></strong>
@@ -139,7 +136,7 @@ export const StationDetailPage: React.FC = () => {
         </article>
 
         <article className="metric-card violet">
-          <span className="metric-icon">⌁</span>
+          <span className="metric-icon"><Gauge className="w-4 h-4" /></span>
           <div>
             <p>Line Pressure</p>
             <strong>4.2<small style={{ fontSize: 12 }}> bar</small></strong>
@@ -148,7 +145,7 @@ export const StationDetailPage: React.FC = () => {
         </article>
 
         <article className="metric-card amber">
-          <span className="metric-icon">▲</span>
+          <span className="metric-icon"><ShieldCheck className="w-4 h-4" /></span>
           <div>
             <p>AI Risk Score</p>
             <strong>{riskPayload?.riskScore || 38}<small style={{ fontSize: 12 }}>%</small></strong>

@@ -11,39 +11,53 @@ interface AuthState {
   clearAuth: () => void;
 }
 
-const DEFAULT_USER: UserSession = {
-  userId: 'usr-001',
-  email: 'viewer.ops@water.gov.eg',
-  name: 'Eng. Mohamed Atef (Chief Operations)',
-  role: 'VIEWER',
-  organizationId: 'org-eg-telemetry'
-};
+const initialToken = localStorage.getItem('wt_access_token');
+const initialRefresh = localStorage.getItem('wt_refresh_token');
+const storedUserJson = localStorage.getItem('wt_user_session');
+let initialUser: UserSession | null = null;
+if (storedUserJson) {
+  try {
+    initialUser = JSON.parse(storedUserJson);
+  } catch {
+    initialUser = null;
+  }
+}
 
 export const useAuthStore = create<AuthState>((set) => ({
-  accessToken: localStorage.getItem('wt_access_token') || 'demo_jwt_access_token_viewer',
-  refreshToken: localStorage.getItem('wt_refresh_token') || 'demo_jwt_refresh_token_viewer',
-  currentUser: DEFAULT_USER,
-  isAuthenticated: true,
+  accessToken: initialToken,
+  refreshToken: initialRefresh,
+  currentUser: initialUser,
+  isAuthenticated: Boolean(initialToken),
 
   setAuth: (accessToken, refreshToken, user) => {
     localStorage.setItem('wt_access_token', accessToken);
     localStorage.setItem('wt_refresh_token', refreshToken);
-    set((state) => ({
-      accessToken,
-      refreshToken,
-      isAuthenticated: true,
-      currentUser: user ? { ...state.currentUser, ...user } as UserSession : state.currentUser
-    }));
+    set((state) => {
+      const updatedUser = user
+        ? ({ ...state.currentUser, ...user } as UserSession)
+        : state.currentUser;
+      if (updatedUser) {
+        localStorage.setItem('wt_user_session', JSON.stringify(updatedUser));
+      }
+      return {
+        accessToken,
+        refreshToken,
+        isAuthenticated: true,
+        currentUser: updatedUser,
+      };
+    });
   },
 
   clearAuth: () => {
     localStorage.removeItem('wt_access_token');
     localStorage.removeItem('wt_refresh_token');
+    localStorage.removeItem('wt_user_session');
     set({
       accessToken: null,
       refreshToken: null,
       currentUser: null,
-      isAuthenticated: false
+      isAuthenticated: false,
     });
-  }
+  },
 }));
+

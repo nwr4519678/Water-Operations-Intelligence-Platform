@@ -1,6 +1,6 @@
 // src/components/layout/Sidebar.tsx
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAlarmsList } from '../../hooks/useViewerQueries';
 import {
   LayoutDashboard,
@@ -9,12 +9,15 @@ import {
   AlertTriangle,
   FileText,
   User,
-  Settings,
+  Settings, ChevronUp, ChevronDown,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
   const { data: alarmsData } = useAlarmsList({ status: 'ACTIVE' });
-  const activeAlarmsCount = alarmsData?.totalCount || 3;
+  const activeAlarmsCount = alarmsData?.totalCount ?? 0;
+  const location = useLocation();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const profileVisible = settingsOpen || location.pathname === '/account';
 
   const navItems = [
     { to: '/', label: 'Overview', icon: LayoutDashboard },
@@ -22,12 +25,10 @@ export const Sidebar: React.FC = () => {
     { to: '/ai', label: 'AI Hub', icon: Sparkles },
     { to: '/alarms', label: 'Alarms', icon: AlertTriangle, badge: activeAlarmsCount },
     { to: '/reports', label: 'Reports', icon: FileText },
-    { to: '/account', label: 'Account', icon: User },
-    { to: '/settings', label: 'Settings', icon: Settings },
   ];
 
   return (
-    <aside className="sidebar">
+    <aside className="sidebar" aria-label="Primary navigation">
       {/* Brand Header */}
       <div className="brand">
         <span className="water-mark">💧</span>
@@ -50,7 +51,7 @@ export const Sidebar: React.FC = () => {
               <i>
                 <Icon size={16} strokeWidth={2.2} />
               </i>
-              <span>{item.label}</span>
+              <span className="sidebar-label">{item.label}</span>
               {item.badge !== undefined && item.badge > 0 && (
                 <b>{item.badge}</b>
               )}
@@ -59,17 +60,19 @@ export const Sidebar: React.FC = () => {
         })}
       </nav>
 
-      {/* System Status Box */}
-      <div className="system-status">
-        <span><i className="dot good" /> National Network</span>
-        <strong>410 Stations Live</strong>
-        <div className="pulse-line">⌁</div>
-        <small>Dual satellite & GSM feeds</small>
+      <div className="sidebar-bottom-nav">
+        {profileVisible && (
+          <NavLink to="/account" className={({ isActive }) => `settings-child ${isActive ? 'active' : ''}`}>
+            <i><User size={14} strokeWidth={2.2} /></i>
+            <span className="sidebar-label">Profile</span>
+          </NavLink>
+        )}
+        <NavLink to="/settings" onClick={() => setSettingsOpen(true)} className={({ isActive }) => `settings-parent ${isActive ? 'active' : ''}`}>
+          <i><Settings size={16} strokeWidth={2.2} /></i>
+          <span className="sidebar-label">Settings</span>
+          <span className="settings-chevron sidebar-label">{profileVisible ? <ChevronDown size={13} /> : <ChevronUp size={13} />}</span>
+        </NavLink>
       </div>
-
-      <button className="collapse" type="button">
-        ⇐ <span>Collapse</span>
-      </button>
     </aside>
   );
 };

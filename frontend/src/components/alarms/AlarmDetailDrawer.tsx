@@ -22,6 +22,7 @@ export const AlarmDetailDrawer: React.FC<{
     <Drawer
       isOpen={isOpen}
       onClose={onClose}
+      mode="modal"
       title={
         <div className="flex items-center gap-2">
           <Badge
@@ -52,7 +53,7 @@ export const AlarmDetailDrawer: React.FC<{
               <span>AI Fault Diagnosis</span>
             </div>
             <span className="text-xs font-bold font-mono text-purple-700 bg-purple-100/80 px-2 py-0.5 rounded border border-purple-200">
-              {faultPayload ? `${Math.round(faultPayload.faultProbability * 100)}% Confidence` : '88% Confidence'}
+              {faultPayload ? `${Math.round(faultPayload.faultProbability * 100)}% Confidence` : 'Not available'}
             </span>
           </div>
 
@@ -70,20 +71,7 @@ export const AlarmDetailDrawer: React.FC<{
                 ))}
               </ul>
             ) : (
-              <ul className="space-y-1 pl-1 text-slate-700">
-                <li className="flex items-start gap-1.5">
-                  <span className="text-purple-600 font-bold">•</span>
-                  <span>Sudden upstream inflow surge (&gt;150 m³/s within 2 hours)</span>
-                </li>
-                <li className="flex items-start gap-1.5">
-                  <span className="text-purple-600 font-bold">•</span>
-                  <span>High water level sensor hysteresis delay</span>
-                </li>
-                <li className="flex items-start gap-1.5">
-                  <span className="text-purple-600 font-bold">•</span>
-                  <span>Downstream regulator gate partial restriction</span>
-                </li>
-              </ul>
+              <p className="text-slate-500">AI diagnosis is not available for this event.</p>
             )}
           </div>
         </div>
@@ -133,11 +121,8 @@ export const AlarmDetailDrawer: React.FC<{
             <span>Automated Tags & Labels</span>
           </span>
           <div className="flex flex-wrap gap-1.5">
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shadow-2xs">
-              Hydrological Surge (94%)
-            </span>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shadow-2xs">
-              Upstream Regulator
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-500">
+              {faultPayload?.rootCauses?.length ? `${faultPayload.rootCauses.length} AI causes available` : 'No automated tags available'}
             </span>
           </div>
         </div>

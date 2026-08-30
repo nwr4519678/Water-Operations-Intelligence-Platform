@@ -1,4 +1,5 @@
-// src/store/uiStore.ts
+﻿// src/store/uiStore.ts
+// English-only. mapLanguage toggle removed — platform is English-only.
 import { create } from 'zustand';
 import { ToastItem } from '../types/ui';
 
@@ -10,8 +11,6 @@ interface UiState {
   toasts: ToastItem[];
   addToast: (toast: Omit<ToastItem, 'id' | 'timestamp'>) => void;
   removeToast: (id: string) => void;
-  mapLanguage: 'en' | 'ar';
-  setMapLanguage: (lang: 'en' | 'ar') => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -22,18 +21,11 @@ export const useUiStore = create<UiState>((set) => ({
   toasts: [],
   addToast: (t) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-    const newToast: ToastItem = {
-      ...t,
-      id,
-      timestamp: new Date().toISOString()
-    };
+    const newToast: ToastItem = { ...t, id, timestamp: new Date().toISOString() };
     set((state) => ({ toasts: [...state.toasts, newToast] }));
-
     setTimeout(() => {
       set((state) => ({ toasts: state.toasts.filter((item) => item.id !== id) }));
     }, t.duration || 5000);
   },
   removeToast: (id) => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
-  mapLanguage: 'en',
-  setMapLanguage: (lang) => set({ mapLanguage: lang })
 }));

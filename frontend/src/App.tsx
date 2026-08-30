@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useMemo } from 'react';
+import React, { lazy, Suspense, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -8,7 +8,7 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 import { LoginPage } from './pages/LoginPage';
 import { OverviewPage } from './pages/OverviewPage';
-import { MapPage } from './pages/MapPage';
+const MapPage = lazy(() => import('./pages/MapPage').then((module) => ({ default: module.MapPage })));
 import { StationDetailPage } from './pages/StationDetailPage';
 import { AiHubPage } from './pages/AiHubPage';
 import { AlarmsPage } from './pages/AlarmsPage';
@@ -45,7 +45,14 @@ export default function App() {
             {/* Protected VIEWER Routes */}
             <Route element={<AppLayout />}>
               <Route path="/" element={<OverviewPage />} />
-              <Route path="/map" element={<MapPage />} />
+              <Route
+                path="/map"
+                element={
+                  <Suspense fallback={<div className="dashboard"><div className="panel p-8 text-center text-slate-500">Loading GIS map…</div></div>}>
+                    <MapPage />
+                  </Suspense>
+                }
+              />
               <Route path="/stations/:stationId" element={<StationDetailPage />} />
               <Route path="/ai" element={<AiHubPage />} />
               <Route path="/alarms" element={<AlarmsPage />} />

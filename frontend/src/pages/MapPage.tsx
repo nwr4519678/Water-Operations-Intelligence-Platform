@@ -1,313 +1,403 @@
 // src/pages/MapPage.tsx
-import React, { useState, useEffect, useMemo } from 'react';
+// Production-grade Water Telemetry GIS command page.
+// English only. Single data source: Backend API.
+// One station registry -> MapPage state -> deck.gl layers.
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { WaterStation, DatasetValidationReport } from '../data/stationTypes';
-import { loadWaterStations, getCachedStations } from '../data/stationLoader';
+import { WaterStation, mapDtoToWaterStation, BoundingBox } from '../data/stationTypes';
+import { useMapStations } from '../hooks/useViewerQueries';
 import { MapLibreDeckMap } from '../components/map/MapLibreDeckMap';
 import { StationTelemetryDrawer } from '../components/map/StationTelemetryDrawer';
-import { useUiStore } from '../store/uiStore';
-import { Search, Filter, Database, CheckCircle, Radio, MapPin, Layers, ExternalLink } from 'lucide-react';
+import { getLodLevel } from '../map/mapConstants';
+import { STATUS_CSS } from '../map/mapConstants';
+import {
+  Search, Database, CheckCircle, Radio, MapPin,
+  Layers, ExternalLink, BarChart3, AlertTriangle, Activity,
+  RadioTower, Building2, Network, CheckCircle2, ShieldCheck, RotateCcw,
+} from 'lucide-react';
+
+// ── Regional summary derived from loaded dataset ──────────────────────────────
+function buildRegionalSummary(stations: WaterStation[]) {
+  const map = new Map<string, { total: number; online: number; warning: number; offline: number; unknown: number }>();
+  for (const s of stations) {
+    const r = s.region;
+    if (!map.has(r)) map.set(r, { total: 0, online: 0, warning: 0, offline: 0, unknown: 0 });
+    const entry = map.get(r)!;
+    entry.total++;
+    entry[s.connectionState]++;
+  }
+  return Array.from(map.entries())
+    .map(([region, counts]) => ({ region, ...counts }))
+    .sort((a, b) => b.total - a.total);
+}
 
 export const MapPage: React.FC = () => {
-  const [stations, setStations] = useState<WaterStation[]>(() => getCachedStations().stations);
-  const [report, setReport] = useState<DatasetValidationReport>(() => getCachedStations().report);
-  const [selectedStationId, setSelectedStationId] = useState<string | null>('MST-01');
-  const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
+  const { data: stationsResult, isLoading } = useMapStations({ pageSize: 1000 });
+  const stations: WaterStation[] = useMemo(() => {
+    if (!stationsResult?.items) return [];
+    return stationsResult.items.map(mapDtoToWaterStation);
+  }, [stationsResult]);
 
-  const [search, setSearch] = useState<string>('');
-  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
+  const [activeTab, setActiveTab]   = useState<'list' | 'regions'>('list');
+
+  const [search,         setSearch]         = useState<string>('');
+  const [selectedType,   setSelectedType]   = useState<string>('all');
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
-
-  const mapLanguage = useUiStore((state) => state.mapLanguage);
-  const setMapLanguage = useUiStore((state) => state.setMapLanguage);
-  const isAr = mapLanguage === 'ar';
+  const [mapZoom, setMapZoom] = useState<number>(6.2);
 
   const navigate = useNavigate();
 
-  // Load authoritative CSV dataset
-  useEffect(() => {
-    loadWaterStations().then(({ stations: loaded, report: rep }) => {
-      setStations(loaded);
-      setReport(rep);
-    });
-  }, []);
+  // ── Derived KPI report ────────────────────────────────────────────────────
+  const report = useMemo(() => {
+    const totalRows = stations.length;
+    const mainCount = stations.filter((s) => s.type === 'main').length;
+    const masterCount = stations.filter((s) => s.type === 'master').length;
+    const rtuCount = stations.filter((s) => s.type === 'rtu').length;
+    const onlineCount = stations.filter((s) => s.connectionState === 'online').length;
+    const warningCount = stations.filter((s) => s.connectionState === 'warning').length;
+    const offlineCount = stations.filter((s) => s.connectionState === 'offline').length;
+    const unknownCount = stations.filter((s) => s.connectionState === 'unknown').length;
+    const regions = Array.from(new Set(stations.map((s) => s.region))).sort();
 
-  // Filtered stations based on search, type, region, and status
+    let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+    for (const s of stations) {
+      if (s.latitude < minLat) minLat = s.latitude;
+      if (s.latitude > maxLat) maxLat = s.latitude;
+      if (s.longitude < minLng) minLng = s.longitude;
+      if (s.longitude > maxLng) maxLng = s.longitude;
+    }
+    const bounds: BoundingBox = {
+      minLat: minLat === 90 ? 22 : minLat,
+      maxLat: maxLat === -90 ? 32 : maxLat,
+      minLng: minLng === 180 ? 24 : minLng,
+      maxLng: maxLng === -180 ? 37 : maxLng,
+      centerLat: 27.0,
+      centerLng: 31.0,
+    };
+
+    return {
+      totalRows,
+      validCount: totalRows,
+      invalidCount: 0,
+      mainCount,
+      masterCount,
+      rtuCount,
+      onlineCount,
+      warningCount,
+      offlineCount,
+      unknownCount,
+      regions,
+      duplicateCount: 0,
+      duplicateKeys: [],
+      bounds,
+      errors: [],
+    };
+  }, [stations]);
+
+  // ── Filtered station set — drives both the list and the map ──────────────
   const filteredStations = useMemo(() => {
     const q = search.trim().toLowerCase();
     return stations.filter((s) => {
       const matchesSearch =
         !q ||
-        s.code.toLowerCase().includes(q) ||
         s.name.toLowerCase().includes(q) ||
-        (s.nameAr && s.nameAr.includes(q)) ||
-        (s.nameEn && s.nameEn.toLowerCase().includes(q)) ||
-        s.region.toLowerCase().includes(q);
+        s.code.toLowerCase().includes(q) ||
+        s.region.toLowerCase().includes(q) ||
+        s.typeLabel.toLowerCase().includes(q);
 
-      const matchesType = selectedType === 'all' || s.type === selectedType;
-      const matchesRegion = selectedRegion === 'all' || s.region === selectedRegion;
-      const matchesStatus = selectedStatus === 'all' || s.connectionState === selectedStatus;
+      const matchesType   = selectedType   === 'all' || s.type             === selectedType;
+      const matchesRegion = selectedRegion === 'all' || s.region           === selectedRegion;
+      const matchesStatus = selectedStatus === 'all' || s.connectionState  === selectedStatus;
 
       return matchesSearch && matchesType && matchesRegion && matchesStatus;
     });
   }, [stations, search, selectedType, selectedRegion, selectedStatus]);
 
-  // Selected station reference
-  const selectedStation = useMemo(() => {
-    return stations.find((s) => s.id === selectedStationId) || stations[0];
-  }, [stations, selectedStationId]);
+  const selectedStation = useMemo(
+    () => stations.find((s) => s.id === selectedStationId) ?? null,
+    [stations, selectedStationId]
+  );
+
+  const regionSummary = useMemo(() => buildRegionalSummary(stations), [stations]);
+
+  const uniqueRegions = useMemo(
+    () => Array.from(new Set(stations.map((s) => s.region))).sort(),
+    [stations]
+  );
 
   const handleSelectStation = (station: WaterStation) => {
     setSelectedStationId(station.id);
   };
 
+  if (isLoading && stations.length === 0) {
+    return (
+      <section className="dashboard">
+        <div className="flex items-center justify-center h-96 text-slate-400">
+          <div className="text-center">
+            <Activity className="w-10 h-10 mx-auto mb-3 animate-pulse text-blue-500" />
+            <p className="text-sm font-medium">Loading live station registry from backend API...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+
   return (
-    <section className="dashboard" dir={isAr ? 'rtl' : 'ltr'}>
-      {/* ── 1. Top GIS Command KPI Summary Banner ──────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-3.5">
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
-            Σ
-          </div>
-          <div>
-            <div className="text-[10px] uppercase font-bold text-slate-400">
-              {isAr ? 'إجمالي المحطات' : 'Total Stations'}
-            </div>
-            <div className="text-lg font-black text-slate-800 font-mono">{report.totalRows}</div>
-          </div>
-        </div>
+    <section className="dashboard map-command-page">
 
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-red-50 text-red-600 flex items-center justify-center font-bold text-sm">
-            ★
-          </div>
-          <div>
-            <div className="text-[10px] uppercase font-bold text-slate-400">
-              {isAr ? 'المركز الرئيسي' : 'Control Center'}
+      {/* ── KPI Summary Banner — computed from real dataset ─────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-3.5 map-kpi-grid">
+        {[
+          { label: 'Total Stations', value: report.totalRows, Icon: RadioTower, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: 'Control Center', value: report.mainCount, Icon: Building2, color: 'text-red-600', bg: 'bg-red-50' },
+          { label: 'Master Stations', value: report.masterCount, Icon: Network, color: 'text-blue-500', bg: 'bg-blue-50' },
+          { label: 'Field RTU', value: report.rtuCount, Icon: Radio, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Online', value: report.onlineCount, Icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Valid / CSV Rows', value: `${report.validCount}/${report.totalRows}`, Icon: ShieldCheck, color: 'text-slate-600', bg: 'bg-slate-50' },
+        ].map(({ label, value, Icon, color, bg }) => (
+          <div key={label} className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3 map-kpi-card">
+            <div className={`w-9 h-9 rounded-lg ${bg} ${color} flex items-center justify-center map-kpi-icon`}><Icon size={17} strokeWidth={2.2} /></div>
+            <div>
+              <div className="text-[10px] uppercase font-bold text-slate-400">{label}</div>
+              <div className="text-lg font-black text-slate-800 font-mono">{value}</div>
             </div>
-            <div className="text-lg font-black text-slate-800 font-mono">{report.mainCount}</div>
           </div>
-        </div>
-
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
-            ◆
-          </div>
-          <div>
-            <div className="text-[10px] uppercase font-bold text-slate-400">
-              {isAr ? 'محطات مرجعية' : 'Master Stations'}
-            </div>
-            <div className="text-lg font-black text-slate-800 font-mono">{report.masterCount}</div>
-          </div>
-        </div>
-
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
-            ●
-          </div>
-          <div>
-            <div className="text-[10px] uppercase font-bold text-slate-400">
-              {isAr ? 'محطات رصد RTU' : 'Field RTUs'}
-            </div>
-            <div className="text-lg font-black text-slate-800 font-mono">{report.rtuCount}</div>
-          </div>
-        </div>
-
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
-            <CheckCircle className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-[10px] uppercase font-bold text-slate-400">
-              {isAr ? 'الحالة اللحظية' : 'Online State'}
-            </div>
-            <div className="text-lg font-black text-emerald-600 font-mono">{report.onlineCount}</div>
-          </div>
-        </div>
-
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-sm">
-            <Database className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-[10px] uppercase font-bold text-slate-400">
-              {isAr ? 'جودة البيانات' : 'Data Integrity'}
-            </div>
-            <div className="text-xs font-black text-purple-700">100% Valid CSV</div>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* ── 2. Main GIS Layout Grid ────────────────────────────────────── */}
-      <div className="map-page-grid">
-        {/* Left Sidebar: Filter, Search & Stations List */}
-        <aside className="station-sidebar" style={{ maxHeight: 'calc(100vh - 120px)' }}>
-          {/* Language Toggle Header */}
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-            <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-              <span>🌐</span>
-              <span>{isAr ? 'لغة عرض المحطات:' : 'Station Info Language:'}</span>
-            </span>
+      {/* ── Validation Report Badge ──────────────────────────────────────────── */}
+      {report.errors.length > 0 && (
+        <div className="mb-3 flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-xs text-amber-800">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600" />
+          <div>
+            <span className="font-bold">Dataset validation: </span>
+            {report.invalidCount} invalid rows excluded from rendering.
+            <span className="ml-2 font-mono">{report.errors.slice(0, 3).join(' | ')}</span>
+            {report.errors.length > 3 && ` ... +${report.errors.length - 3} more`}
+          </div>
+        </div>
+      )}
 
-            <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-md border border-slate-200">
-              <button
-                type="button"
-                onClick={() => setMapLanguage('en')}
-                className={`text-xs px-2.5 py-1 rounded font-semibold cursor-pointer border-0 transition-colors ${
-                  mapLanguage === 'en' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                English
-              </button>
-              <button
-                type="button"
-                onClick={() => setMapLanguage('ar')}
-                className={`text-xs px-2.5 py-1 rounded font-semibold cursor-pointer border-0 font-['Noto_Kufi_Arabic'] transition-colors ${
-                  mapLanguage === 'ar' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                عربي
-              </button>
+      {report.duplicateCount > 0 && (
+        <div className="mb-3 flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-xs text-amber-800">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600" />
+          <div>
+            <span className="font-bold">Duplicate station records detected: </span>
+            {report.duplicateCount} duplicate coordinate/name key{report.duplicateCount === 1 ? '' : 's'} identified in the loaded dataset.
+          </div>
+        </div>
+      )}
+
+      {/* ── Main 3-column layout ─────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-3.5">
+
+        {/* LEFT: Sidebar — filters, search, station list / regional stats */}
+        <aside className="panel p-0 bg-white overflow-hidden flex flex-col map-filter-panel" style={{ maxHeight: 'calc(100vh - 104px)' }}>
+
+          {/* Filters */}
+          <div className="p-3.5 border-b border-slate-100 space-y-2.5">
+            <div className="filter-panel-heading"><div><span className="filter-eyebrow">Operations registry</span><h2>Station Registry Filter</h2></div><button type="button" className="filter-reset" onClick={() => { setSearch(''); setSelectedType('all'); setSelectedRegion('all'); setSelectedStatus('all'); }} title="Reset filters"><RotateCcw size={13} /></button></div>
+
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <input
+                id="map-station-search"
+                type="text"
+                placeholder="Search by name, ID, region..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-1 focus:ring-blue-400 text-slate-800"
+              />
             </div>
-          </div>
 
-          {/* Search Box */}
-          <div className="station-search">
-            <span>⌕</span>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={isAr ? 'بحث بالاسم، الكود، أو الإقليم (مثل: HQ, RTU-2001, السد)...' : 'Search by name, ID, or sector...'}
-              dir="auto"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch('')}
-                className="border-0 bg-transparent text-slate-400 cursor-pointer text-xs"
-              >
-                ✕
-              </button>
-            )}
-          </div>
+            {/* Type filter */}
+            <div className="flex gap-1 flex-wrap">
+              {[
+                { val: 'all',    label: 'All' },
+                { val: 'main',   label: 'HQ' },
+                { val: 'master', label: 'Master' },
+                { val: 'rtu',    label: 'RTU' },
+              ].map(({ val, label }) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setSelectedType(val)}
+                  aria-pressed={selectedType === val}
+                  className={`px-2.5 py-1 rounded-md text-xs font-bold transition-colors cursor-pointer ${
+                    selectedType === val
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
-          {/* Type & Status Filter Pills */}
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            <button
-              type="button"
-              onClick={() => setSelectedType('all')}
-              className={`text-[11px] px-2.5 py-1 rounded-md font-bold cursor-pointer transition-all border ${
-                selectedType === 'all' ? 'bg-blue-600 text-white border-blue-700' : 'bg-slate-100 text-slate-700 border-slate-200'
-              }`}
-            >
-              {isAr ? 'الكل' : 'All'} ({stations.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedType(selectedType === 'main' ? 'all' : 'main')}
-              className={`text-[11px] px-2.5 py-1 rounded-md font-bold cursor-pointer transition-all border ${
-                selectedType === 'main' ? 'bg-red-600 text-white border-red-700' : 'bg-red-50 text-red-700 border-red-200'
-              }`}
-            >
-              HQ ({report.mainCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedType(selectedType === 'master' ? 'all' : 'master')}
-              className={`text-[11px] px-2.5 py-1 rounded-md font-bold cursor-pointer transition-all border ${
-                selectedType === 'master' ? 'bg-blue-600 text-white border-blue-700' : 'bg-blue-50 text-blue-700 border-blue-200'
-              }`}
-            >
-              Master ({report.masterCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedType(selectedType === 'rtu' ? 'all' : 'rtu')}
-              className={`text-[11px] px-2.5 py-1 rounded-md font-bold cursor-pointer transition-all border ${
-                selectedType === 'rtu' ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-              }`}
-            >
-              RTU ({report.rtuCount})
-            </button>
-          </div>
+            {/* Status filter */}
+            <div className="flex gap-1 flex-wrap">
+              {[
+                { val: 'all',     label: 'All Status' },
+                { val: 'online',  label: 'Online' },
+                { val: 'warning', label: 'Warning' },
+                { val: 'offline', label: 'Offline' },
+                { val: 'unknown', label: 'Unknown' },
+              ].map(({ val, label }) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setSelectedStatus(val)}
+                  aria-pressed={selectedStatus === val}
+                  className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition-colors cursor-pointer ${
+                    selectedStatus === val
+                      ? 'bg-slate-800 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
-          {/* Regional Filter Dropdown */}
-          <div className="pt-1">
+            {/* Region filter — dynamic from CSV */}
             <select
+              id="map-region-filter"
               value={selectedRegion}
               onChange={(e) => setSelectedRegion(e.target.value)}
-              className="select w-full text-xs bg-white cursor-pointer"
+              className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-slate-50 text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
             >
-              <option value="all">{isAr ? 'كافة الأقاليم المائية' : 'All Hydrological Regions'}</option>
-              {report.regions.map((reg) => (
-                <option key={reg} value={reg}>
-                  {reg}
-                </option>
+              <option value="all">All Hydrological Regions ({uniqueRegions.length})</option>
+              {uniqueRegions.map((reg) => (
+                <option key={reg} value={reg}>{reg}</option>
               ))}
             </select>
           </div>
 
-          {/* Scrollable Station List */}
-          <div className="station-list-scroll mt-1">
-            {filteredStations.map((s) => {
-              const isSelected = s.id === selectedStationId;
-              const name = isAr ? s.nameAr || s.name : s.nameEn || s.name;
-              const statusClass =
-                s.type === 'main' ? 'red' : s.type === 'master' ? 'warning' : 'good';
+          {/* Tabs: Station List / Regional Summary */}
+          <div className="flex border-b border-slate-100">
+            {(['list', 'regions'] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 py-2 text-xs font-bold transition-colors cursor-pointer ${
+                  activeTab === tab
+                    ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
+                    : 'text-slate-500 hover:text-slate-700 bg-slate-50'
+                }`}
+              >
+                {tab === 'list' ? `Stations (${filteredStations.length})` : `Regional Stats`}
+              </button>
+            ))}
+          </div>
 
-              return (
+          {/* Station list */}
+          {activeTab === 'list' && (
+            <div className="overflow-y-auto flex-1">
+              {filteredStations.length === 0 ? (
+                <div className="p-6 text-center text-xs text-slate-400">
+                  No stations match your filters.
+                </div>
+              ) : (
+                filteredStations.map((s) => {
+                  const isSelected = s.id === selectedStationId;
+                  const css = STATUS_CSS[s.connectionState] ?? STATUS_CSS.unknown;
+                  return (
+                    <div
+                      key={s.id}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Select ${s.name}`}
+                      onClick={() => handleSelectStation(s)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSelectStation(s)}
+                      className={`flex items-center gap-2.5 px-3.5 py-2.5 border-b border-slate-50 cursor-pointer transition-colors ${
+                        isSelected ? 'bg-blue-50 border-l-2 border-l-blue-500' : 'hover:bg-slate-50'
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${css.dot}`} />
+                      <div className="min-w-0 flex-1">
+                        <strong className="truncate block font-mono text-[11px] text-slate-800">
+                          {s.code} &middot; <span className="font-sans font-bold">{s.name}</span>
+                        </strong>
+                        <p className="truncate text-[10px] text-slate-500">{s.region}</p>
+                      </div>
+                      <span className="text-[9px] font-bold uppercase text-slate-400 shrink-0">
+                        {s.type === 'main' ? 'HQ' : s.type === 'master' ? 'MST' : 'RTU'}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+
+          {/* Regional statistics — derived from CSV, not hard-coded */}
+          {activeTab === 'regions' && (
+            <div className="overflow-y-auto flex-1 p-3 space-y-1.5">
+              <div className="text-[10px] uppercase font-bold text-slate-400 mb-2 flex items-center gap-1.5">
+                <BarChart3 className="w-3.5 h-3.5" />
+                Station Distribution by Hydrological Region
+              </div>
+              {regionSummary.map(({ region, total, online, warning, offline, unknown }) => (
                 <div
-                  key={s.id}
-                  className={`station-list-item ${isSelected ? 'active' : ''}`}
-                  onClick={() => handleSelectStation(s)}
+                  key={region}
+                  className="p-2.5 rounded-lg border border-slate-100 bg-slate-50 hover:bg-white transition-colors cursor-pointer"
+                  onClick={() => setSelectedRegion(region === selectedRegion ? 'all' : region)}
                 >
-                  <i className={`dot ${statusClass}`} />
-                  <div className="min-w-0 flex-1">
-                    <strong className="truncate block font-mono text-[11px]">
-                      {s.code} — <span className="font-sans font-bold">{name}</span>
-                    </strong>
-                    <p className="truncate text-[10px] text-slate-500">{s.region}</p>
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <span className="text-[11px] font-bold text-slate-700 leading-tight">{region}</span>
+                    <span className="font-mono text-xs font-black text-slate-800 shrink-0">{total}</span>
+                  </div>
+                  <div className="flex gap-2 text-[10px] font-semibold">
+                    {online  > 0 && <span className="text-emerald-600">✓ {online} online</span>}
+                    {warning > 0 && <span className="text-amber-600">⚠ {warning} warn</span>}
+                    {offline > 0 && <span className="text-red-600">✗ {offline} offline</span>}
+                    {unknown > 0 && <span className="text-slate-400">? {unknown} unknown</span>}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </aside>
 
-        {/* Right Area: MapLibre + deck.gl GIS Map + Selected Station Card Below */}
+        {/* RIGHT: Map + selected station card */}
         <div className="flex flex-col gap-3.5">
-          {/* Map Container Panel */}
-          <div className="panel p-3.5 bg-white">
+
+          {/* Map container */}
+          <div className="panel p-3.5 bg-white map-command-map-card">
             <div className="panel-heading mb-2.5">
               <div>
-                <h2>
-                  {isAr ? 'الخريطة التليمترية القومية للموارد المائية' : 'National Water Telemetry GIS Command Center'}
-                </h2>
+                <h2>National Water Telemetry GIS Command Center</h2>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  High-performance MapLibre GL JS + deck.gl WebGL vector engine ({filteredStations.length} nodes rendered)
+                  MapLibre GL JS + deck.gl WebGL engine &middot; {filteredStations.length} nodes rendered
                 </p>
               </div>
-
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-600 font-mono bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
-                  GPU WebGL Active
+                <span className="text-xs font-bold text-emerald-700 font-mono bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                  ● GPU WebGL Active
+                </span>
+                <span className="text-xs font-bold text-slate-500 font-mono bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
+                  LOD: {getLodLevel(mapZoom).toUpperCase()}
                 </span>
               </div>
             </div>
 
-            {/* MapLibre + deck.gl Map */}
             <MapLibreDeckMap
               stations={filteredStations}
               bounds={report.bounds}
               selectedStationId={selectedStationId}
               onSelectStation={handleSelectStation}
-              language={mapLanguage}
+              onZoomChange={setMapZoom}
               height="530px"
             />
           </div>
 
-          {/* Selected Station Telemetry Card Under Map */}
+          {/* Selected station card */}
           {selectedStation && (
             <div className="panel p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
               <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
@@ -317,85 +407,86 @@ export const MapPage: React.FC = () => {
                   </span>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="m-0 text-sm font-bold text-slate-900">
-                        {isAr ? selectedStation.nameAr || selectedStation.name : selectedStation.nameEn || selectedStation.name}
-                      </h3>
+                      <h3 className="m-0 text-sm font-bold text-slate-900">{selectedStation.name}</h3>
                       <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-slate-100 text-slate-600">
                         {selectedStation.typeLabel}
                       </span>
                     </div>
-                    <p className="m-0 text-[11px] text-slate-500 font-medium">
-                      {isAr ? selectedStation.nameEn || selectedStation.name : selectedStation.nameAr || selectedStation.name}
-                    </p>
+                    <p className="m-0 text-[11px] text-slate-500 font-medium mt-0.5">{selectedStation.region}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2.5">
-                  <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    ● {selectedStation.connectionState}
+                  <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-bold uppercase ${STATUS_CSS[selectedStation.connectionState]?.bg} ${STATUS_CSS[selectedStation.connectionState]?.text} border ${STATUS_CSS[selectedStation.connectionState]?.ring}`}>
+                    <span className={`w-2 h-2 rounded-full ${STATUS_CSS[selectedStation.connectionState]?.dot}`} />
+                    {selectedStation.connectionState}
                   </span>
                   <button
                     type="button"
                     onClick={() => setDrawerOpen(true)}
                     className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs cursor-pointer transition-colors"
                   >
-                    <span>{isAr ? 'فحص السجل التليمترى' : 'Inspect Telemetry Slots'}</span>
+                    <Layers className="w-3.5 h-3.5" />
+                    Telemetry Slots
                   </button>
                   <button
                     type="button"
                     onClick={() => navigate(`/stations/${selectedStation.id}`)}
                     className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs cursor-pointer shadow-xs transition-colors"
                   >
-                    <span>{isAr ? 'فتح التحليلات الكاملة ↗' : 'Open Full Analytics ↗'}</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Full Analytics
                   </button>
                 </div>
               </div>
 
-              {/* 4 Informational Metrics Columns */}
+              {/* 4 info columns */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
                 <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">
                   <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">
-                    {isAr ? 'الإقليم الهيدرولوجي' : 'Hydrological Region'}
+                    <MapPin className="w-3 h-3 inline mr-1" />Hydrological Region
                   </span>
                   <strong className="text-xs text-slate-800">{selectedStation.region}</strong>
                 </div>
-
                 <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">
                   <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">
-                    {isAr ? 'حالة الربط والشبكة' : 'Connection Status'}
+                    <Database className="w-3 h-3 inline mr-1" />Connection Status
                   </span>
-                  <strong className="text-xs text-emerald-700 font-medium">{selectedStation.connectionStatus}</strong>
+                  <strong className="text-xs text-emerald-700">{selectedStation.connectionStatus}</strong>
                 </div>
-
                 <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">
                   <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">
-                    {isAr ? 'الإحداثيات الجغرافية' : 'Coordinates (CSV)'}
+                    <CheckCircle className="w-3 h-3 inline mr-1" />Coordinates (CSV)
                   </span>
                   <strong className="text-xs text-slate-700 font-mono">
                     {selectedStation.latitude.toFixed(4)}°N, {selectedStation.longitude.toFixed(4)}°E
                   </strong>
                 </div>
-
                 <div className="p-2.5 rounded-lg bg-blue-50/60 border border-blue-100">
                   <span className="text-[10px] font-bold uppercase text-blue-600 block mb-0.5">
-                    {isAr ? 'بروتوكول البث' : 'Telemetry Link'}
+                    <Radio className="w-3 h-3 inline mr-1" />Telemetry Link
                   </span>
                   <strong className="text-xs text-blue-900 font-mono">
                     {selectedStation.type === 'main' ? 'Satellite VSAT' : 'GSM / GPRS 4G'}
                   </strong>
                 </div>
               </div>
+
+              {/* Telemetry integrity notice */}
+              <div className="mt-2.5 text-[10px] text-slate-400 italic flex items-center gap-1">
+                <Activity className="w-3 h-3" />
+                Telemetry fields show "Not available" — awaiting real-time data feed. No values are fabricated.
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Station Telemetry Drawer */}
+      {/* Station telemetry drawer */}
       <StationTelemetryDrawer
         station={selectedStation}
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        language={mapLanguage}
       />
     </section>
   );

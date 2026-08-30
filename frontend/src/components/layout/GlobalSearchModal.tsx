@@ -60,7 +60,7 @@ export const GlobalSearchModal: React.FC = () => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search stations, alarms, reports across Egypt (English / عربي)..."
+            placeholder="Search stations, alarms, or reports across Egypt..."
             className="w-full px-3 py-4 text-sm bg-transparent outline-none text-slate-900 placeholder:text-slate-400 font-medium"
           />
           {query && (
@@ -81,7 +81,7 @@ export const GlobalSearchModal: React.FC = () => {
             </div>
           ) : !query.trim() ? (
             <div className="py-8 text-center text-xs text-slate-400">
-              Type at least 1 character to search across 410 monitoring nodes, alarms, and operations reports.
+              Type at least 1 character to search across the monitoring station registry, alarms, and operations reports.
             </div>
           ) : !data ||
             (data.stations.length === 0 &&

@@ -118,9 +118,9 @@ export const AccountPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 text-slate-900 pb-12">
+    <div className="space-y-6 text-slate-900 pb-12 account-command-page">
       {/* Top Banner Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-5 account-hero">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-white flex items-center justify-center text-xl font-extrabold shadow-md shadow-blue-500/20 shrink-0">
             {String(fullName || 'MA').slice(0, 2).toUpperCase()}
@@ -149,7 +149,7 @@ export const AccountPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-stretch md:self-auto justify-end">
+        <div className="account-hero-meta">
           <div className="px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-right">
             <span className="text-[10px] uppercase font-bold text-slate-400 block">
               Authorization Status
@@ -159,6 +159,7 @@ export const AccountPage: React.FC = () => {
               <span>Active Institutional Session</span>
             </span>
           </div>
+          <div className="account-trust-grid"><span><strong>VIEWER</strong><small>Role scope</small></span><span><strong>ACTIVE</strong><small>Session posture</small></span><span><strong>MWRI</strong><small>Organization</small></span></div>
         </div>
       </div>
 

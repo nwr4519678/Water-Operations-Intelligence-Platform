@@ -1,12 +1,13 @@
 // src/pages/SettingsPage.tsx
 import React, { useState } from 'react';
+import { SlidersHorizontal, MapPinned, ShieldCheck, Accessibility, BellRing } from 'lucide-react';
 import { settingsApi } from '../api/settings';
 import { useQuery } from '@tanstack/react-query';
 import { QUERY_KEYS } from '../utils/constants';
 import { useUiStore } from '../store/uiStore';
 
 export const SettingsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'preferences' | 'notifications'>('preferences');
+  const [activeTab, setActiveTab] = useState<'preferences' | 'notifications' | 'workspace' | 'map' | 'accessibility'>('preferences');
   const addToast = useUiStore((state) => state.addToast);
 
   const { data: userPref } = useQuery({
@@ -18,6 +19,8 @@ export const SettingsPage: React.FC = () => {
   const [locale, setLocale] = useState(userPref?.locale || 'en-US');
   const [timeZone, setTimeZone] = useState(userPref?.timeZone || 'Africa/Cairo');
   const [decimalPrecision, setDecimalPrecision] = useState(userPref?.decimalPrecision || 2);
+  const [options, setOptions] = useState({ autoRefresh: true, compactTables: false, mapLabels: true, mapAnimations: true, sessionAlerts: true, reducedMotion: false, highContrast: false });
+  const toggleOption = (key: keyof typeof options) => setOptions((current) => ({ ...current, [key]: !current[key] }));
 
   const [notifMatrix, setNotifMatrix] = useState([
     { channel: 'IN_APP', severity: 'CRITICAL', enabled: true, digest: true },
@@ -59,7 +62,7 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <section className="dashboard">
-      <div className="panel" style={{ padding: 0, overflow: 'hidden', maxWidth: 900 }}>
+      <div className="panel settings-command-panel" style={{ padding: 0, overflow: 'hidden', maxWidth: 1080 }}>
         {/* Subtabs Bar */}
         <div className="filter-bar">
           <div className="filter-group">
@@ -70,6 +73,9 @@ export const SettingsPage: React.FC = () => {
             >
               Display & Localization
             </button>
+            {[
+              ['workspace', 'Workspace & Session'], ['map', 'Map & GIS'], ['accessibility', 'Accessibility'],
+            ].map(([value, label]) => <button key={value} type="button" className={`filter-chip ${activeTab === value ? 'active' : ''}`} onClick={() => setActiveTab(value as typeof activeTab)}>{label}</button>)}
             <button
               type="button"
               className={`filter-chip ${activeTab === 'notifications' ? 'active' : ''}`}
@@ -89,7 +95,7 @@ export const SettingsPage: React.FC = () => {
                     Visual Theme
                   </label>
                   <select
-                    value="light"
+                    value={theme}
                     disabled
                     className="select"
                     style={{ width: '100%', padding: '8px 10px', background: '#f8fafc', color: '#64748b' }}
@@ -162,6 +168,14 @@ export const SettingsPage: React.FC = () => {
                   Save Display Preferences
                 </button>
               </div>
+              <div className="settings-option-grid">
+                {[
+                  ['autoRefresh', 'Auto-refresh operational views', 'Refresh dashboards when new server data is available.'],
+                  ['compactTables', 'Compact data tables', 'Show more station rows in dense control-room layouts.'],
+                  ['mapLabels', 'Show station labels', 'Keep hierarchy labels visible on the GIS canvas.'],
+                  ['mapAnimations', 'Map interaction animations', 'Use smooth transitions when focusing a station.'],
+                ].map(([key, title, description]) => <button type="button" key={key} className="settings-option" onClick={() => toggleOption(key as keyof typeof options)}><span><strong>{title}</strong><small>{description}</small></span><span className={`settings-toggle ${options[key as keyof typeof options] ? 'on' : ''}`} aria-hidden="true"><i /></span></button>)}
+              </div>
             </form>
           )}
 
@@ -228,6 +242,9 @@ export const SettingsPage: React.FC = () => {
               </div>
             </div>
           )}
+          {activeTab === 'workspace' && <div className="settings-extra-panel"><div className="settings-extra-icon"><SlidersHorizontal size={20} /></div><h2>Workspace & Session</h2><p>Control how the operations console behaves during long monitoring shifts.</p><div className="settings-option-grid">{[['sessionAlerts','Session continuity alerts','Notify when authentication or session state changes.'],['autoRefresh','Background data refresh','Keep active pages synchronized with server updates.']].map(([key,title,description]) => <button type="button" key={key} className="settings-option" onClick={() => toggleOption(key as keyof typeof options)}><span><strong>{title}</strong><small>{description}</small></span><span className={`settings-toggle ${options[key as keyof typeof options] ? 'on' : ''}`}><i /></span></button>)}</div></div>}
+          {activeTab === 'map' && <div className="settings-extra-panel"><div className="settings-extra-icon"><MapPinned size={20} /></div><h2>Map & GIS Operations</h2><p>Configure the operator view for network navigation and station context.</p><div className="settings-option-grid">{[['mapLabels','Hierarchy labels','Display HQ, master and RTU names on the map.'],['mapAnimations','Camera transitions','Animate fit-bounds and station focus movements.']].map(([key,title,description]) => <button type="button" key={key} className="settings-option" onClick={() => toggleOption(key as keyof typeof options)}><span><strong>{title}</strong><small>{description}</small></span><span className={`settings-toggle ${options[key as keyof typeof options] ? 'on' : ''}`}><i /></span></button>)}</div></div>}
+          {activeTab === 'accessibility' && <div className="settings-extra-panel"><div className="settings-extra-icon"><Accessibility size={20} /></div><h2>Accessibility & Operator Comfort</h2><p>Make dense telemetry screens easier to scan across multiple shifts.</p><div className="settings-option-grid">{[['reducedMotion','Reduce motion','Minimize animated transitions throughout the console.'],['highContrast','High contrast status','Increase semantic contrast for alarms and operational states.']].map(([key,title,description]) => <button type="button" key={key} className="settings-option" onClick={() => toggleOption(key as keyof typeof options)}><span><strong>{title}</strong><small>{description}</small></span><span className={`settings-toggle ${options[key as keyof typeof options] ? 'on' : ''}`}><i /></span></button>)}</div></div>}
         </div>
       </div>
     </section>

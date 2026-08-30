@@ -1,7 +1,17 @@
 // src/map/deckLayers.ts
-import { ScatterplotLayer } from '@deck.gl/layers';
-import { TextLayer } from '@deck.gl/layers';
-import { WaterStation, StationType, ConnectionState } from '../data/stationTypes';
+// deck.gl layer factory for the Water Telemetry GIS platform.
+// High-performance GPU geospatial layers with dynamic Level-of-Detail (LOD).
+import { ScatterplotLayer, TextLayer, PathLayer, ColumnLayer } from '@deck.gl/layers';
+import { WaterStation, ConnectionState, NetworkPath } from '../data/stationTypes';
+import { SCHEMATIC_WATERWAYS } from './waterNetworkData';
+import {
+  STATUS_COLORS,
+  TIER_COLORS,
+  LAYER_SIZES,
+  LAYER_IDS,
+  LOD,
+  getLodLevel,
+} from './mapConstants';
 
 export interface DeckLayersOptions {
   stations: WaterStation[];
@@ -11,20 +21,13 @@ export interface DeckLayersOptions {
   onClick?: (info: any) => void;
   is3d?: boolean;
   zoom?: number;
-  language?: 'en' | 'ar';
+  networkPaths?: NetworkPath[];
+  showWaterNetwork?: boolean;
+  showDistribution?: boolean;
 }
 
 function getStatusColor(state: ConnectionState): [number, number, number, number] {
-  switch (state) {
-    case 'online':
-      return [16, 185, 129, 230]; // #10b981 emerald
-    case 'warning':
-      return [245, 158, 11, 230]; // #f59e0b amber
-    case 'offline':
-      return [239, 68, 68, 230];  // #ef4444 red
-    default:
-      return [100, 116, 139, 200]; // #64748b slate
-  }
+  return STATUS_COLORS[state] ?? STATUS_COLORS.unknown;
 }
 
 export function createWaterTelemetryDeckLayers(options: DeckLayersOptions) {
@@ -36,48 +39,151 @@ export function createWaterTelemetryDeckLayers(options: DeckLayersOptions) {
     onClick,
     is3d = false,
     zoom = 6.5,
-    language = 'en',
+    networkPaths = [],
+    showWaterNetwork = true,
+    showDistribution = true,
   } = options;
 
-  const isAr = language === 'ar';
-
-  const hqStations = stations.filter((s) => s.type === 'main');
+  const lod = getLodLevel(zoom);
+  const hqStations     = stations.filter((s) => s.type === 'main');
   const masterStations = stations.filter((s) => s.type === 'master');
-  const rtuStations = stations.filter((s) => s.type === 'rtu');
+  const rtuStations    = stations.filter((s) => s.type === 'rtu');
+  const selectedStation = stations.find((s) => s.id === selectedStationId);
 
   const layers: any[] = [];
 
-  // ── Layer 1: Field RTU Stations (Dense GPU Scatterplot) ───────────────────
-  if (rtuStations.length > 0) {
+  // Future topology layer: deliberately empty for the current CSV-only
+  // dataset. It becomes active only when real surveyed network paths arrive.
+  const waterPaths = showWaterNetwork ? [...SCHEMATIC_WATERWAYS, ...networkPaths.filter((path) => path.layer !== 'distribution')] : [];
+  if (waterPaths.length > 0) {
+    layers.push(
+      new PathLayer<NetworkPath>({
+        id: LAYER_IDS.networkPaths,
+        data: waterPaths,
+        pickable: false,
+        getPath: (d) => d.path,
+        getColor: (d) => d.color ?? [37, 99, 235, 150],
+        getWidth: (d) => d.width ?? 2,
+        widthUnits: 'pixels',
+        widthMinPixels: 1,
+        billboard: true,
+        jointRounded: true,
+        capRounded: true,
+      })
+    );
+  }
+
+  const distributionPaths = showDistribution ? networkPaths.filter((path) => path.layer === 'distribution') : [];
+  if (distributionPaths.length > 0) {
+    layers.push(
+      new PathLayer<NetworkPath>({
+        id: 'wt-distribution-network',
+        data: distributionPaths,
+        pickable: false,
+        getPath: (d) => d.path,
+        getColor: (d) => d.color ?? [72, 221, 190, 95],
+        getWidth: (d) => d.width ?? 1,
+        widthUnits: 'pixels',
+        widthMinPixels: 1,
+        opacity: 0.8,
+        billboard: true,
+        jointRounded: true,
+        capRounded: true,
+      })
+    );
+  }
+
+  // Operational 3D hierarchy: deck.gl columns encode network responsibility,
+  // not fabricated telemetry. HQ/master/RTU elevations remain readable while
+  // orbiting the oblique MapLibre camera.
+  if (is3d && stations.length > 0) {
+    layers.push(
+      new ColumnLayer<WaterStation>({
+        id: 'wt-operational-hierarchy-columns',
+        data: stations,
+        pickable: true,
+        autoHighlight: true,
+        highlightColor: [255, 255, 255, 220],
+        diskResolution: 16,
+        radius: 1200,
+        extruded: true,
+        elevationScale: 0.7,
+        getPosition: (d) => [d.longitude, d.latitude],
+        getElevation: (d) => d.type === 'main' ? 1800 : d.type === 'master' ? 900 : 180,
+        getFillColor: (d) => {
+          if (d.id === selectedStationId) return [37, 99, 235, 230];
+          if (d.type === 'main') return [239, 68, 68, 220];
+          if (d.type === 'master') return [37, 99, 235, 210];
+          return getStatusColor(d.connectionState);
+        },
+        getLineColor: [255, 255, 255, 170],
+        getLineWidth: 1,
+        onHover,
+        onClick,
+        updateTriggers: { getFillColor: [selectedStationId] },
+      })
+    );
+  }
+
+  // ── RTU DENSITY REPRESENTATION (national zoom < LOD.NATIONAL) ────────────────
+  // At national scale, RTUs are rendered as high-performance semi-transparent density dots
+  if (lod === 'national' && rtuStations.length > 0) {
     layers.push(
       new ScatterplotLayer<WaterStation>({
-        id: 'water-rtu-layer',
+        id: LAYER_IDS.rtuDensity,
+        data: rtuStations,
+        pickable: false,
+        opacity: 0.4,
+        stroked: false,
+        filled: true,
+        radiusUnits: 'pixels',
+        radiusMinPixels: 2.0,
+        radiusMaxPixels: 3.5,
+        getPosition: (d) => [d.longitude, d.latitude, 0],
+        getRadius: 2.5,
+        getFillColor: [16, 185, 129, 140],
+      })
+    );
+  }
+
+  // ── FIELD RTU STATIONS (regional, local, detail LOD) ─────────────────────────
+  if (lod !== 'national' && rtuStations.length > 0) {
+    const baseRadius =
+      lod === 'regional' ? LAYER_SIZES.rtu.regional :
+      lod === 'local'    ? LAYER_SIZES.rtu.local    :
+                           LAYER_SIZES.rtu.detail;
+
+    layers.push(
+      new ScatterplotLayer<WaterStation>({
+        id: LAYER_IDS.rtuCore,
         data: rtuStations,
         pickable: true,
+        autoHighlight: true,
+        highlightColor: [255, 255, 255, 180],
         opacity: 0.95,
         stroked: true,
         filled: true,
         radiusUnits: 'pixels',
-        radiusMinPixels: zoom > 10 ? 5 : zoom > 7 ? 4 : 3,
-        radiusMaxPixels: 9,
-        getPosition: (d) => [d.longitude, d.latitude, is3d ? 100 : 0],
-        getRadius: (d) => (d.id === selectedStationId ? 8 : d.id === hoveredStationId ? 6 : 4),
+        radiusMinPixels: baseRadius,
+        radiusMaxPixels: LAYER_SIZES.rtu.selected + 2,
+        getPosition: (d) => [d.longitude, d.latitude, is3d ? 120 : 0],
+        getRadius: (d) =>
+          d.id === selectedStationId ? LAYER_SIZES.rtu.selected :
+          d.id === hoveredStationId  ? LAYER_SIZES.rtu.hovered  :
+          baseRadius,
         getFillColor: (d) => {
-          if (d.id === selectedStationId) return [37, 99, 235, 255]; // Royal Blue selection
+          if (d.id === selectedStationId) return [37, 99, 235, 255];
           return getStatusColor(d.connectionState);
         },
-        getLineColor: (d) => {
-          if (d.id === selectedStationId) return [255, 255, 255, 255];
-          if (d.id === hoveredStationId) return [255, 255, 255, 240];
-          return [255, 255, 255, 180];
-        },
-        getLineWidth: (d) => (d.id === selectedStationId ? 2.5 : d.id === hoveredStationId ? 2 : 1.2),
+        getLineColor: (d) =>
+          d.id === selectedStationId ? [255, 255, 255, 255] : [255, 255, 255, 200],
+        getLineWidth: (d) => (d.id === selectedStationId ? 2.5 : 1.2),
         lineWidthUnits: 'pixels',
         updateTriggers: {
-          getRadius: [selectedStationId, hoveredStationId, zoom],
-          getFillColor: [selectedStationId, hoveredStationId],
-          getLineColor: [selectedStationId, hoveredStationId],
-          getLineWidth: [selectedStationId, hoveredStationId],
+          getRadius:    [selectedStationId, hoveredStationId, lod],
+          getFillColor: [selectedStationId],
+          getLineColor: [selectedStationId],
+          getLineWidth: [selectedStationId],
         },
         onHover,
         onClick,
@@ -85,49 +191,55 @@ export function createWaterTelemetryDeckLayers(options: DeckLayersOptions) {
     );
   }
 
-  // ── Layer 2: Master Stations Halo (Outer Pulsing / Glow) ─────────────────
+  // ── MASTER STATION HALO (all LOD levels) ─────────────────────────────────────
   if (masterStations.length > 0) {
     layers.push(
       new ScatterplotLayer<WaterStation>({
-        id: 'water-master-halo-layer',
+        id: LAYER_IDS.masterHalo,
         data: masterStations,
         pickable: false,
-        opacity: 0.35,
+        opacity: 0.4,
         stroked: true,
         filled: true,
         radiusUnits: 'pixels',
-        radiusMinPixels: 12,
-        radiusMaxPixels: 24,
+        radiusMinPixels: LAYER_SIZES.master.halo - 2,
+        radiusMaxPixels: LAYER_SIZES.master.halo + 10,
         getPosition: (d) => [d.longitude, d.latitude, is3d ? 600 : 0],
-        getRadius: 16,
-        getFillColor: [59, 130, 246, 70],
-        getLineColor: [59, 130, 246, 160],
-        getLineWidth: 1.5,
+        getRadius: LAYER_SIZES.master.halo,
+        getFillColor: TIER_COLORS.master.halo,
+        getLineColor: TIER_COLORS.master.haloRing,
+        getLineWidth: 2,
         lineWidthUnits: 'pixels',
       })
     );
 
-    // Master Stations Core Node
+    // Master core
     layers.push(
       new ScatterplotLayer<WaterStation>({
-        id: 'water-master-core-layer',
+        id: LAYER_IDS.masterCore,
         data: masterStations,
         pickable: true,
+        autoHighlight: true,
+        highlightColor: [255, 255, 255, 200],
         opacity: 1,
         stroked: true,
         filled: true,
         radiusUnits: 'pixels',
-        radiusMinPixels: 7,
-        radiusMaxPixels: 14,
+        radiusMinPixels: LAYER_SIZES.master.core,
+        radiusMaxPixels: LAYER_SIZES.master.selected + 4,
         getPosition: (d) => [d.longitude, d.latitude, is3d ? 600 : 0],
-        getRadius: (d) => (d.id === selectedStationId ? 11 : d.id === hoveredStationId ? 9 : 7.5),
-        getFillColor: (d) => (d.id === selectedStationId ? [30, 64, 175, 255] : [59, 130, 246, 255]),
+        getRadius: (d) =>
+          d.id === selectedStationId ? LAYER_SIZES.master.selected :
+          d.id === hoveredStationId  ? LAYER_SIZES.master.hovered  :
+          LAYER_SIZES.master.core,
+        getFillColor: (d) =>
+          d.id === selectedStationId ? [30, 64, 175, 255] : TIER_COLORS.master.fill,
         getLineColor: [255, 255, 255, 255],
-        getLineWidth: 2,
+        getLineWidth: 2.5,
         lineWidthUnits: 'pixels',
         updateTriggers: {
-          getRadius: [selectedStationId, hoveredStationId],
-          getFillColor: [selectedStationId, hoveredStationId],
+          getRadius:    [selectedStationId, hoveredStationId],
+          getFillColor: [selectedStationId],
         },
         onHover,
         onClick,
@@ -135,44 +247,49 @@ export function createWaterTelemetryDeckLayers(options: DeckLayersOptions) {
     );
   }
 
-  // ── Layer 3: Main Control Center (HQ Sovereign Beacon) ───────────────────
+  // ── HQ STATION (all LOD levels) ───────────────────────────────────────────────
   if (hqStations.length > 0) {
     layers.push(
       new ScatterplotLayer<WaterStation>({
-        id: 'water-hq-halo-layer',
+        id: LAYER_IDS.hqHalo,
         data: hqStations,
         pickable: false,
         opacity: 0.45,
         stroked: true,
         filled: true,
         radiusUnits: 'pixels',
-        radiusMinPixels: 16,
-        radiusMaxPixels: 32,
+        radiusMinPixels: LAYER_SIZES.hq.halo - 4,
+        radiusMaxPixels: LAYER_SIZES.hq.halo + 14,
         getPosition: (d) => [d.longitude, d.latitude, is3d ? 1200 : 0],
-        getRadius: 22,
-        getFillColor: [239, 68, 68, 60],
-        getLineColor: [239, 68, 68, 180],
-        getLineWidth: 2,
+        getRadius: LAYER_SIZES.hq.halo,
+        getFillColor: TIER_COLORS.main.halo,
+        getLineColor: TIER_COLORS.main.haloRing,
+        getLineWidth: 2.5,
         lineWidthUnits: 'pixels',
       })
     );
 
     layers.push(
       new ScatterplotLayer<WaterStation>({
-        id: 'water-hq-core-layer',
+        id: LAYER_IDS.hqCore,
         data: hqStations,
         pickable: true,
+        autoHighlight: true,
+        highlightColor: [255, 255, 255, 200],
         opacity: 1,
         stroked: true,
         filled: true,
         radiusUnits: 'pixels',
-        radiusMinPixels: 9,
-        radiusMaxPixels: 18,
+        radiusMinPixels: LAYER_SIZES.hq.core,
+        radiusMaxPixels: LAYER_SIZES.hq.selected + 4,
         getPosition: (d) => [d.longitude, d.latitude, is3d ? 1200 : 0],
-        getRadius: (d) => (d.id === selectedStationId ? 13 : d.id === hoveredStationId ? 11 : 9.5),
-        getFillColor: [239, 68, 68, 255], // Red sovereign center
+        getRadius: (d) =>
+          d.id === selectedStationId ? LAYER_SIZES.hq.selected :
+          d.id === hoveredStationId  ? LAYER_SIZES.hq.hovered  :
+          LAYER_SIZES.hq.core,
+        getFillColor: TIER_COLORS.main.fill,
         getLineColor: [255, 255, 255, 255],
-        getLineWidth: 2.5,
+        getLineWidth: 3,
         lineWidthUnits: 'pixels',
         updateTriggers: {
           getRadius: [selectedStationId, hoveredStationId],
@@ -183,27 +300,95 @@ export function createWaterTelemetryDeckLayers(options: DeckLayersOptions) {
     );
   }
 
-  // ── Layer 4: Labels for Master & HQ Nodes (Zoom >= 6.8) ───────────────────
-  if (zoom >= 6.8) {
-    const labeledStations = [...hqStations, ...masterStations];
+  // ── SELECTION TARGET RING ───────────────────────────────────────────────────
+  if (selectedStation) {
+    layers.push(
+      new ScatterplotLayer<WaterStation>({
+        id: 'wt-selection-pulse-ring',
+        data: [selectedStation],
+        pickable: false,
+        opacity: 0.8,
+        stroked: true,
+        filled: false,
+        radiusUnits: 'pixels',
+        getPosition: (d) => [d.longitude, d.latitude, is3d ? (d.type === 'main' ? 1200 : d.type === 'master' ? 600 : 120) : 0],
+        getRadius: selectedStation.type === 'main' ? 34 : selectedStation.type === 'master' ? 24 : 16,
+        getLineColor: [37, 99, 235, 240],
+        getLineWidth: 2.5,
+        lineWidthUnits: 'pixels',
+      })
+    );
+  }
+
+  // ── HQ LABEL (always visible) ─────────────────────────────────────────────────
+  if (hqStations.length > 0) {
     layers.push(
       new TextLayer<WaterStation>({
-        id: 'water-key-node-labels',
-        data: labeledStations,
+        id: LAYER_IDS.hqLabel,
+        data: hqStations,
         pickable: false,
-        getPosition: (d) => [d.longitude, d.latitude, is3d ? (d.type === 'main' ? 1300 : 700) : 0],
-        getText: (d) => (isAr ? d.nameAr || d.name : d.nameEn || d.name),
-        getSize: zoom > 9 ? 12 : 10.5,
+        getPosition: (d) => [d.longitude, d.latitude, is3d ? 1300 : 0],
+        getText: (d) => d.nameEn ?? d.name,
+        getSize: 11.5,
         getColor: [15, 23, 42, 255],
         getAngle: 0,
         getTextAnchor: 'start',
         getAlignmentBaseline: 'center',
-        getPixelOffset: [14, 0],
-        fontFamily: isAr ? "'Noto Kufi Arabic', system-ui, sans-serif" : "'Manrope', system-ui, sans-serif",
+        getPixelOffset: [20, 0],
+        fontFamily: "'Manrope', 'Inter', system-ui, sans-serif",
         fontWeight: 'bold',
         background: true,
-        getBackgroundColor: [255, 255, 255, 225],
+        getBackgroundColor: [255, 255, 255, 230],
+        backgroundPadding: [5, 3, 5, 3],
+      })
+    );
+  }
+
+  // ── MASTER LABELS (zoom >= LOD.NATIONAL) ─────────────────────────────────────
+  if (zoom >= LOD.NATIONAL && masterStations.length > 0) {
+    layers.push(
+      new TextLayer<WaterStation>({
+        id: LAYER_IDS.masterLabels,
+        data: masterStations,
+        pickable: false,
+        getPosition: (d) => [d.longitude, d.latitude, is3d ? 700 : 0],
+        getText: (d) => d.nameEn ?? d.name,
+        getSize: zoom > 9 ? 11 : 9.5,
+        getColor: [15, 23, 42, 230],
+        getAngle: 0,
+        getTextAnchor: 'start',
+        getAlignmentBaseline: 'center',
+        getPixelOffset: [16, 0],
+        fontFamily: "'Manrope', 'Inter', system-ui, sans-serif",
+        fontWeight: 'bold',
+        background: true,
+        getBackgroundColor: [255, 255, 255, 210],
         backgroundPadding: [4, 2, 4, 2],
+        updateTriggers: { getSize: [zoom] },
+      })
+    );
+  }
+
+  // ── RTU LABELS (detail LOD only, zoom >= LOD.LOCAL) ──────────────────────────
+  if (zoom >= LOD.LOCAL && rtuStations.length > 0) {
+    layers.push(
+      new TextLayer<WaterStation>({
+        id: LAYER_IDS.allLabels,
+        data: rtuStations,
+        pickable: false,
+        getPosition: (d) => [d.longitude, d.latitude, is3d ? 200 : 0],
+        getText: (d) => d.nameEn ?? d.name,
+        getSize: 9,
+        getColor: [30, 41, 59, 220],
+        getAngle: 0,
+        getTextAnchor: 'start',
+        getAlignmentBaseline: 'center',
+        getPixelOffset: [10, 0],
+        fontFamily: "'Manrope', 'Inter', system-ui, sans-serif",
+        fontWeight: '600',
+        background: true,
+        getBackgroundColor: [255, 255, 255, 200],
+        backgroundPadding: [3, 1, 3, 1],
       })
     );
   }
