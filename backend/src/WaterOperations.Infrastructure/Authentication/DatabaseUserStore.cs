@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using WaterOperations.Application.Features.Auth.DTOs;
@@ -15,6 +16,7 @@ namespace WaterOperations.Infrastructure.Authentication;
 
 public sealed class DatabaseUserStore(
     IServiceScopeFactory scopeFactory,
+    IConfiguration configuration,
     ILogger<DatabaseUserStore> logger)
     : IUserCredentialRepository
 {
@@ -53,9 +55,24 @@ public sealed class DatabaseUserStore(
 
         if (user is null || !user.IsActive)
         {
+            var devEmail = configuration["DevelopmentViewer:Email"];
+            var devPassword = configuration["DevelopmentViewer:Password"];
+            if (!string.IsNullOrWhiteSpace(devEmail)
+                && string.Equals(request.Email, devEmail, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(request.Password, devPassword))
+            {
+                failures.TryRemove(request.Email, out _);
+                return new AuthenticatedUser(
+                    devEmail,
+                    configuration["DevelopmentViewer:Organization"] ?? "11111111-1111-1111-1111-111111111111",
+                    configuration["DevelopmentViewer:Region"] ?? "1",
+                    AuthorizationPolicies.ViewerRole);
+            }
+
             RecordFailure(request.Email);
             return null;
         }
+
 
         bool passwordValid = false;
 

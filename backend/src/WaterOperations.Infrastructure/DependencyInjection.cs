@@ -234,7 +234,12 @@ public static class DependencyInjection
             .UseSimpleAssemblyNameTypeSerializer()
             .UseRecommendedSerializerSettings()
             .UsePostgreSqlStorage(options => options
-                .UseNpgsqlConnection(connectionString)));
+                .UseNpgsqlConnection(connectionString),
+                new Hangfire.PostgreSql.PostgreSqlStorageOptions
+                {
+                    SchemaName = "hangfire",
+                    PrepareSchemaIfNecessary = true,
+                }));
         services.AddHangfireServer(options => { options.WorkerCount = 4; });
         services.AddScoped<IReportJobScheduler, HangfireReportJobScheduler>();
 
