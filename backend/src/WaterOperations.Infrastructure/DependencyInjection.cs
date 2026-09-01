@@ -37,6 +37,7 @@ using WaterOperations.Infrastructure.Security;
 using WaterOperations.Infrastructure.Caching;
 using WaterOperations.Infrastructure.Collaboration.Repositories;
 using WaterOperations.Infrastructure.Configuration;
+using WaterOperations.Infrastructure.Dahiti;
 using WaterOperations.Infrastructure.Ingestion;
 using WaterOperations.Infrastructure.Ingestion.Repositories;
 using WaterOperations.Infrastructure.Jobs;
@@ -126,6 +127,8 @@ public static class DependencyInjection
             configuration.GetSection(JwtAuthenticationOptions.SectionName));
         services.Configure<AiModelClientOptions>(
             configuration.GetSection(AiModelClientOptions.SectionName));
+        services.Configure<DahitiOptions>(
+            configuration.GetSection(DahitiOptions.SectionName));
         return services;
     }
 
@@ -179,6 +182,13 @@ public static class DependencyInjection
         services.AddScoped<IChartAnnotationRepository, ChartAnnotationRepository>();
         services.AddScoped<IStationAuthorizationService, StationAuthorizationService>();
         services.AddSingleton<AiModelCircuitBreaker>();
+        services.AddScoped<DahitiSyncService>();
+        services.AddHttpClient("Dahiti", (provider, client) =>
+        {
+            var settings = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<DahitiOptions>>().Value;
+            client.BaseAddress = new Uri((string.IsNullOrWhiteSpace(settings.BaseUrl) ? "https://dahiti.dgfi.tum.de/api/v2/" : settings.BaseUrl).TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(120);
+        });
         services.AddHttpClient<IAiModelClient, HttpAiModelClient>((provider, client) =>
         {
             var options = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<AiModelClientOptions>>().Value;
@@ -237,6 +247,7 @@ public static class DependencyInjection
                 .UseNpgsqlConnection(connectionString)));
         services.AddHangfireServer(options => { options.WorkerCount = 4; });
         services.AddScoped<IReportJobScheduler, HangfireReportJobScheduler>();
+        services.AddHostedService<DahitiSyncHostedService>();
 
         return services;
     }
