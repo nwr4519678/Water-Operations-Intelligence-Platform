@@ -13,6 +13,42 @@ export interface DeckLayersOptions {
   language?: "en" | "ar"
 }
 
+type ClusterPoint = {
+  station: WaterStation
+  stations: WaterStation[]
+  count: number
+  latitude: number
+  longitude: number
+}
+
+function clusterRtuStations(stations: WaterStation[], zoom: number): ClusterPoint[] {
+  // Keep a cluster roughly within a 32px screen cell. A fixed geographic
+  // cell leaves a misleading "4" visible even at street-level zoom when
+  // several nearby stations happen to share that large cell.
+  const cellSize = Math.max(0.001, (32 * 360) / (256 * 2 ** Math.max(0, zoom)))
+  const groups = new Map<string, WaterStation[]>()
+
+  for (const station of stations) {
+    const cellX = Math.floor(station.longitude / cellSize)
+    const cellY = Math.floor(station.latitude / cellSize)
+    const key = `${cellX}:${cellY}`
+    const group = groups.get(key) ?? []
+    group.push(station)
+    groups.set(key, group)
+  }
+
+  return [...groups.values()].map((group) => {
+    const representative = group.find((station) => station.id === stations[0]?.id) ?? group[0]
+    return {
+      station: representative,
+      stations: group,
+      count: group.length,
+      latitude: group.reduce((sum, station) => sum + station.latitude, 0) / group.length,
+      longitude: group.reduce((sum, station) => sum + station.longitude, 0) / group.length,
+    }
+  })
+}
+
 function getStatusColor(
   state: ConnectionState,
 ): [number, number, number, number] {
@@ -45,15 +81,16 @@ export function createWaterTelemetryDeckLayers(options: DeckLayersOptions) {
   const hqStations = stations.filter((s) => s.type === "main")
   const masterStations = stations.filter((s) => s.type === "master")
   const rtuStations = stations.filter((s) => s.type === "rtu")
+  const rtuClusters = clusterRtuStations(rtuStations, zoom)
 
   const layers: any[] = []
 
   // ── Layer 1: Field RTU Stations (Distinct, easy-to-click GPU points) ───────
-  if (rtuStations.length > 0) {
+  if (rtuClusters.length > 0) {
     layers.push(
-      new ScatterplotLayer<WaterStation>({
+      new ScatterplotLayer<ClusterPoint>({
         id: "water-rtu-layer",
-        data: rtuStations,
+        data: rtuClusters,
         pickable: true,
         autoHighlight: true,
         highlightColor: [255, 255, 255, 180],
@@ -65,17 +102,20 @@ export function createWaterTelemetryDeckLayers(options: DeckLayersOptions) {
         radiusMaxPixels: 12,
         getPosition: (d) => [d.longitude, d.latitude, is3d ? 100 : 0],
         getRadius: (d) =>
-          d.id === selectedStationId
+          d.station.id === selectedStationId
             ? 9
-            : d.id === hoveredStationId
+            : d.station.id === hoveredStationId
               ? 7.5
-              : 5.5,
+              : d.count > 1
+                ? Math.min(20, 6 + Math.log2(d.count) * 3)
+                : 5.5,
         getFillColor: (d) => {
-          if (d.id === selectedStationId) return [37, 99, 235, 255] // Royal Blue
-          return getStatusColor(d.connectionState)
+          // Selection is communicated by size and outline; preserve the
+          // station's health color instead of turning every selected RTU blue.
+          return getStatusColor(d.station.connectionState)
         },
         getLineColor: [255, 255, 255, 255],
-        getLineWidth: (d) => (d.id === selectedStationId ? 2.5 : 1.5),
+        getLineWidth: (d) => (d.station.id === selectedStationId ? 2.5 : 1.5),
         lineWidthUnits: "pixels",
         updateTriggers: {
           getRadius: [selectedStationId, hoveredStationId, zoom],
@@ -86,6 +126,25 @@ export function createWaterTelemetryDeckLayers(options: DeckLayersOptions) {
         onClick,
       }),
     )
+
+    const labeledClusters = rtuClusters.filter((cluster) => cluster.count > 1)
+    if (labeledClusters.length > 0) {
+      layers.push(
+        new TextLayer<ClusterPoint>({
+          id: "water-rtu-cluster-labels",
+          data: labeledClusters,
+          pickable: false,
+          getPosition: (d) => [d.longitude, d.latitude, is3d ? 110 : 0],
+          // A singleton is a station marker, never a numbered cluster.
+          getText: (d) => (d.count > 1 ? String(d.count) : ""),
+          getSize: 11,
+          getColor: [255, 255, 255, 255],
+          getTextAnchor: "middle",
+          getAlignmentBaseline: "center",
+          fontWeight: "bold",
+        }),
+      )
+    }
   }
 
   // ── Layer 2: Master Stations (Large Prominent Strategic Nodes) ───────────

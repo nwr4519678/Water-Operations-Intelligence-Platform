@@ -1,7 +1,7 @@
 // src/data/stationLoader.ts
 import { WaterStation, DatasetValidationReport } from "./stationTypes"
-import { parseStationsCsv, ParseResult } from "./stationParser"
-import rawCsvFallback from "./egypt_water_telemetry_stations.csv?raw"
+import { ParseResult } from "./stationParser"
+import { apiClient } from "../api/client"
 
 let cachedResult: ParseResult | null = null
 let loadingPromise: Promise<ParseResult> | null = null
@@ -16,25 +16,9 @@ export async function loadWaterStations(): Promise<ParseResult> {
   }
 
   loadingPromise = (async () => {
-    try {
-      // 1. Try fetching from public/data
-      const res = await fetch("/data/egypt_water_telemetry_stations.csv")
-      if (res.ok) {
-        const text = await res.text()
-        if (text && text.trim().length > 100) {
-          cachedResult = parseStationsCsv(text)
-          return cachedResult
-        }
-      }
-    } catch (err) {
-      console.warn(
-        "Could not fetch CSV over HTTP, using bundled dataset...",
-        err,
-      )
-    }
-
-    // 2. Bundled fallback
-    cachedResult = parseStationsCsv(rawCsvFallback)
+    const response = await apiClient.get<DahitiStationDto[]>("/api/v1/dahiti/stations")
+    const stations = response.data.map(toWaterStation)
+    cachedResult = { stations, report: createReport(stations) }
     return cachedResult
   })()
 
@@ -42,8 +26,84 @@ export async function loadWaterStations(): Promise<ParseResult> {
 }
 
 export function getCachedStations(): ParseResult {
-  if (!cachedResult) {
-    cachedResult = parseStationsCsv(rawCsvFallback)
+  return cachedResult ?? { stations: [], report: createReport([]) }
+}
+
+export interface DahitiMonthlyTrend {
+  month: string
+  averageLevel: number
+  minimumLevel: number
+  maximumLevel: number
+  observationCount: number
+}
+
+export async function loadMonthlyTrend(dahitiId: number, months = 12): Promise<DahitiMonthlyTrend[]> {
+  const response = await apiClient.get<DahitiMonthlyTrend[]>(`/api/v1/dahiti/trends/${dahitiId}`, {
+    params: { months },
+  })
+  return response.data
+}
+
+interface DahitiStationDto {
+  stationId: string
+  dahitiId: number
+  name: string
+  country: string
+  continent: string
+  latitude: number
+  longitude: number
+  lastSyncedAtUtc: string | null
+  lastObservedAtUtc: string | null
+  waterLevel: number | null
+  uncertainty: number | null
+  observationCount: number
+}
+
+function toWaterStation(station: DahitiStationDto): WaterStation {
+  return {
+    id: station.stationId,
+    code: `DAHITI-${station.dahitiId}`,
+    name: station.name,
+    nameEn: station.name,
+    type: "master",
+    typeLabel: "DaHITI Water-Level Target",
+    region: `${station.country} · ${station.continent}`,
+    latitude: station.latitude,
+    longitude: station.longitude,
+    coordinates: [station.longitude, station.latitude],
+    connectionStatus: station.lastSyncedAtUtc ? "DaHITI synchronized" : "No sync yet",
+    connectionState: station.lastSyncedAtUtc ? "online" : "unknown",
+    telemetrySnapshot: {
+      waterLevel: station.waterLevel ?? "—",
+      lastUpdateUtc: station.lastObservedAtUtc ?? station.lastSyncedAtUtc ?? undefined,
+      isSimulated: false,
+    },
   }
-  return cachedResult
+}
+
+function createReport(stations: WaterStation[]): DatasetValidationReport {
+  const valid = stations.filter((station) => Number.isFinite(station.latitude) && Number.isFinite(station.longitude))
+  const minLat = valid.length ? Math.min(...valid.map((station) => station.latitude)) : 0
+  const maxLat = valid.length ? Math.max(...valid.map((station) => station.latitude)) : 0
+  const minLng = valid.length ? Math.min(...valid.map((station) => station.longitude)) : 0
+  const maxLng = valid.length ? Math.max(...valid.map((station) => station.longitude)) : 0
+  return {
+    totalRows: stations.length,
+    validCount: valid.length,
+    invalidCount: stations.length - valid.length,
+    mainCount: 0,
+    masterCount: stations.length,
+    rtuCount: 0,
+    onlineCount: stations.filter((station) => station.connectionState === "online").length,
+    warningCount: 0,
+    offlineCount: 0,
+    unknownCount: stations.filter((station) => station.connectionState === "unknown").length,
+    regions: [...new Set(stations.map((station) => station.region))],
+    bounds: {
+      minLng, minLat, maxLng, maxLat,
+      centerLng: (minLng + maxLng) / 2,
+      centerLat: (minLat + maxLat) / 2,
+    },
+    errors: [],
+  }
 }
