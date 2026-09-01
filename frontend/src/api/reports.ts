@@ -61,59 +61,21 @@ export const reportsApi = {
     page?: number
     pageSize?: number
   }): Promise<PagedResult<ReportDto>> => {
-    try {
-      const res = await apiClient.get<PagedResult<ReportDto>>(
-        "/api/v1/reports",
-        { params },
-      )
-      return res.data
-    } catch {
-      let filtered = [...mockReportsList]
-      if (params?.reportType && params.reportType !== "ALL") {
-        filtered = filtered.filter((r) => r.reportType === params.reportType)
-      }
-      const page = params?.page || 1
-      const pageSize = params?.pageSize || 10
-      return {
-        items: filtered.slice((page - 1) * pageSize, page * pageSize),
-        page,
-        pageSize,
-        totalCount: filtered.length,
-        totalPages: Math.ceil(filtered.length / pageSize),
-      }
-    }
+    const res = await apiClient.get<PagedResult<ReportDto>>(
+      "/api/v1/reports",
+      { params },
+    )
+    return res.data
   },
 
   createReport: async (data: CreateReportRequest): Promise<ReportDto> => {
-    try {
-      const res = await apiClient.post<ReportDto>("/api/v1/reports", data)
-      return res.data
-    } catch {
-      const newReport: ReportDto = {
-        reportId: `RPT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`,
-        title: data.title,
-        reportType: data.reportType,
-        format: data.format,
-        status: "READY",
-        fileSizeBytes: 1200000 + Math.floor(Math.random() * 500000),
-        createdAtUtc: new Date().toISOString(),
-        completedAtUtc: new Date().toISOString(),
-      }
-      mockReportsList.unshift(newReport)
-      return newReport
-    }
+    const res = await apiClient.post<ReportDto>("/api/v1/reports", data)
+    return res.data
   },
 
   getReport: async (reportId: string): Promise<ReportDto> => {
-    try {
-      const res = await apiClient.get<ReportDto>(`/api/v1/reports/${reportId}`)
-      return res.data
-    } catch {
-      return (
-        mockReportsList.find((r) => r.reportId === reportId) ||
-        mockReportsList[0]
-      )
-    }
+    const res = await apiClient.get<ReportDto>(`/api/v1/reports/${reportId}`)
+    return res.data
   },
 
   downloadReportUrl: (reportId: string): string => {

@@ -307,258 +307,99 @@ export const mockAlarms: AlarmDto[] = [
 
 export const viewerApi = {
   overview: async (asOf?: string): Promise<OperationsOverviewDto> => {
-    try {
-      const res = await apiClient.get<OperationsOverviewDto>(
-        "/api/v1/viewer/overview",
-        { params: { asOf } },
-      )
-      return res.data
-    } catch {
-      const total = mockMapStations.length
-      const online = mockMapStations.filter((s) => s.status === "ONLINE").length
-      const offline = total - online
-      const critical = mockAlarms.filter(
-        (a) => a.severity === "CRITICAL" && a.status === "ACTIVE",
-      ).length
-      const warning = mockAlarms.filter(
-        (a) => a.severity === "WARNING" && a.status === "ACTIVE",
-      ).length
-      return {
-        totalStations: total,
-        onlineStations: online,
-        offlineStations: offline,
-        activeCriticalAlarms: critical,
-        activeWarningAlarms: warning,
-      }
-    }
+    const res = await apiClient.get<OperationsOverviewDto>(
+      "/api/v1/viewer/overview",
+      { params: { asOf } },
+    )
+    return res.data
   },
 
   mapStations: async (
     params?: MapStationsParams,
   ): Promise<PagedResult<MapStationDto>> => {
-    try {
-      const res = await apiClient.get<PagedResult<MapStationDto>>(
-        "/api/v1/viewer/map/stations",
-        { params },
-      )
-      return res.data
-    } catch {
-      let filtered = [...mockMapStations]
-      if (params?.search) {
-        const q = params.search.toLowerCase()
-        filtered = filtered.filter((s) =>
-          `${s.stationCode} ${s.name} ${s.nameAr || ""} ${s.zoneEn || ""} ${s.zoneAr || ""}`
-            .toLowerCase()
-            .includes(q),
-        )
-      }
-      if (params?.status && params.status !== "ALL") {
-        filtered = filtered.filter((s) => s.status === params.status)
-      }
-      const page = params?.page || 1
-      const pageSize = params?.pageSize || 500
-      const totalCount = filtered.length
-      const totalPages = Math.ceil(totalCount / pageSize)
-      const items = filtered.slice((page - 1) * pageSize, page * pageSize)
-
-      return { items, page, pageSize, totalCount, totalPages }
+    const res = await apiClient.get<{
+      data: MapStationDto[]
+      total: number
+      page: number
+      pageSize: number
+      totalPages: number
+    }>("/api/v1/viewer/map/stations", { params })
+    return {
+      items: res.data.data,
+      page: res.data.page,
+      pageSize: res.data.pageSize,
+      totalCount: res.data.total,
+      totalPages: res.data.totalPages,
     }
   },
 
   stationDetail: async (stationId: string): Promise<StationDetailDto> => {
-    try {
-      const res = await apiClient.get<StationDetailDto>(
-        `/api/v1/viewer/stations/${stationId}`,
-      )
-      return res.data
-    } catch {
-      const found =
-        allStations.find((s) => s.id === stationId) || allStations[0]
-      return {
-        stationId: found.id,
-        organizationId: "org-eg-telemetry",
-        regionId: found.zoneEn.toLowerCase().replace(/[^a-z0-9]/g, "-"),
-        stationCode: found.id,
-        name: found.nameEn,
-        nameAr: found.nameAr,
-        nameEn: found.nameEn,
-        description: `${found.nameEn} (${found.nameAr}) — Strategic Water Telemetry Node`,
-        status:
-          found.status === "online"
-            ? "ONLINE"
-            : found.status === "warning"
-              ? "MAINTENANCE"
-              : "OFFLINE",
-        latitude: found.lat,
-        longitude: found.lng,
-        elevationMeters: found.category === "master" ? 120 : 45,
-        staffGaugeHeight: parseFloat(found.level) || 3.5,
-        isActive: true,
-        communicationIntervalSeconds: 60,
-        createdAtUtc: "2024-01-01T00:00:00Z",
-        updatedAtUtc: new Date().toISOString(),
-        category: found.category,
-        zoneAr: found.zoneAr,
-        zoneEn: found.zoneEn,
-        mechanismAr: found.mechanismAr,
-        mechanismEn: found.mechanismEn,
-        signalAr: found.signalAr,
-        signalEn: found.signalEn,
-        assignedParameters: [
-          {
-            parameterId: 1,
-            code: "WL",
-            name: "Water Level",
-            canonicalUnit: "m",
-            dataType: "Float",
-          },
-          {
-            parameterId: 2,
-            code: "FL",
-            name: "Discharge Flow Rate",
-            canonicalUnit: found.category === "master" ? "m³/s" : "L/s",
-            dataType: "Float",
-          },
-          {
-            parameterId: 3,
-            code: "PR",
-            name: "Pipe Line Pressure",
-            canonicalUnit: "bar",
-            dataType: "Float",
-          },
-          {
-            parameterId: 4,
-            code: "WQ",
-            name: "Water Salinity TDS",
-            canonicalUnit: "ppm",
-            dataType: "Float",
-          },
-        ],
-      }
-    }
+    const res = await apiClient.get<StationDetailDto>(
+      `/api/v1/viewer/stations/${stationId}`,
+    )
+    return res.data
   },
 
   alarms: async (params?: AlarmsParams): Promise<PagedResult<AlarmDto>> => {
-    try {
-      const res = await apiClient.get<PagedResult<AlarmDto>>(
-        "/api/v1/viewer/alarms",
-        { params },
-      )
-      return res.data
-    } catch {
-      let filtered = [...mockAlarms]
-      if (params?.stationId) {
-        filtered = filtered.filter((a) => a.stationId === params.stationId)
-      }
-      if (params?.severity && params.severity !== "ALL") {
-        filtered = filtered.filter((a) => a.severity === params.severity)
-      }
-      if (params?.status && params.status !== "ALL") {
-        filtered = filtered.filter((a) => a.status === params.status)
-      }
-      const page = params?.page || 1
-      const pageSize = params?.pageSize || 10
-      const totalCount = filtered.length
-      const totalPages = Math.ceil(totalCount / pageSize)
-      const items = filtered.slice((page - 1) * pageSize, page * pageSize)
-      return { items, page, pageSize, totalCount, totalPages }
+    const res = await apiClient.get<{
+      data: AlarmDto[]
+      total: number
+      page: number
+      pageSize: number
+      totalPages: number
+    }>("/api/v1/viewer/alarms", { params })
+    return {
+      items: res.data.data,
+      page: res.data.page,
+      pageSize: res.data.pageSize,
+      totalCount: res.data.total,
+      totalPages: res.data.totalPages,
     }
   },
 
   alarmDetail: async (alarmId: string): Promise<AlarmDto> => {
-    try {
-      const res = await apiClient.get<AlarmDto>(
-        `/api/v1/viewer/alarms/${alarmId}`,
-      )
-      return res.data
-    } catch {
-      const a =
-        mockAlarms.find((item) => item.alarmId === alarmId) || mockAlarms[0]
-      return a
-    }
+    const res = await apiClient.get<AlarmDto>(
+      `/api/v1/viewer/alarms/${alarmId}`,
+    )
+    return res.data
   },
 
   organizations: async (): Promise<OrganizationDto[]> => {
-    try {
-      const res = await apiClient.get<OrganizationDto[]>(
-        "/api/v1/viewer/organizations",
-      )
-      return res.data
-    } catch {
-      return mockOrganizations
-    }
+    const res = await apiClient.get<OrganizationDto[]>(
+      "/api/v1/viewer/organizations",
+    )
+    return res.data
   },
 
   regions: async (organizationId: string): Promise<RegionDto[]> => {
-    try {
-      const res = await apiClient.get<RegionDto[]>(
-        `/api/v1/viewer/organizations/${organizationId}/regions`,
-      )
-      return res.data
-    } catch {
-      return mockRegions
-    }
+    const res = await apiClient.get<RegionDto[]>(
+      `/api/v1/viewer/organizations/${organizationId}/regions`,
+    )
+    return res.data
   },
 
   regionStations: async (regionId: string): Promise<StationSummaryDto[]> => {
-    try {
-      const res = await apiClient.get<StationSummaryDto[]>(
-        `/api/v1/viewer/regions/${regionId}/stations`,
-      )
-      return res.data
-    } catch {
-      return mockMapStations
-        .filter((s) => s.regionId === regionId || regionId === "all")
-        .map((s) => ({
-          stationId: s.stationId,
-          stationCode: s.stationCode,
-          name: s.name,
-          status: s.status,
-          regionId: s.regionId,
-          latitude: s.latitude,
-          longitude: s.longitude,
-          lastReadingUtc: s.lastReadingUtc,
-        }))
-    }
+    const res = await apiClient.get<StationSummaryDto[]>(
+      `/api/v1/viewer/regions/${regionId}/stations`,
+    )
+    return res.data
   },
 
   stationMeasurements: async (
     stationId: string,
     params?: { from?: string; to?: string; parameterId?: number; limit?: number },
   ): Promise<TelemetryPointDto[]> => {
-    try {
-      const res = await apiClient.get<TelemetryPointDto[]>(
-        `/api/v1/viewer/stations/${stationId}/measurements`,
-        { params },
-      )
-      return res.data
-    } catch {
-      const now = Date.now()
-      const points: TelemetryPointDto[] = []
-      for (let i = 24; i >= 0; i--) {
-        points.push({
-          stationId,
-          parameterId: params?.parameterId || 1,
-          timestampUtc: new Date(now - i * 3600000).toISOString(),
-          value: parseFloat(
-            (2.4 + Math.sin(i / 3) * 0.4 + Math.random() * 0.1).toFixed(2),
-          ),
-          canonicalUnit: "m",
-          qualityFlag: "GOOD",
-        })
-      }
-      return points
-    }
+    const res = await apiClient.get<TelemetryPointDto[]>(
+      `/api/v1/viewer/stations/${stationId}/measurements`,
+      { params },
+    )
+    return res.data
   },
 
   stationAlarms: async (stationId: string): Promise<AlarmDto[]> => {
-    try {
-      const res = await apiClient.get<AlarmDto[]>(
-        `/api/v1/viewer/stations/${stationId}/alarms`,
-      )
-      return res.data
-    } catch {
-      return mockAlarms.filter((a) => a.stationId === stationId)
-    }
+    const res = await apiClient.get<AlarmDto[]>(
+      `/api/v1/viewer/stations/${stationId}/alarms`,
+    )
+    return res.data
   },
 }
