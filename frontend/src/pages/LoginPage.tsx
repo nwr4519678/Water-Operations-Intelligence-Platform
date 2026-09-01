@@ -23,8 +23,8 @@ type LoginStep = "CREDENTIALS" | "MFA_VERIFY"
 
 export const LoginPage: React.FC = () => {
   const [step, setStep] = useState<LoginStep>("CREDENTIALS")
-  const [email, setEmail] = useState("viewer.ops@water.gov.eg")
-  const [password, setPassword] = useState("Viewer@Pass2026!")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [mfaCode, setMfaCode] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -43,24 +43,6 @@ export const LoginPage: React.FC = () => {
       navigate("/")
     } catch (err: any) {
       setError(err.message || "Invalid credentials.")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleQuickDemoLogin = async () => {
-    setEmail("viewer.ops@water.gov.eg")
-    setPassword("Viewer@Pass2026!")
-    setIsLoading(true)
-    setError(null)
-    try {
-      await login({
-        email: "viewer.ops@water.gov.eg",
-        password: "Viewer@Pass2026!",
-      })
-      navigate("/")
-    } catch (err: any) {
-      setError(err.message || "Login failed.")
     } finally {
       setIsLoading(false)
     }
@@ -182,25 +164,6 @@ export const LoginPage: React.FC = () => {
                 Sign In to Operations Portal
               </Button>
 
-              <div className="relative my-4 text-center">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-200" />
-                </div>
-                <span className="relative bg-white px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Or Instant Access
-                </span>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full border-blue-200 text-blue-700 hover:bg-blue-50/60"
-                leftIcon={<Sparkles className="w-4 h-4 text-blue-600" />}
-                onClick={handleQuickDemoLogin}
-                isLoading={isLoading}
-              >
-                1-Click Quick Demo Login (Chief Engineer)
-              </Button>
             </form>
           ) : (
             <form onSubmit={handleMfaSubmit} className="space-y-5 text-center">

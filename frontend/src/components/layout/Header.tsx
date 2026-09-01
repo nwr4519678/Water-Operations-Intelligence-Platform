@@ -2,28 +2,25 @@
 import React from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useUiStore } from "../../store/uiStore"
-import { useAlarmsList } from "../../hooks/useViewerQueries"
+import { NotificationBell } from "../notifications/NotificationBell"
 
-export const Header: React.FC = () => {
+export const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
   const location = useLocation()
   const navigate = useNavigate()
   const setGlobalSearchOpen = useUiStore((state) => state.setGlobalSearchOpen)
-  const { data: alarmsData } = useAlarmsList({ status: "ACTIVE" })
-  const activeAlarmsCount = alarmsData?.totalCount || 3
-
   const getPageInfo = () => {
     const path = location.pathname
     if (path === "/")
       return {
         title: "Overview",
         subtitle:
-          "Real-time national water network telemetry across 410 monitoring nodes in Egypt",
+          "Real-time water-level targets supplied by the backend database",
       }
     if (path === "/map")
       return {
         title: "Map & Stations",
         subtitle:
-          "410 interactive monitoring stations (Leaflet + MarkerCluster)",
+          "Database-backed DaHITI monitoring targets",
       }
     if (path.startsWith("/stations/"))
       return {
@@ -63,7 +60,7 @@ export const Header: React.FC = () => {
 
   return (
     <header className="topbar">
-      <button className="menu" type="button">
+      <button className="menu" type="button" onClick={onMenuClick} aria-label="Toggle navigation">
         ☰
       </button>
       <div className="page-title">
@@ -72,7 +69,7 @@ export const Header: React.FC = () => {
       </div>
 
       <div className="header-actions">
-        {/* Global Search across 410 stations */}
+        {/* Global Search across backend stations */}
         <label
           className="search cursor-pointer"
           onClick={() => setGlobalSearchOpen(true)}
@@ -85,15 +82,8 @@ export const Header: React.FC = () => {
           />
         </label>
 
-        {/* Notification Bell */}
-        <button
-          className="icon-button notification"
-          type="button"
-          onClick={() => navigate("/alarms")}
-          title="Active Alarms"
-        >
-          ♧<b>{activeAlarmsCount}</b>
-        </button>
+        {/* Database-backed notification bell and message list */}
+        <NotificationBell />
 
         {/* User Profile */}
         <div
