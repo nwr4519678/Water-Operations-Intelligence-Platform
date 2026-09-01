@@ -24,12 +24,10 @@ const DEFAULT_USER: UserSession = {
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  accessToken:
-    localStorage.getItem("wt_access_token") || "demo_jwt_access_token_viewer",
-  refreshToken:
-    localStorage.getItem("wt_refresh_token") || "demo_jwt_refresh_token_viewer",
-  currentUser: DEFAULT_USER,
-  isAuthenticated: true,
+  accessToken: localStorage.getItem("wt_access_token"),
+  refreshToken: localStorage.getItem("wt_refresh_token"),
+  currentUser: localStorage.getItem("wt_access_token") ? DEFAULT_USER : null,
+  isAuthenticated: Boolean(localStorage.getItem("wt_access_token")),
 
   setAuth: (accessToken, refreshToken, user) => {
     localStorage.setItem("wt_access_token", accessToken)

@@ -9,7 +9,6 @@ import { useUiStore } from "../store/uiStore"
 import {
   Search,
   Filter,
-  Database,
   CheckCircle,
   Radio,
   MapPin,
@@ -153,19 +152,6 @@ export const MapPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-sm">
-            <Database className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-[10px] uppercase font-bold text-slate-400">
-              {isAr ? "جودة البيانات" : "Data Integrity"}
-            </div>
-            <div className="text-xs font-black text-purple-700">
-              100% Valid CSV
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* ── 2. Main GIS Layout Grid ────────────────────────────────────── */}

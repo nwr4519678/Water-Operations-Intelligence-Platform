@@ -1,7 +1,8 @@
 // src/components/layout/Sidebar.tsx
-import React from "react"
+import React, { useEffect, useState } from "react"
 import { NavLink } from "react-router-dom"
-import { useAlarmsList } from "../../hooks/useViewerQueries"
+import { useAlarmsList, useOperationsOverview } from "../../hooks/useViewerQueries"
+import { loadWaterStations } from "../../data/stationLoader"
 import {
   LayoutDashboard,
   Map,
@@ -14,7 +15,29 @@ import {
 
 export const Sidebar: React.FC = () => {
   const { data: alarmsData } = useAlarmsList({ status: "ACTIVE" })
-  const activeAlarmsCount = alarmsData?.totalCount || 3
+  const activeAlarmsCount = alarmsData?.totalCount ?? 0
+  const { data: overviewData } = useOperationsOverview()
+  const [dahitiCounts, setDahitiCounts] = useState({ total: 0, online: 0 })
+
+  useEffect(() => {
+    let active = true
+    loadWaterStations()
+      .then(({ stations }) => {
+        if (active) {
+          setDahitiCounts({
+            total: stations.length,
+            online: stations.filter((station) => station.connectionState === "online").length,
+          })
+        }
+      })
+      .catch(() => undefined)
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const stationCount = overviewData?.totalStations || dahitiCounts.total
+  const onlineCount = overviewData?.onlineStations ?? dahitiCounts.online
 
   const navItems = [
     { to: "/", label: "Overview", icon: LayoutDashboard },
@@ -71,9 +94,9 @@ export const Sidebar: React.FC = () => {
         <span>
           <i className="dot good" /> National Network
         </span>
-        <strong>410 Stations Live</strong>
+        <strong>{onlineCount}/{stationCount} Stations Online</strong>
         <div className="pulse-line">⌁</div>
-        <small>Dual satellite & GSM feeds</small>
+        <small>Backend database telemetry</small>
       </div>
 
       <button className="collapse" type="button">

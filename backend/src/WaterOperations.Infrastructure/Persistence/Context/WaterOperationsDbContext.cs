@@ -117,6 +117,7 @@ public partial class WaterOperationsDbContext : DbContext, IUnitOfWork
         modelBuilder.Entity<Alarm>(entity =>
         {
             entity.HasKey(e => e.AlarmId);
+            entity.ToTable("Alarm", "Operations");
             entity.Property(e => e.RaisedAtUtc)
                 .HasPrecision(3)
                 .HasDefaultValueSql("timezone('utc', now())");

@@ -25,22 +25,9 @@ function buildPopupHtml(station: WaterStation, isAr: boolean) {
     ? station.nameEn || station.name
     : station.nameAr || station.name
   const level =
-    station.telemetrySnapshot?.waterLevel ??
-    (station.type === "main"
-      ? "3.45"
-      : station.type === "master"
-        ? "178.5"
-        : "2.65")
-  const flow =
-    station.telemetrySnapshot?.flowRate ??
-    (station.type === "main"
-      ? "1,450 m³/s"
-      : station.type === "master"
-        ? "2,100 m³/s"
-        : "320 L/s")
-  const pressure =
-    station.telemetrySnapshot?.pressure ??
-    (station.type === "main" ? "5.8" : "4.2")
+    station.telemetrySnapshot?.waterLevel ?? "—"
+  const flow = station.telemetrySnapshot?.flowRate ?? "—"
+  const pressure = station.telemetrySnapshot?.pressure ?? "—"
 
   return `
     <div style="font-family: ${
@@ -100,6 +87,7 @@ export const MapLibreDeckMap: React.FC<MapLibreDeckMapProps> = ({
   const mapInstanceRef = useRef<MapLibreMap | null>(null)
   const deckOverlayRef = useRef<MapboxOverlay | null>(null)
   const popupRef = useRef<Popup | null>(null)
+  const lastMapZoomRef = useRef(6.2)
 
   const [zoom, setZoom] = useState<number>(6.2)
   const [is3d, setIs3d] = useState<boolean>(false)
@@ -148,19 +136,35 @@ export const MapLibreDeckMap: React.FC<MapLibreDeckMapProps> = ({
     (st: WaterStation) => {
       if (!mapInstanceRef.current) return
 
+      // The MapLibre popup is the primary station detail surface. Never let
+      // the lightweight hover card remain visible underneath it.
+      setHoveredStation(null)
+      setHoverPos(null)
+
       if (!popupRef.current) {
-        popupRef.current = new Popup({
+        const popup = new Popup({
           closeButton: true,
           closeOnClick: false,
           offset: 14,
           maxWidth: "320px",
         })
+        popup.addClassName("water-primary-popup")
+        popup.on("close", () => {
+          if (popupRef.current === popup) popupRef.current = null
+        })
+        popupRef.current = popup
       }
 
       popupRef.current
         .setLngLat([st.longitude, st.latitude])
         .setHTML(buildPopupHtml(st, isAr))
         .addTo(mapInstanceRef.current)
+
+      // MapLibre can recreate the popup element during addTo(), so apply the
+      // stacking priority to the actual DOM node after it is mounted.
+      const popupElement = popupRef.current.getElement()
+      popupElement?.classList.add("water-primary-popup")
+      popupElement?.style.setProperty("z-index", "1000", "important")
     },
     [isAr],
   )
@@ -212,7 +216,9 @@ export const MapLibreDeckMap: React.FC<MapLibreDeckMapProps> = ({
 
     // Create deck.gl MapboxOverlay
     const overlay = new MapboxOverlay({
-      interleaved: true,
+      // Use a dedicated deck.gl canvas. Interleaved rendering currently
+      // triggers a viewport-height error with MapLibre GL in Chromium/Docker.
+      interleaved: false,
       layers: [],
     })
 
@@ -220,8 +226,28 @@ export const MapLibreDeckMap: React.FC<MapLibreDeckMapProps> = ({
     deckOverlayRef.current = overlay
     mapInstanceRef.current = map
 
-    map.on("zoom", () => {
+    // Rebuilding the geographic clusters on every zoom frame makes their
+    // representative centers jump between cells while the map is animating.
+    // Keep the current layer stable during the gesture and regroup once the
+    // camera settles.
+    map.on("zoomend", () => {
       setZoom(map.getZoom())
+    })
+
+    // Detail popups are intended for close inspection. Close them as soon as
+    // the operator zooms back to the national/cluster view.
+    map.on("zoom", () => {
+      const currentZoom = map.getZoom()
+      const isZoomingOut = currentZoom < lastMapZoomRef.current
+
+      // Do not close while flyTo is zooming in to open a station popup. Only
+      // close an already-open detail popup when the operator zooms back out.
+      if (isZoomingOut && currentZoom < 9 && popupRef.current) {
+        popupRef.current.remove()
+        popupRef.current = null
+      }
+
+      lastMapZoomRef.current = currentZoom
     })
 
     // Initial fitBounds
@@ -250,27 +276,79 @@ export const MapLibreDeckMap: React.FC<MapLibreDeckMapProps> = ({
   }, [webGlAvailable])
 
   // Handle deck.gl Hover & Click
-  const handleHover = useCallback((info: any) => {
-    if (info.object) {
-      setHoveredStation(info.object as WaterStation)
+  const handleHover = useCallback(
+    (info: any) => {
+      const object = info.object as
+        | { count?: number; station?: WaterStation }
+        | WaterStation
+        | undefined
+      const count = object && "count" in object ? object.count ?? 1 : 1
+      const station = object && (object as any).station
+        ? (object as any).station as WaterStation
+        : (object as WaterStation | undefined)
+
+      // Hover details are useful only for an individual station at close
+      // zoom. Cluster labels should remain uncluttered at national zoom.
+      if (!station || count > 1 || zoom < 9 || popupRef.current) {
+        setHoveredStation(null)
+        setHoverPos(null)
+        return
+      }
+
+      setHoveredStation(station)
       setHoverPos({ x: info.x, y: info.y })
-    } else {
-      setHoveredStation(null)
-      setHoverPos(null)
-    }
-  }, [])
+    },
+    [zoom],
+  )
 
   const handleClick = useCallback(
     (info: any) => {
-      if (info.object) {
-        const station = info.object as WaterStation
-        showStationPopup(station)
-        if (onSelectStation) {
-          onSelectStation(station)
-        }
+      const object = info.object as
+        | {
+            count?: number
+            station?: WaterStation
+            longitude: number
+            latitude: number
+          }
+        | undefined
+      if (!object || !mapInstanceRef.current) return
+
+      // A cluster click only zooms into its center and never opens a profile.
+      if ((object.count ?? 1) > 1) {
+        mapInstanceRef.current.flyTo({
+          center: [object.longitude, object.latitude],
+          zoom: Math.min(mapInstanceRef.current.getZoom() + 2.5, 13),
+          duration: 700,
+          essential: true,
+        })
+        return
       }
+
+      // A singleton click zooms to the station and opens the primary
+      // blue-action popup. The popup's own action opens the full profile.
+      // RTU clusters wrap the station in `object.station`, while the red HQ
+      // and blue master layers pass the WaterStation object directly.
+      const station = (object.station ?? object) as WaterStation
+      if (
+        !station.id ||
+        !Number.isFinite(station.latitude) ||
+        !Number.isFinite(station.longitude)
+      ) {
+        return
+      }
+
+      const zoomToStation = () =>
+        mapInstanceRef.current?.flyTo({
+          center: [station.longitude, station.latitude],
+          zoom: Math.max(mapInstanceRef.current.getZoom(), 13),
+          duration: 700,
+          essential: true,
+        })
+
+      zoomToStation()
+      showStationPopup(station)
     },
-    [onSelectStation, showStationPopup],
+    [showStationPopup],
   )
 
   // 2. Update deck.gl layers whenever dependencies change
@@ -299,6 +377,20 @@ export const MapLibreDeckMap: React.FC<MapLibreDeckMapProps> = ({
     handleHover,
     handleClick,
   ])
+
+  // The first render can happen before the database stations arrive. Refit
+  // the already-created map when their authoritative bounds become available.
+  useEffect(() => {
+    const map = mapInstanceRef.current
+    if (!map || !bounds) return
+    map.fitBounds(
+      [
+        [bounds.minLng, bounds.minLat],
+        [bounds.maxLng, bounds.maxLat],
+      ],
+      { padding: 45, maxZoom: 8.5, duration: 0 },
+    )
+  }, [bounds])
 
   // 3. Fly to and show popup for selected station
   useEffect(() => {
@@ -369,6 +461,56 @@ export const MapLibreDeckMap: React.FC<MapLibreDeckMapProps> = ({
         className="z-0 outline-none"
       />
 
+      {hoveredStation && hoverPos && zoom >= 9 && (
+        <div
+          className="absolute z-20 pointer-events-none w-64 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur-sm"
+          style={{
+            left: Math.min(hoverPos.x + 16, 520),
+            top: Math.min(hoverPos.y + 16, 420),
+          }}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="truncate text-xs font-bold text-slate-900">
+                {isAr
+                  ? hoveredStation.nameAr || hoveredStation.name
+                  : hoveredStation.nameEn || hoveredStation.name}
+              </div>
+              <div className="mt-0.5 text-[10px] font-semibold text-slate-500">
+                {hoveredStation.code}
+              </div>
+            </div>
+            <span
+              className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${
+                hoveredStation.connectionState === "online"
+                  ? "bg-emerald-100 text-emerald-700"
+                  : hoveredStation.connectionState === "warning"
+                    ? "bg-amber-100 text-amber-700"
+                    : hoveredStation.connectionState === "offline"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-slate-100 text-slate-600"
+              }`}
+            >
+              {hoveredStation.connectionState}
+            </span>
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-slate-600">
+            <span>
+              {isAr ? "النوع" : "Type"}: {hoveredStation.typeLabel}
+            </span>
+            <span>
+              {isAr ? "المنطقة" : "Region"}: {hoveredStation.region}
+            </span>
+            <span>
+              {isAr ? "خط العرض" : "Lat"}: {hoveredStation.latitude.toFixed(4)}
+            </span>
+            <span>
+              {isAr ? "خط الطول" : "Lng"}: {hoveredStation.longitude.toFixed(4)}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Floating GIS Command Controls (Top Right) */}
       <div className="absolute top-3.5 right-3.5 z-10 flex flex-col gap-2 pointer-events-auto">
         <button
@@ -413,20 +555,24 @@ export const MapLibreDeckMap: React.FC<MapLibreDeckMapProps> = ({
           <span className="w-3 h-3 rounded-full bg-red-500 ring-2 ring-red-200 shrink-0" />
           <span className="text-slate-700 font-medium">
             {isAr
-              ? "المقر القومي للتحكم (1)"
-              : "National HQ Control Center (1)"}
+              ? `محطات التحكم القومي (${stations.filter((station) => station.type === "main").length})`
+              : `National HQ Control Center (${stations.filter((station) => station.type === "main").length})`}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0" />
           <span className="text-slate-700 font-medium">
-            {isAr ? "محطات مرجعية كبرى (9)" : "Strategic Master Stations (9)"}
+            {isAr
+              ? `المحطات الرئيسية (${stations.filter((station) => station.type === "master").length})`
+              : `Strategic Master Stations (${stations.filter((station) => station.type === "master").length})`}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-emerald-200 shrink-0" />
           <span className="text-slate-700 font-medium">
-            {isAr ? "محطات حقلية ذكية (400 RTU)" : "Field RTU Stations (400)"}
+            {isAr
+              ? `محطات الرصد الحقلي (${stations.filter((station) => station.type === "rtu").length})`
+              : `Field RTU Stations (${stations.filter((station) => station.type === "rtu").length})`}
           </span>
         </div>
       </div>
