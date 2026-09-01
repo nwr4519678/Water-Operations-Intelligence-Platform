@@ -9,6 +9,7 @@ using WaterOperations.Application.Common.Caching;
 using WaterOperations.Application.Common.Repositories;
 using WaterOperations.Application.Common.Security;
 using WaterOperations.Application.Features.AI.Interfaces;
+using WaterOperations.Application.Features.Dahiti.Interfaces;
 using WaterOperations.Application.Features.Administration.Interfaces;
 using WaterOperations.Application.Features.Alarms.Interfaces;
 using WaterOperations.Application.Features.Audit.Interfaces;
@@ -182,6 +183,7 @@ public static class DependencyInjection
         services.AddScoped<IChartAnnotationRepository, ChartAnnotationRepository>();
         services.AddScoped<IStationAuthorizationService, StationAuthorizationService>();
         services.AddSingleton<AiModelCircuitBreaker>();
+        services.AddScoped<IDahitiQueryRepository, DahitiQueryRepository>();
         services.AddScoped<DahitiSyncService>();
         services.AddHttpClient("Dahiti", (provider, client) =>
         {
