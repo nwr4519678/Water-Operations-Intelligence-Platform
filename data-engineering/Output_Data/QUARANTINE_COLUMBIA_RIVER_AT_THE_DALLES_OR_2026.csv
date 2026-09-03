@@ -1,8 +1,0 @@
-,Temperature,Temperature_qa_flag,Streamflow,Streamflow_qa_flag,Gage height,Gage height_qa_flag,Station_State,Active_Alarms
-2026-04-17 05:00:00+00:00,10.4,VALID,,,,,Critical,CRITICAL_ALARM: Sensor data missing or invalid
-2026-04-17 06:00:00+00:00,10.4,VALID,,,,,Critical,CRITICAL_ALARM: Sensor data missing or invalid
-2026-04-17 23:00:00+00:00,10.5,VALID,,,,,Critical,CRITICAL_ALARM: Sensor data missing or invalid
-2026-04-18 18:00:00+00:00,10.5,VALID,,,,,Critical,CRITICAL_ALARM: Sensor data missing or invalid
-2026-04-18 20:00:00+00:00,10.5,VALID,,,,,Critical,CRITICAL_ALARM: Sensor data missing or invalid
-2026-04-19 14:00:00+00:00,10.6,VALID,,,,,Critical,CRITICAL_ALARM: Sensor data missing or invalid
-2026-08-21 11:00:00+00:00,22.4,VALID,,,23.4315,VALID,Critical,CRITICAL_ALARM: Sensor data missing or invalid

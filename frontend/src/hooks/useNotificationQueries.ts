@@ -11,6 +11,8 @@ export function useNotificationsList(params?: {
   return useQuery({
     queryKey: [QUERY_KEYS.NOTIFICATIONS_LIST, params],
     queryFn: () => notificationsApi.listNotifications(params),
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
   })
 }
 
@@ -18,7 +20,8 @@ export function useUnreadNotificationsCount() {
   return useQuery({
     queryKey: [QUERY_KEYS.NOTIFICATIONS_UNREAD],
     queryFn: () => notificationsApi.unreadCount(),
-    refetchInterval: 60000,
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
   })
 }
 

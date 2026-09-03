@@ -1,12 +1,16 @@
 // src/components/layout/Header.tsx
 import React from "react"
-import { useLocation, useNavigate } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 import { useUiStore } from "../../store/uiStore"
 import { NotificationBell } from "../notifications/NotificationBell"
+import { UserMenu } from "./UserMenu"
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
 
-export const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) => {
+export const Header: React.FC<{
+  onMenuClick?: () => void
+  sidebarOpen?: boolean
+}> = ({ onMenuClick, sidebarOpen = true }) => {
   const location = useLocation()
-  const navigate = useNavigate()
   const setGlobalSearchOpen = useUiStore((state) => state.setGlobalSearchOpen)
   const getPageInfo = () => {
     const path = location.pathname
@@ -30,7 +34,7 @@ export const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) 
     if (path === "/ai")
       return {
         title: "AI Hub",
-        subtitle: "Autonomous anomaly detection & predictive maintenance",
+        subtitle: "Live anomaly detection from DaHITI observations",
       }
     if (path === "/alarms")
       return {
@@ -60,8 +64,19 @@ export const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) 
 
   return (
     <header className="topbar">
-      <button className="menu" type="button" onClick={onMenuClick} aria-label="Toggle navigation">
-        ☰
+      <button
+        className="menu"
+        type="button"
+        onClick={onMenuClick}
+        aria-label="Toggle navigation"
+        aria-expanded={sidebarOpen}
+        title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+      >
+        {sidebarOpen ? (
+          <PanelLeftClose size={18} className="menu-icon" />
+        ) : (
+          <PanelLeftOpen size={18} className="menu-icon" />
+        )}
       </button>
       <div className="page-title">
         <h1>{info.title}</h1>
@@ -77,7 +92,7 @@ export const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) 
           <span>⌕</span>
           <input
             readOnly
-            placeholder="Search stations (English / عربي)..."
+            placeholder="Search stations..."
             className="cursor-pointer"
           />
         </label>
@@ -85,18 +100,8 @@ export const Header: React.FC<{ onMenuClick?: () => void }> = ({ onMenuClick }) 
         {/* Database-backed notification bell and message list */}
         <NotificationBell />
 
-        {/* User Profile */}
-        <div
-          className="user cursor-pointer"
-          onClick={() => navigate("/account")}
-          title="View Account Profile"
-        >
-          <span>◉</span>
-          <div>
-            <strong>Eng. Mohamed Atef</strong>
-            <small>National Operations Center</small>
-          </div>
-        </div>
+        {/* Real User Profile Menu */}
+        <UserMenu />
       </div>
     </header>
   )

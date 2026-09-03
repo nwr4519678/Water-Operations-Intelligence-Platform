@@ -22,9 +22,7 @@ type ClusterPoint = {
 }
 
 function clusterRtuStations(stations: WaterStation[], zoom: number): ClusterPoint[] {
-  // Keep a cluster roughly within a 32px screen cell. A fixed geographic
-  // cell leaves a misleading "4" visible even at street-level zoom when
-  // several nearby stations happen to share that large cell.
+  // Keep a cluster roughly within a 32px screen cell.
   const cellSize = Math.max(0.001, (32 * 360) / (256 * 2 ** Math.max(0, zoom)))
   const groups = new Map<string, WaterStation[]>()
 
@@ -58,11 +56,15 @@ function getStatusColor(
     case "warning":
       return [245, 158, 11, 240] // #f59e0b amber
     case "offline":
-      return [239, 68, 68, 240] // #ef4444 red
+      return [239, 68, 68, 240]  // #ef4444 red
     default:
       return [100, 116, 139, 220] // #64748b slate
   }
 }
+
+// Shared font stack: Inter is pre-installed on Windows/macOS; fallback to system-ui
+const LABEL_FONT =
+  "'Inter', 'Segoe UI', -apple-system, system-ui, BlinkMacSystemFont, sans-serif"
 
 export function createWaterTelemetryDeckLayers(options: DeckLayersOptions) {
   const {
@@ -85,8 +87,29 @@ export function createWaterTelemetryDeckLayers(options: DeckLayersOptions) {
 
   const layers: any[] = []
 
-  // ── Layer 1: Field RTU Stations (Distinct, easy-to-click GPU points) ───────
+  // ── Layer 1: Field RTU Stations ──────────────────────────────────────────
   if (rtuClusters.length > 0) {
+    // Generous outer picking aura for RTU stations
+    layers.push(
+      new ScatterplotLayer<ClusterPoint>({
+        id: "water-rtu-aura-layer",
+        data: rtuClusters,
+        pickable: true,
+        opacity: 0.3,
+        stroked: false,
+        filled: true,
+        radiusUnits: "pixels",
+        radiusMinPixels: 14,
+        radiusMaxPixels: 24,
+        getPosition: (d) => [d.longitude, d.latitude, 0],
+        getRadius: (d) => (d.count > 1 ? Math.min(26, 14 + Math.log2(d.count) * 3) : 15),
+        getFillColor: (d) => getStatusColor(d.station.connectionState),
+        onHover,
+        onClick,
+      }),
+    )
+
+    // RTU Core dot
     layers.push(
       new ScatterplotLayer<ClusterPoint>({
         id: "water-rtu-layer",
@@ -98,22 +121,18 @@ export function createWaterTelemetryDeckLayers(options: DeckLayersOptions) {
         stroked: true,
         filled: true,
         radiusUnits: "pixels",
-        radiusMinPixels: zoom > 9 ? 6.5 : zoom > 7 ? 5.5 : 4.5,
-        radiusMaxPixels: 12,
-        getPosition: (d) => [d.longitude, d.latitude, is3d ? 100 : 0],
+        radiusMinPixels: 8,
+        radiusMaxPixels: 18,
+        getPosition: (d) => [d.longitude, d.latitude, 0],
         getRadius: (d) =>
           d.station.id === selectedStationId
-            ? 9
+            ? 11
             : d.station.id === hoveredStationId
-              ? 7.5
+              ? 10
               : d.count > 1
-                ? Math.min(20, 6 + Math.log2(d.count) * 3)
-                : 5.5,
-        getFillColor: (d) => {
-          // Selection is communicated by size and outline; preserve the
-          // station's health color instead of turning every selected RTU blue.
-          return getStatusColor(d.station.connectionState)
-        },
+                ? Math.min(22, 8 + Math.log2(d.count) * 3)
+                : 8.5,
+        getFillColor: (d) => getStatusColor(d.station.connectionState),
         getLineColor: [255, 255, 255, 255],
         getLineWidth: (d) => (d.station.id === selectedStationId ? 2.5 : 1.5),
         lineWidthUnits: "pixels",
@@ -127,50 +146,53 @@ export function createWaterTelemetryDeckLayers(options: DeckLayersOptions) {
       }),
     )
 
-    const labeledClusters = rtuClusters.filter((cluster) => cluster.count > 1)
+    // Cluster count badge labels
+    const labeledClusters = rtuClusters.filter((c) => c.count > 1)
     if (labeledClusters.length > 0) {
       layers.push(
         new TextLayer<ClusterPoint>({
           id: "water-rtu-cluster-labels",
           data: labeledClusters,
           pickable: false,
-          getPosition: (d) => [d.longitude, d.latitude, is3d ? 110 : 0],
-          // A singleton is a station marker, never a numbered cluster.
-          getText: (d) => (d.count > 1 ? String(d.count) : ""),
-          getSize: 11,
+          getPosition: (d) => [d.longitude, d.latitude, 0],
+          getText: (d) => String(d.count),
+          getSize: 12,
           getColor: [255, 255, 255, 255],
           getTextAnchor: "middle",
           getAlignmentBaseline: "center",
-          fontWeight: "bold",
+          fontFamily: LABEL_FONT,
+          fontWeight: "900",
         }),
       )
     }
   }
 
-  // ── Layer 2: Master Stations (Large Prominent Strategic Nodes) ───────────
+  // ── Layer 2: Master Stations (Large Strategic Nodes) ─────────────────────
   if (masterStations.length > 0) {
-    // Outer halo
+    // Outer halo ring (also pickable for easy, accurate hover/click)
     layers.push(
       new ScatterplotLayer<WaterStation>({
         id: "water-master-halo-layer",
         data: masterStations,
-        pickable: false,
+        pickable: true,
         opacity: 0.4,
         stroked: true,
         filled: true,
         radiusUnits: "pixels",
-        radiusMinPixels: 16,
-        radiusMaxPixels: 28,
-        getPosition: (d) => [d.longitude, d.latitude, is3d ? 600 : 0],
-        getRadius: 18,
+        radiusMinPixels: 18,
+        radiusMaxPixels: 32,
+        getPosition: (d) => [d.longitude, d.latitude, 0],
+        getRadius: 22,
         getFillColor: [59, 130, 246, 80],
         getLineColor: [59, 130, 246, 200],
         getLineWidth: 2,
         lineWidthUnits: "pixels",
+        onHover,
+        onClick,
       }),
     )
 
-    // Master Core
+    // Master core dot
     layers.push(
       new ScatterplotLayer<WaterStation>({
         id: "water-master-core-layer",
@@ -182,17 +204,21 @@ export function createWaterTelemetryDeckLayers(options: DeckLayersOptions) {
         stroked: true,
         filled: true,
         radiusUnits: "pixels",
-        radiusMinPixels: 9,
-        radiusMaxPixels: 16,
-        getPosition: (d) => [d.longitude, d.latitude, is3d ? 600 : 0],
+        radiusMinPixels: 10,
+        radiusMaxPixels: 18,
+        getPosition: (d) => [d.longitude, d.latitude, 0],
         getRadius: (d) =>
           d.id === selectedStationId
-            ? 13
+            ? 14
             : d.id === hoveredStationId
-              ? 11
-              : 9.5,
-        getFillColor: (d) =>
-          d.id === selectedStationId ? [30, 64, 175, 255] : [59, 130, 246, 255],
+              ? 12
+              : 10.5,
+        getFillColor: (d) => {
+          const color = getStatusColor(d.connectionState)
+          return d.id === selectedStationId
+            ? [Math.max(0, color[0] - 25), Math.max(0, color[1] - 25), Math.max(0, color[2] - 25), 255]
+            : color
+        },
         getLineColor: [255, 255, 255, 255],
         getLineWidth: 2.5,
         lineWidthUnits: "pixels",
@@ -206,30 +232,32 @@ export function createWaterTelemetryDeckLayers(options: DeckLayersOptions) {
     )
   }
 
-  // ── Layer 3: Main Control Center (HQ Sovereign Beacon) ───────────────────
+  // ── Layer 3: HQ / Main Control Center (Sovereign Beacon) ─────────────────
   if (hqStations.length > 0) {
-    // Outer Beacon Ring
+    // Outer beacon ring (also pickable for easy, accurate hover/click)
     layers.push(
       new ScatterplotLayer<WaterStation>({
         id: "water-hq-halo-layer",
         data: hqStations,
-        pickable: false,
+        pickable: true,
         opacity: 0.45,
         stroked: true,
         filled: true,
         radiusUnits: "pixels",
-        radiusMinPixels: 22,
-        radiusMaxPixels: 38,
-        getPosition: (d) => [d.longitude, d.latitude, is3d ? 1200 : 0],
-        getRadius: 26,
+        radiusMinPixels: 24,
+        radiusMaxPixels: 42,
+        getPosition: (d) => [d.longitude, d.latitude, 0],
+        getRadius: 28,
         getFillColor: [239, 68, 68, 70],
         getLineColor: [239, 68, 68, 220],
         getLineWidth: 2.5,
         lineWidthUnits: "pixels",
+        onHover,
+        onClick,
       }),
     )
 
-    // HQ Core
+    // HQ core dot
     layers.push(
       new ScatterplotLayer<WaterStation>({
         id: "water-hq-core-layer",
@@ -243,15 +271,16 @@ export function createWaterTelemetryDeckLayers(options: DeckLayersOptions) {
         radiusUnits: "pixels",
         radiusMinPixels: 12,
         radiusMaxPixels: 20,
-        getPosition: (d) => [d.longitude, d.latitude, is3d ? 1200 : 0],
+        getPosition: (d) => [d.longitude, d.latitude, 0],
         getRadius: (d) =>
           d.id === selectedStationId ? 16 : d.id === hoveredStationId ? 14 : 12,
-        getFillColor: [239, 68, 68, 255],
+        getFillColor: (d) => getStatusColor(d.connectionState),
         getLineColor: [255, 255, 255, 255],
         getLineWidth: 3,
         lineWidthUnits: "pixels",
         updateTriggers: {
           getRadius: [selectedStationId, hoveredStationId],
+          getFillColor: [selectedStationId, hoveredStationId],
         },
         onHover,
         onClick,
@@ -259,36 +288,6 @@ export function createWaterTelemetryDeckLayers(options: DeckLayersOptions) {
     )
   }
 
-  // ── Layer 4: Labels for Master & HQ Nodes (Zoom >= 6.8) ───────────────────
-  if (zoom >= 6.8) {
-    const labeledStations = [...hqStations, ...masterStations]
-    layers.push(
-      new TextLayer<WaterStation>({
-        id: "water-key-node-labels",
-        data: labeledStations,
-        pickable: false,
-        getPosition: (d) => [
-          d.longitude,
-          d.latitude,
-          is3d ? (d.type === "main" ? 1300 : 700) : 0,
-        ],
-        getText: (d) => (isAr ? d.nameAr || d.name : d.nameEn || d.name),
-        getSize: zoom > 9 ? 12 : 10.5,
-        getColor: [15, 23, 42, 255],
-        getAngle: 0,
-        getTextAnchor: "start",
-        getAlignmentBaseline: "center",
-        getPixelOffset: [16, 0],
-        fontFamily: isAr
-          ? "'Noto Kufi Arabic', system-ui, sans-serif"
-          : "'Manrope', system-ui, sans-serif",
-        fontWeight: "bold",
-        background: true,
-        getBackgroundColor: [255, 255, 255, 230],
-        backgroundPadding: [4, 2, 4, 2],
-      }),
-    )
-  }
-
   return layers
 }
+

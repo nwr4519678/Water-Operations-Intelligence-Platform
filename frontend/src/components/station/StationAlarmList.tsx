@@ -10,7 +10,7 @@ export const StationAlarmList: React.FC<{
   if (alarms.length === 0) {
     return (
       <div className="py-8 text-center text-xs text-slate-400">
-        No active alarms on this station. All telemetry thresholds nominal.
+        No operational alarms recorded for this station.
       </div>
     )
   }

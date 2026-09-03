@@ -48,6 +48,19 @@ public sealed class ReportsController(ISender sender) : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await sender.Send(new DownloadReportQuery(reportId), cancellationToken);
+        if (!result.IsAuthorized || result.Value is null)
+            return result.ToActionResult(this);
+
+        var dto = result.Value;
+        return File(dto.FileContent, dto.ContentType, dto.FileName);
+    }
+
+    [HttpDelete("reports/{reportId:guid}")]
+    public async Task<IActionResult> Delete(
+        Guid reportId,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new DeleteReportCommand(reportId), cancellationToken);
         return result.ToActionResult(this);
     }
 

@@ -1,9 +1,8 @@
 // src/api/search.ts
 import { apiClient } from "./client"
 import { SearchResultDto, ShareSnapshotDto } from "../types/api"
-import { mockAlarms } from "./viewer"
-import { mockReportsList } from "./reports"
-import { allStations } from "../data/stationsData"
+import { loadWaterStations } from "../data/stationLoader"
+import { viewerApi } from "./viewer"
 
 export const searchApi = {
   search: async (
@@ -11,69 +10,71 @@ export const searchApi = {
     includeUsers: boolean = false,
   ): Promise<SearchResultDto> => {
     try {
-      const res = await apiClient.get<SearchResultDto>("/api/v1/search", {
+      const res = await apiClient.get<any>("/api/v1/search", {
         params: { query, includeUsers },
       })
-      return res.data
+      const payload = res.data?.items?.[0] || res.data
+      if (payload && (Array.isArray(payload.stations) || Array.isArray(payload.alarms))) {
+        return {
+          stations: Array.isArray(payload.stations) ? payload.stations : [],
+          alarms: Array.isArray(payload.alarms) ? payload.alarms : [],
+          reports: Array.isArray(payload.reports) ? payload.reports : [],
+        }
+      }
+      throw new Error("Invalid search response shape")
     } catch {
       const q = query.trim().toLowerCase()
-      if (!q) {
-        return { stations: [], alarms: [], reports: [] }
-      }
 
-      const matchingStations = allStations
-        .filter((s) =>
-          `${s.id} ${s.nameEn} ${s.nameAr} ${s.zoneEn} ${s.zoneAr} ${s.typeEn}`
-            .toLowerCase()
-            .includes(q),
-        )
+      // Fetch real live 19 DaHITI telemetry stations from backend
+      const parseResult = await loadWaterStations().catch(() => ({ stations: [] }))
+      const liveStations = parseResult.stations || []
+
+      const matchingStations: any[] = liveStations
+        .filter((s) => {
+          if (!q) return true
+          const haystack = `${s.id} ${s.name} ${s.code} ${s.region} ${s.typeLabel}`.toLowerCase()
+          return haystack.includes(q)
+        })
+        .slice(0, 10)
+        .map((s) => {
+          const rawLvl = s.telemetrySnapshot?.waterLevel
+          const numLvl = typeof rawLvl === "number" ? rawLvl : parseFloat(String(rawLvl || "0")) || 0
+          return {
+            stationId: s.id,
+            organizationId: "org-eg-telemetry",
+            regionId: s.region.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+            stationCode: s.code || s.id,
+            name: s.name,
+            nameAr: s.nameAr || s.name,
+            nameEn: s.nameEn || s.name,
+            status: s.connectionState === "warning" ? "MAINTENANCE" : "ONLINE",
+            latitude: s.latitude,
+            longitude: s.longitude,
+            elevationMeters: numLvl,
+            currentWaterLevel: numLvl,
+            waterLevelUnit: "m",
+            lastReadingUtc: s.telemetrySnapshot?.lastUpdateUtc || new Date().toISOString(),
+            zoneEn: s.region,
+            flowRate: s.telemetrySnapshot?.flowRate ? `${s.telemetrySnapshot.flowRate}` : "Nominal",
+            quality: s.telemetrySnapshot?.waterQuality ? `${s.telemetrySnapshot.waterQuality}` : "NOMINAL",
+          }
+        })
+
+      // Fetch real alarms from viewerApi
+      const alarmsRes = await viewerApi.alarms({ page: 1, pageSize: 50 }).catch(() => ({ items: [] }))
+      const realAlarms = alarmsRes?.items || []
+
+      const matchingAlarms = realAlarms
+        .filter((a) => {
+          if (!q) return true
+          return `${a.alarmId} ${a.message} ${a.stationName || ""} ${a.severity}`.toLowerCase().includes(q)
+        })
         .slice(0, 8)
-        .map((s) => ({
-          stationId: s.id,
-          organizationId: "org-eg-telemetry",
-          regionId: s.zoneEn.toLowerCase().replace(/[^a-z0-9]/g, "-"),
-          stationCode: s.id,
-          name: s.nameEn,
-          nameAr: s.nameAr,
-          nameEn: s.nameEn,
-          status: (s.status === "online"
-            ? "ONLINE"
-            : s.status === "warning"
-              ? "MAINTENANCE"
-              : "OFFLINE") as "ONLINE" | "OFFLINE" | "MAINTENANCE",
-          latitude: s.lat,
-          longitude: s.lng,
-          elevationMeters: 50,
-          staffGaugeHeight: 3.5,
-          currentWaterLevel: parseFloat(s.level) || 2.5,
-          waterLevelUnit: "m",
-          lastReadingUtc: new Date().toISOString(),
-          category: s.category,
-          zoneAr: s.zoneAr,
-          zoneEn: s.zoneEn,
-          flowRate: s.flow,
-          pressureBar: s.pressure,
-          quality: s.quality,
-        }))
-
-      const matchingAlarms = mockAlarms
-        .filter((a) =>
-          `${a.alarmId} ${a.message} ${a.stationName} ${a.severity}`
-            .toLowerCase()
-            .includes(q),
-        )
-        .slice(0, 5)
-
-      const matchingReports = mockReportsList
-        .filter((r) =>
-          `${r.reportId} ${r.title} ${r.reportType}`.toLowerCase().includes(q),
-        )
-        .slice(0, 5)
 
       return {
         stations: matchingStations,
         alarms: matchingAlarms,
-        reports: matchingReports,
+        reports: [],
       }
     }
   },

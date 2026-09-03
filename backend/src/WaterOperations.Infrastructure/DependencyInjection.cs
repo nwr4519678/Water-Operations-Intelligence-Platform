@@ -184,6 +184,7 @@ public static class DependencyInjection
         services.AddScoped<IStationAuthorizationService, StationAuthorizationService>();
         services.AddSingleton<AiModelCircuitBreaker>();
         services.AddScoped<IDahitiQueryRepository, DahitiQueryRepository>();
+        services.AddScoped<IReportDocumentBuilder, ReportDocumentBuilder>();
         services.AddScoped<DahitiSyncService>();
         services.AddHttpClient("Dahiti", (provider, client) =>
         {

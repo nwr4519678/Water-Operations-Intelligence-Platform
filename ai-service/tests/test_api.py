@@ -1,5 +1,6 @@
 import sys
 import os
+import json
 import pytest
 from fastapi.testclient import TestClient
 
@@ -140,3 +141,56 @@ def test_backend_integration_insights_endpoint(client):
     assert data["insightType"] == "anomaly"
     assert "payloadJson" in data
     assert data["isFallback"] is False
+
+
+def test_backend_insights_normalize_monthly_observation_gap(client):
+    payload = {
+        "organizationId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "stationId": "DAHITI-210",
+        "insightType": "anomaly",
+        "observations": [
+            {"timestampUtc": "2026-07-01T00:00:00Z", "value": 179.20},
+            {"timestampUtc": "2026-08-01T00:00:00Z", "value": 178.40}
+        ]
+    }
+    response = client.post("/insights", json=payload)
+    assert response.status_code == 200
+    result = json.loads(response.json()["payloadJson"])
+    assert result["is_anomaly"] == 0
+
+
+def test_anomaly_confidence_reflects_observation_evidence(client):
+    base = {
+        "dahiti_id": 210,
+        "wse": 178.12,
+        "wse_u": 0.032,
+        "rolling_zscore_7d": 0.1,
+        "rolling_zscore_30d": 0.2,
+        "dwse_dt": 0.01,
+        "uncertainty_ratio": 0.1,
+        "iqr_outlier_flag": 0,
+    }
+    normal = client.post("/v1/models/predict-anomaly", json=base).json()
+    strong_signal = {**base, "rolling_zscore_7d": 4.5, "dwse_dt": 0.8}
+    anomaly = client.post("/v1/models/predict-anomaly", json=strong_signal).json()
+
+    assert anomaly["is_anomaly"] == 1
+    assert anomaly["confidence_score"] != normal["confidence_score"]
+
+
+def test_backend_monthly_forecast_uses_station_series(client):
+    response = client.post("/insights", json={
+        "stationId": "DAHITI-17685",
+        "insightType": "forecast",
+        "observations": [
+            {"timestampUtc": "2025-01-01T00:00:00Z", "value": 40.0},
+            {"timestampUtc": "2025-02-01T00:00:00Z", "value": 41.0},
+            {"timestampUtc": "2025-03-01T00:00:00Z", "value": 42.0},
+        ],
+    })
+    payload = json.loads(response.json()["payloadJson"])
+    forecasts = payload["forecasts"]
+
+    assert response.status_code == 200
+    assert response.json()["modelVersion"] == "station-monthly-trend-v1"
+    assert forecasts["target_wse_30d"] > forecasts["target_wse_1d"]

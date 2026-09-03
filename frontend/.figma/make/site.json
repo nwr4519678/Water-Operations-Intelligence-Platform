@@ -1,4 +1,6 @@
 {
+  "title": "Water Operations Intelligence Platform",
+  "description": "National water operations telemetry, anomaly detection, and forecasting platform.",
   "description": "Connect with others effortlessly through real-time messaging, enhancing communication for individuals and teams seeking seamless interaction.",
   "robots": {
     "index": false

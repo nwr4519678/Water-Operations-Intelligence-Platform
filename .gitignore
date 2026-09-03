@@ -1,24 +1,33 @@
+# ==============================================================================
+# Build & Compilation Artifacts (Only non-essential outputs)
+# ==============================================================================
 bin/
 obj/
-node_modules/
 dist/
+build/
+out/
+.runtime/
+.runtime-logs/
 *.tsbuildinfo
+
+# Dependencies & Environments
+node_modules/
 .venv/
-__pycache__/
-.pytest_cache/
+ai-service/venv/
 *.egg-info/
+__pycache__/
 *.pyc
-*.user
-*.suo
-.env
-appsettings.*.local.json
-secrets/
-*.db
+
+# Test & Coverage Outputs
 TestResults/
 coverage/
 playwright-report/
 test-results/
+.pytest_cache/
 
+# IDE & OS Artifacts
 .vs/
-bin/
-obj/
+*.user
+*.suo
+.DS_Store
+Thumbs.db

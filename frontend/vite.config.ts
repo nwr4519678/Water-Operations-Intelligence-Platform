@@ -36,6 +36,13 @@ export default defineConfig(({ mode }) => {
       port: parseInt(process.env.PORT || "8443"),
       strictPort: true,
       watch: { ignored: ["**/.figma/**"] },
+      proxy: {
+        "/ai-engine": {
+          target: "http://localhost:8000",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/ai-engine/, ""),
+        },
+      },
     },
     preview: {
       host: "0.0.0.0",

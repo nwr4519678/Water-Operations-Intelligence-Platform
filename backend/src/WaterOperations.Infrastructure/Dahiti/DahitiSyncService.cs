@@ -125,7 +125,12 @@ public sealed class DahitiSyncService(
         var payload = new Dictionary<string, object?> { ["api_key"] = settings.ApiKey };
         if (!string.IsNullOrWhiteSpace(settings.Country))
         {
-            payload["country"] = settings.Country;
+            var country = settings.Country.Trim().ToLowerInvariant();
+            if (country is "egypt" or "egy")
+            {
+                country = "eg";
+            }
+            payload["country"] = country;
         }
 
         using var response = await client.PostAsync("list-targets/", JsonContent(payload), cancellationToken);

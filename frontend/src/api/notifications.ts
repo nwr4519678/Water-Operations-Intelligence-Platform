@@ -6,6 +6,30 @@ import {
   PagedResult,
 } from "../types/api"
 
+interface ApiNotificationDto {
+  notificationId?: number
+  notificationLogId?: number
+  title: string
+  body: string
+  severity?: string
+  channel: "IN_APP" | "EMAIL"
+  isRead: boolean
+  createdAtUtc: string
+  readAtUtc?: string | null
+}
+
+function normalizeNotification(item: ApiNotificationDto): NotificationDto {
+  return {
+    notificationId: item.notificationId ?? item.notificationLogId ?? 0,
+    title: item.title,
+    body: item.body,
+    channel: item.channel,
+    isRead: item.isRead,
+    createdAtUtc: item.createdAtUtc,
+    readAtUtc: item.readAtUtc ?? null,
+  }
+}
+
 export const notificationsApi = {
   listNotifications: async (params?: {
     unreadOnly?: boolean
@@ -22,8 +46,9 @@ export const notificationsApi = {
       "/api/v1/notifications",
       { params },
     )
+    const items = res.data.data.map(normalizeNotification)
     return {
-      items: res.data.data,
+      items,
       page: res.data.page,
       pageSize: res.data.pageSize,
       totalCount: res.data.total,

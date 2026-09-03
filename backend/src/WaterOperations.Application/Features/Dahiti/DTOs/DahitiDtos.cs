@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace WaterOperations.Application.Features.Dahiti.DTOs;
 
 public sealed record DahitiStationDto(
@@ -20,3 +22,24 @@ public sealed record DahitiMonthlyTrendDto(
     double MinimumLevel,
     double MaximumLevel,
     long ObservationCount);
+
+public sealed record DahitiReadingDto(
+    DateTimeOffset ObservedAtUtc,
+    double WaterLevel,
+    double? Uncertainty);
+
+public sealed record DahitiAiInsightDto(
+    string Status,
+    string StationId,
+    string InsightType,
+    string ModelVersion,
+    bool IsFallback,
+    DateTimeOffset GeneratedAtUtc,
+    JsonElement Payload);
+
+public sealed record DahitiAiAnomalyDto(
+    string StationId,
+    string StationName,
+    string ReasonCode,
+    double Score,
+    DateTimeOffset DetectedAtUtc);

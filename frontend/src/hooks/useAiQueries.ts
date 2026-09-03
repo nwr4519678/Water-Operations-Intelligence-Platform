@@ -7,6 +7,8 @@ export function useAiAnomalies(page: number = 1, pageSize: number = 10) {
   return useQuery({
     queryKey: [QUERY_KEYS.AI_ANOMALIES, page, pageSize],
     queryFn: () => aiApi.anomalies({ page, pageSize }),
+    refetchInterval: 60000,
+    refetchOnWindowFocus: true,
   })
 }
 
@@ -23,6 +25,8 @@ export function useAiForecast(stationId: string, asOfUtc?: string) {
     queryKey: [QUERY_KEYS.AI_FORECAST, stationId, asOfUtc],
     queryFn: () => aiApi.forecast(stationId, asOfUtc),
     enabled: Boolean(stationId),
+    retry: 2,
+    refetchOnWindowFocus: true,
   })
 }
 

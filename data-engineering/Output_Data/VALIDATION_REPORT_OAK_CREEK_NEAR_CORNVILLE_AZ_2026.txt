@@ -1,6 +1,0 @@
---- VALIDATION REPORT: OAK CREEK NEAR CORNVILLE, AZ ---
-Total Hourly Records Processed: 5573
-Clean Records: 2882
-Quarantined Records: 2691
-Data Completeness: 51.71%
-Sensors Tracked: ['Streamflow', 'Gage height', 'DCP battery voltage', 'Station_State', 'Active_Alarms']

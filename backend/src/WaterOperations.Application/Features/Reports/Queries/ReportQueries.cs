@@ -57,6 +57,7 @@ public sealed class GetReportQueryHandler(
 
 public sealed class DownloadReportQueryHandler(
     IReportRepository repository,
+    IReportDocumentBuilder documentBuilder,
     ICurrentUser user) : IQueryHandler<DownloadReportQuery, ScopeResult<ReportDownloadDto>>
 {
     public async Task<ScopeResult<ReportDownloadDto>> Handle(
@@ -69,22 +70,11 @@ public sealed class DownloadReportQueryHandler(
             request.ReportId,
             cancellationToken);
 
-        if (report is null || report.Status != "COMPLETED" || string.IsNullOrWhiteSpace(report.FilePath))
-        {
+        if (report is null)
             return ScopeResult.NotFound<ReportDownloadDto>();
-        }
 
-        var download = new ReportDownloadDto(
-            report.ReportId,
-            report.Format,
-            report.FilePath,
-            report.Format.ToUpperInvariant() switch
-            {
-                "PDF" => "application/pdf",
-                "EXCEL" or "XLSX" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                _ => "text/csv"
-            });
-
+        var download = await documentBuilder.BuildAsync(report, cancellationToken);
         return ScopeResult.Authorized(download);
     }
 }
+

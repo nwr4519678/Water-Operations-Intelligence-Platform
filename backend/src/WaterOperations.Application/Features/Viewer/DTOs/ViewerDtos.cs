@@ -22,8 +22,20 @@ public sealed record MeasurementDto(
     string Unit);
 
 public sealed record AlarmDto(
-    Guid Id,
+    Guid AlarmId,
     Guid StationId,
-    DateTimeOffset RaisedAt,
+    string StationName,
+    string StationCode,
+    int AlarmTypeId,
+    string AlarmTypeCode,
     string Severity,
-    string Message);
+    string Status,
+    DateTimeOffset RaisedAtUtc,
+    DateTimeOffset? AcknowledgedAtUtc,
+    string? AcknowledgedByEmail,
+    DateTimeOffset? ResolvedAtUtc,
+    string? ResolvedByEmail,
+    string Message,
+    string? ResolutionNote,
+    decimal? ValueAtRaise,
+    decimal? ThresholdValue);

@@ -1,4 +1,5 @@
 using WaterOperations.Application.Features.Dahiti.DTOs;
+using WaterOperations.Application.Features.AI.DTOs;
 
 namespace WaterOperations.Application.Features.Dahiti.Interfaces;
 
@@ -17,5 +18,15 @@ public interface IDahitiQueryRepository
     Task<List<DahitiMonthlyTrendDto>> GetMonthlyTrendAsync(
         int dahitiId,
         int months,
+        CancellationToken cancellationToken);
+
+    Task<List<DahitiReadingDto>> GetReadingsAsync(
+        int dahitiId,
+        int limit,
+        CancellationToken cancellationToken);
+
+    Task<List<AiTelemetryObservation>> GetObservationsAsync(
+        int dahitiId,
+        int limit,
         CancellationToken cancellationToken);
 }

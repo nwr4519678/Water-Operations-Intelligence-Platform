@@ -1,78 +1,116 @@
 // src/components/ai/AnomalyCard.tsx
 import React from "react"
-import { Card } from "../common/Card"
-import { Badge } from "../common/Badge"
 import { AiAnomalyItem } from "../../types/api"
 import { formatRelative } from "../../utils/formatters"
-import { ArrowUpRight } from "lucide-react"
+import { AlertTriangle, ArrowUpRight, Clock, MapPin, Zap } from "lucide-react"
 import { Link } from "react-router-dom"
+
+// Map technical reason codes to plain language
+function getPlainLanguageReason(parameter: string): {
+  title: string
+  description: string
+  icon: React.ReactNode
+} {
+  const code = parameter?.toUpperCase() ?? ""
+  if (code.includes("LATENCY") || code.includes("DRIFT")) {
+    return {
+      title: "Late Data Report",
+      description:
+        "This station hasn't sent updated readings on time. The AI noticed a gap in the expected schedule.",
+      icon: <Clock className="w-4 h-4 text-amber-600" />,
+    }
+  }
+  if (code.includes("SPIKE") || code.includes("STEP")) {
+    return {
+      title: "Sudden Water Level Jump",
+      description:
+        "The water level changed too fast compared to normal patterns. This may need a closer look.",
+      icon: <Zap className="w-4 h-4 text-orange-600" />,
+    }
+  }
+  if (code.includes("NOISE") || code.includes("OUTLIER")) {
+    return {
+      title: "Unusual Reading",
+      description:
+        "The sensor recorded a value outside the expected range. Could be a sensor issue or a real event.",
+      icon: <AlertTriangle className="w-4 h-4 text-amber-600" />,
+    }
+  }
+  if (code.includes("MISSING") || code.includes("NULL")) {
+    return {
+      title: "Missing Data",
+      description:
+        "No reading was received from this station during the expected window.",
+      icon: <Clock className="w-4 h-4 text-amber-600" />,
+    }
+  }
+  // default fallback
+  return {
+    title: "Potential Issue Detected",
+    description:
+      "The AI detected something unusual at this station that may require attention.",
+    icon: <AlertTriangle className="w-4 h-4 text-amber-600" />,
+  }
+}
 
 export const AnomalyCard: React.FC<{
   anomaly: AiAnomalyItem
 }> = ({ anomaly }) => {
-  return (
-    <Card className="border border-slate-200 hover:border-purple-300 transition-all shadow-xs bg-white text-slate-900">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold text-blue-600">
-              {anomaly.stationId}
-            </span>
-            <Badge
-              label={anomaly.severity}
-              variant={anomaly.severity === "CRITICAL" ? "critical" : "warning"}
-              size="sm"
-            />
-            <span className="text-[10px] text-slate-400 font-mono">
-              {formatRelative(anomaly.detectedAtUtc)}
-            </span>
-          </div>
-          <h4 className="text-sm font-bold text-slate-900 mt-1.5">
-            {anomaly.stationName}
-          </h4>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Parameter:{" "}
-            <span className="font-semibold text-slate-700">
-              {anomaly.parameter}
-            </span>
-          </p>
-        </div>
+  const isCritical = anomaly.severity === "CRITICAL"
+  const { title, description, icon } = getPlainLanguageReason(anomaly.parameter)
 
+  return (
+    <div className="anom-card">
+      {/* Header row */}
+      <div className="anom-card-header">
+        <div className="anom-card-icon-wrap" data-critical={isCritical ? "true" : "false"}>
+          {icon}
+        </div>
+        <div className="anom-card-meta">
+          <span className="anom-card-severity" data-critical={isCritical ? "true" : "false"}>
+            {isCritical ? "⚠ Critical" : "⚠ Needs Attention"}
+          </span>
+          <span className="anom-card-time">
+            {formatRelative(anomaly.detectedAtUtc)}
+          </span>
+        </div>
         <Link
           to={`/stations/${anomaly.stationId}`}
-          className="p-1.5 rounded-lg bg-slate-100 hover:bg-purple-50 text-slate-600 hover:text-purple-600 transition-colors"
+          className="anom-card-link-btn"
+          title="View station details"
         >
           <ArrowUpRight className="w-4 h-4" />
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mt-3.5 p-3 rounded-xl bg-slate-50 text-xs border border-slate-200">
-        <div>
-          <span className="text-[10px] text-slate-400 font-bold block uppercase">
-            Expected Baseline
-          </span>
-          <span className="font-semibold text-slate-700 text-sm">
-            {anomaly.expectedValue} {anomaly.unit}
-          </span>
-        </div>
-        <div>
-          <span className="text-[10px] text-slate-400 font-bold block uppercase">
-            Detected Deviation
-          </span>
-          <span className="font-bold text-red-600 text-sm">
-            {anomaly.actualValue} {anomaly.unit}
-          </span>
-        </div>
+      {/* Station name */}
+      <h4 className="anom-card-station">{anomaly.stationName}</h4>
+      <div className="anom-card-location">
+        <MapPin className="w-3 h-3" />
+        <span>{anomaly.stationId}</span>
       </div>
 
-      <div className="mt-3 flex items-center justify-between text-xs pt-2.5 border-t border-slate-100">
-        <span className="text-slate-400 font-medium">
-          Neural Detection Confidence
-        </span>
-        <span className="font-bold text-purple-700 font-mono">
-          {Math.round(anomaly.confidenceScore * 100)}%
-        </span>
+      {/* Plain-language explanation */}
+      <div className="anom-card-reason">
+        <div className="anom-card-reason-title">{title}</div>
+        <p className="anom-card-reason-desc">{description}</p>
       </div>
-    </Card>
+
+      {/* Confidence bar */}
+      <div className="anom-card-confidence">
+        <div className="anom-card-confidence-label">
+          <span>AI Detection Certainty</span>
+          <span className="anom-card-confidence-pct">
+            {Math.round(anomaly.confidenceScore * 100)}%
+          </span>
+        </div>
+        <div className="anom-card-confidence-track">
+          <div
+            className="anom-card-confidence-fill"
+            style={{ width: `${Math.round(anomaly.confidenceScore * 100)}%` }}
+          />
+        </div>
+      </div>
+    </div>
   )
 }
