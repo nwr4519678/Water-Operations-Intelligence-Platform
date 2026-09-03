@@ -116,6 +116,7 @@ export interface StationDetailDto {
   elevationMeters: number
   staffGaugeHeight: number
   isActive: boolean
+  lastObservedAtUtc?: string | null
   communicationIntervalSeconds: number | null
   createdAtUtc: string
   updatedAtUtc: string
@@ -237,6 +238,7 @@ export interface AiInsightDto {
   payload: unknown
   generatedAtUtc: string
   modelVersion: string | null
+  status?: string
 }
 
 export interface AiTelemetryObservation {
@@ -319,8 +321,8 @@ export interface AiAnomalyItem {
   stationName: string
   parameter: string
   severity: "CRITICAL" | "WARNING" | "INFO"
-  expectedValue: number
-  actualValue: number
+  expectedValue: number | null
+  actualValue: number | null
   unit: string
   confidenceScore: number
   detectedAtUtc: string
@@ -332,7 +334,7 @@ export interface ReportDto {
   reportId: string
   title: string
   reportType: "STATION_SUMMARY" | "ALARM_SUMMARY" | "TELEMETRY_EXPORT"
-  format: "PDF" | "EXCEL"
+  format: "PDF" | "EXCEL" | "CSV"
   status: "PENDING" | "PROCESSING" | "READY" | "FAILED"
   fileSizeBytes: number | null
   createdAtUtc: string
@@ -345,7 +347,7 @@ export interface CreateReportRequest {
   stationIds?: string[]
   fromUtc: string
   toUtc: string
-  format: "PDF" | "EXCEL"
+  format: "PDF" | "EXCEL" | "CSV"
 }
 
 // ─── Notifications ─────────────────────────────────────────────────────────────

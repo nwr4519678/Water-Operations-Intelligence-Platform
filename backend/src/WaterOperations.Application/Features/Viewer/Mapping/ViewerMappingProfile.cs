@@ -27,7 +27,7 @@ public sealed class ViewerMappingProfile : Profile
             .ForMember(dest => dest.RecordedAt, opt => opt.MapFrom(src => src.TimestampUtc));
 
         CreateMap<Alarm, AlarmDto>()
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.AlarmId))
-            .ForMember(dest => dest.RaisedAt, opt => opt.MapFrom(src => src.RaisedAtUtc));
+            .ForMember(dest => dest.AlarmId, opt => opt.MapFrom(src => src.AlarmId))
+            .ForMember(dest => dest.RaisedAtUtc, opt => opt.MapFrom(src => src.RaisedAtUtc));
     }
 }

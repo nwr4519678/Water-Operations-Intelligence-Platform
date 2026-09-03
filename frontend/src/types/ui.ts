@@ -14,7 +14,7 @@ export interface ToastItem {
 
 export interface TimeRangeOption {
   label: string
-  value: "1H" | "6H" | "24H" | "7D" | "30D" | "CUSTOM"
+  value: "3M" | "6M" | "12M" | "24M" | "CUSTOM"
   hours: number
 }
 

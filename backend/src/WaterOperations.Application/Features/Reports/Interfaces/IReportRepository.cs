@@ -42,4 +42,10 @@ public interface IReportRepository
         long scheduleId,
         bool isActive,
         CancellationToken cancellationToken);
+
+    Task<bool> DeleteReportAsync(
+        Guid organizationId,
+        Guid userId,
+        Guid reportId,
+        CancellationToken cancellationToken);
 }

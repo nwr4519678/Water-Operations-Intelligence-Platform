@@ -43,6 +43,16 @@ public static class ApiPipeline
         app.MapScalarApiReference(options => options.WithTitle("Water Operations API"));
 
         app.MapGet(
+            "/",
+            () => Results.Ok(new
+            {
+                service = "Water Operations API",
+                status = "healthy",
+                documentation = "/scalar/v1",
+                health = "/health/ready"
+            }));
+
+        app.MapGet(
             "/metrics",
             (ApiMetrics metrics) => Results.Text(
                 metrics.RenderPrometheus(),

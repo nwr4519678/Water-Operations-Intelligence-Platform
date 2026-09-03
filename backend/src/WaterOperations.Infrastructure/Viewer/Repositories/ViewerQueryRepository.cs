@@ -83,17 +83,17 @@ public sealed class ViewerQueryRepository(IRepositoryContext repository) : IView
     {
         var rows = await repository.Query<Alarm>()
             .AsNoTracking()
-            .Where(x => x.StationId == stationId && x.OrganizationId == organizationId)
+            .Where(x => x.StationId == stationId && x.OrganizationId == organizationId
+                && !x.Message.StartsWith("Synthetic"))
+            .Include(x => x.Station)
+            .Include(x => x.AlarmType)
+            .Include(x => x.AcknowledgedByUser)
+            .Include(x => x.ResolvedByUser)
             .OrderByDescending(x => x.RaisedAtUtc)
             .ToListAsync(cancellationToken);
 
         return rows
-            .Select(x => new AlarmDto(
-                x.AlarmId,
-                x.StationId,
-                new DateTimeOffset(DateTime.SpecifyKind(x.RaisedAtUtc, DateTimeKind.Utc)),
-                x.Severity,
-                x.Message))
+            .Select(ToDto)
             .ToList();
     }
 
@@ -107,7 +107,8 @@ public sealed class ViewerQueryRepository(IRepositoryContext repository) : IView
     {
         var query = repository.Query<Alarm>()
             .AsNoTracking()
-            .Where(x => x.OrganizationId == organizationId);
+            .Where(x => x.OrganizationId == organizationId
+                && !x.Message.StartsWith("Synthetic"));
 
         if (stationId.HasValue)
         {
@@ -132,15 +133,13 @@ public sealed class ViewerQueryRepository(IRepositoryContext repository) : IView
             .OrderByDescending(x => x.RaisedAtUtc)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(x => new AlarmDto(
-                x.AlarmId,
-                x.StationId,
-                new DateTimeOffset(DateTime.SpecifyKind(x.RaisedAtUtc, DateTimeKind.Utc)),
-                x.Severity,
-                x.Message))
+            .Include(x => x.Station)
+            .Include(x => x.AlarmType)
+            .Include(x => x.AcknowledgedByUser)
+            .Include(x => x.ResolvedByUser)
             .ToListAsync(cancellationToken);
 
-        return new PagedResult<AlarmDto>(data, page, pageSize, total);
+        return new PagedResult<AlarmDto>(data.Select(ToDto).ToList(), total, page, pageSize);
     }
 
     public async Task<AlarmDto?> GetAlarmAsync(
@@ -148,15 +147,35 @@ public sealed class ViewerQueryRepository(IRepositoryContext repository) : IView
         Guid alarmId,
         CancellationToken cancellationToken)
     {
-        return await repository.Query<Alarm>()
+        var alarm = await repository.Query<Alarm>()
             .AsNoTracking()
-            .Where(x => x.OrganizationId == organizationId && x.AlarmId == alarmId)
-            .Select(x => new AlarmDto(
-                x.AlarmId,
-                x.StationId,
-                new DateTimeOffset(DateTime.SpecifyKind(x.RaisedAtUtc, DateTimeKind.Utc)),
-                x.Severity,
-                x.Message))
+            .Where(x => x.OrganizationId == organizationId && x.AlarmId == alarmId
+                && !x.Message.StartsWith("Synthetic"))
+            .Include(x => x.Station)
+            .Include(x => x.AlarmType)
+            .Include(x => x.AcknowledgedByUser)
+            .Include(x => x.ResolvedByUser)
             .SingleOrDefaultAsync(cancellationToken);
+
+        return alarm is null ? null : ToDto(alarm);
     }
+
+    private static AlarmDto ToDto(Alarm x) => new(
+        x.AlarmId,
+        x.StationId,
+        x.Station.Name,
+        x.Station.StationCode,
+        x.AlarmTypeId,
+        x.AlarmType.Code,
+        x.Severity,
+        x.Status,
+        new DateTimeOffset(DateTime.SpecifyKind(x.RaisedAtUtc, DateTimeKind.Utc)),
+        x.AcknowledgedAtUtc.HasValue ? new DateTimeOffset(DateTime.SpecifyKind(x.AcknowledgedAtUtc.Value, DateTimeKind.Utc)) : null,
+        x.AcknowledgedByUser == null ? null : x.AcknowledgedByUser.Email,
+        x.ResolvedAtUtc.HasValue ? new DateTimeOffset(DateTime.SpecifyKind(x.ResolvedAtUtc.Value, DateTimeKind.Utc)) : null,
+        x.ResolvedByUser == null ? null : x.ResolvedByUser.Email,
+        x.Message,
+        x.ResolutionNote,
+        x.ValueAtRaise,
+        x.ThresholdValue);
 }

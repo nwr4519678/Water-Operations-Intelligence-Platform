@@ -24,13 +24,11 @@ export const MapFilterBar: React.FC<MapFilterBarProps> = ({
   regions = [],
   language = "en",
 }) => {
-  const isAr = language === "ar"
-
   const statuses = [
-    { value: "ALL", label: isAr ? "الكل" : "All Nodes" },
-    { value: "ONLINE", label: isAr ? "متصلة" : "Online" },
-    { value: "MAINTENANCE", label: isAr ? "صيانة / تنبيه" : "Warning" },
-    { value: "OFFLINE", label: isAr ? "غير متصلة" : "Offline" },
+    { value: "ALL", label: "All Nodes" },
+    { value: "ONLINE", label: "Online" },
+    { value: "MAINTENANCE", label: "Warning" },
+    { value: "OFFLINE", label: "Offline" },
   ]
 
   return (
@@ -42,13 +40,9 @@ export const MapFilterBar: React.FC<MapFilterBarProps> = ({
           type="text"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder={
-            isAr
-              ? "ابحث عن محطة بالعربية أو الإنجليزية..."
-              : "Search by Station Code, English/Arabic name, or sector..."
-          }
+          placeholder="Search by station code, name, or sector..."
           className="w-full pl-9 pr-3 py-1.5 text-xs font-medium bg-slate-50 rounded-lg border border-slate-200 outline-none focus:border-blue-500 text-slate-900"
-          dir="auto"
+          dir="ltr"
         />
       </div>
 
@@ -59,7 +53,7 @@ export const MapFilterBar: React.FC<MapFilterBarProps> = ({
         className="text-xs font-semibold bg-slate-50 rounded-lg border border-slate-200 px-3 py-1.5 outline-none text-slate-700"
       >
         <option value="ALL">
-          {isAr ? "جميع المناطق الهيدرولوجية" : "All Hydrological Regions"}
+          All Hydrological Regions
         </option>
         {regions.map((r) => (
           <option key={r.regionId} value={r.regionId}>

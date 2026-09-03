@@ -5,12 +5,11 @@ import { QUERY_KEYS } from "../utils/constants"
 import { useDebounce } from "./useDebounce"
 
 export function useGlobalSearch(rawQuery: string) {
-  const debouncedQuery = useDebounce(rawQuery, 300)
+  const debouncedQuery = useDebounce(rawQuery, 120)
 
   return useQuery({
     queryKey: [QUERY_KEYS.GLOBAL_SEARCH, debouncedQuery],
     queryFn: () => searchApi.search(debouncedQuery),
-    enabled: debouncedQuery.trim().length > 1,
     staleTime: 30000,
   })
 }

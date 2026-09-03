@@ -38,7 +38,8 @@ public sealed class AuthTokenService(IConfiguration configuration) : IAccessToke
                 issuer: configuration["Authentication:Issuer"] ?? "water-operations",
                 audience: configuration["Authentication:Audience"] ?? "water-operations-web",
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(15),
+                expires: DateTime.UtcNow.AddMinutes(
+                    configuration.GetValue("Authentication:AccessTokenMinutes", 30)),
                 signingCredentials: credentials));
     }
 

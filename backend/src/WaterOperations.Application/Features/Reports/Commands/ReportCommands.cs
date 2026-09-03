@@ -19,6 +19,9 @@ public sealed record SetReportScheduleActiveCommand(
     long ScheduleId,
     bool IsActive) : ICommand<ScopeResult<bool>>, IRequireOrganization, IRequireUser;
 
+public sealed record DeleteReportCommand(
+    Guid ReportId) : ICommand<ScopeResult<bool>>, IRequireOrganization, IRequireUser;
+
 public sealed class CreateReportCommandValidator : AbstractValidator<CreateReportCommand>
 {
     public CreateReportCommandValidator()
@@ -107,5 +110,23 @@ public sealed class SetReportScheduleActiveCommandHandler(
             cancellationToken);
 
         return ScopeResult.Authorized(succeeded);
+    }
+}
+
+public sealed class DeleteReportCommandHandler(
+    IReportRepository repository,
+    ICurrentUser user) : ICommandHandler<DeleteReportCommand, ScopeResult<bool>>
+{
+    public async Task<ScopeResult<bool>> Handle(
+        DeleteReportCommand request,
+        CancellationToken cancellationToken)
+    {
+        var succeeded = await repository.DeleteReportAsync(
+            user.OrganizationId!.Value,
+            user.UserId!.Value,
+            request.ReportId,
+            cancellationToken);
+
+        return succeeded ? ScopeResult.Authorized(true) : ScopeResult.NotFound<bool>();
     }
 }

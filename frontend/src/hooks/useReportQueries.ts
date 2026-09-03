@@ -24,3 +24,13 @@ export function useCreateReport() {
     },
   })
 }
+
+export function useDeleteReport() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (reportId: string) => reportsApi.deleteReport(reportId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.REPORTS_LIST] })
+    },
+  })
+}

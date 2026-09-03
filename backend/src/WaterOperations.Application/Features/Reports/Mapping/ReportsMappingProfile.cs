@@ -14,9 +14,7 @@ public sealed class ReportsMappingProfile : Profile
     {
         CreateMap<Report, ReportDto>();
 
-        CreateMap<Report, ReportDownloadDto>()
-            .ForMember(dest => dest.FilePath, opt => opt.MapFrom(src => src.FilePath ?? string.Empty))
-            .ForMember(dest => dest.ContentType, opt => opt.MapFrom(src => GetContentType(src.Format)));
+        // ReportDownloadDto is built by ReportDocumentBuilder — no AutoMapper mapping needed.
 
         CreateMap<ReportSchedule, ReportScheduleDto>()
             .ForMember(dest => dest.ScheduleId, opt => opt.MapFrom(src => src.ReportScheduleId));

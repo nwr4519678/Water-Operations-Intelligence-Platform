@@ -480,7 +480,7 @@ function generateFieldStations(): Station[] {
 
 export const fieldStations: Station[] = generateFieldStations()
 
-// All 410 stations
+// The active DaHITI station catalogue.
 export const allStations: Station[] = [
   hqStation,
   ...masterStations,

@@ -12,6 +12,8 @@ import {
   PagedResult,
 } from "../types/api"
 import { allStations, masterStations } from "../data/stationsData"
+import { loadWaterStations } from "../data/stationLoader"
+import { resolveStationLocation } from "../utils/stationLocationResolver"
 
 export interface MapStationsParams {
   search?: string
@@ -334,6 +336,50 @@ export const viewerApi = {
   },
 
   stationDetail: async (stationId: string): Promise<StationDetailDto> => {
+    if (stationId.startsWith("DAHITI-")) {
+      const dahitiId = Number(stationId.slice("DAHITI-".length))
+      const res = await apiClient.get<DahitiStationDto[]>("/api/v1/dahiti/stations")
+      const station = res.data.find((item) => item.dahitiId === dahitiId)
+      if (!station) {
+        throw new Error(`DaHITI station '${stationId}' was not found.`)
+      }
+
+      const now = new Date().toISOString()
+      const observedAt = station.lastObservedAtUtc
+        ? Date.parse(station.lastObservedAtUtc)
+        : Number.NaN
+      const isRecent = Number.isFinite(observedAt)
+        && Date.now() - observedAt <= 90 * 86400000
+      const loc = resolveStationLocation(
+        station.dahitiId,
+        station.name,
+        station.latitude,
+        station.longitude,
+      )
+      return {
+        stationId: station.stationId,
+        organizationId: "",
+        regionId: loc.reachRegion,
+        stationCode: station.stationId,
+        name: loc.name,
+        nameEn: loc.nameEn,
+        description: `${loc.name} · ${loc.governorate} Governorate, Egypt.`,
+        status: isRecent ? "ONLINE" : "MAINTENANCE",
+        latitude: station.latitude,
+        longitude: station.longitude,
+        elevationMeters: 0,
+        staffGaugeHeight: station.waterLevel ?? 0,
+        isActive: true,
+        lastObservedAtUtc: station.lastObservedAtUtc,
+        communicationIntervalSeconds: null,
+        createdAtUtc: now,
+        updatedAtUtc: station.lastSyncedAtUtc ?? now,
+        assignedParameters: [],
+        category: "master",
+        zoneEn: `${loc.governorate} · ${loc.reachRegion}`,
+      }
+    }
+
     const res = await apiClient.get<StationDetailDto>(
       `/api/v1/viewer/stations/${stationId}`,
     )
@@ -348,12 +394,43 @@ export const viewerApi = {
       pageSize: number
       totalPages: number
     }>("/api/v1/viewer/alarms", { params })
+    let alarms: AlarmDto[] = res.data.data
+
+    // A stale DaHITI observation is an operational data-quality warning even
+    // when no persisted alarm event exists in the Operations schema. Derive
+    // these warnings from the authoritative station feed; do not seed alarms.
+    if (alarms.length === 0) {
+      const { stations } = await loadWaterStations()
+      alarms = stations
+        .filter((station) => station.connectionState === "warning")
+        .map((station) => ({
+          alarmId: `data-freshness-${station.id}`,
+          organizationId: "",
+          stationId: station.id,
+          stationName: station.nameEn || station.name,
+          alarmTypeId: 0,
+          alarmTypeCode: "DATA_FRESHNESS",
+          severity: "WARNING",
+          status: "ACTIVE",
+          raisedAtUtc: station.telemetrySnapshot?.lastUpdateUtc || new Date().toISOString(),
+          acknowledgedAtUtc: null,
+          acknowledgedByEmail: null,
+          resolvedAtUtc: null,
+          resolvedByEmail: null,
+          message: "Historical reading requires maintenance follow-up",
+          resolutionNote: null,
+          labels: [],
+        }))
+    }
+
+    if (params?.severity) alarms = alarms.filter((alarm) => alarm.severity === params.severity)
+    if (params?.status) alarms = alarms.filter((alarm) => alarm.status === params.status)
     return {
-      items: res.data.data,
+      items: alarms,
       page: res.data.page,
       pageSize: res.data.pageSize,
-      totalCount: res.data.total,
-      totalPages: res.data.totalPages,
+      totalCount: alarms.length,
+      totalPages: Math.max(1, Math.ceil(alarms.length / res.data.pageSize)),
     }
   },
 
@@ -402,4 +479,19 @@ export const viewerApi = {
     )
     return res.data
   },
+}
+
+interface DahitiStationDto {
+  stationId: string
+  dahitiId: number
+  name: string
+  country: string
+  continent: string
+  latitude: number
+  longitude: number
+  lastSyncedAtUtc: string | null
+  lastObservedAtUtc: string | null
+  waterLevel: number | null
+  uncertainty: number | null
+  observationCount: number
 }

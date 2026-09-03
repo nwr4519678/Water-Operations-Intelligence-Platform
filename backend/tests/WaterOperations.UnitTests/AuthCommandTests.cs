@@ -21,7 +21,7 @@ public sealed class AuthCommandTests
         Assert.NotNull(result);
         Assert.Equal("jwt-token-viewer@water.local", result.AccessToken);
         Assert.Equal("refresh-token-viewer@water.local", result.RefreshToken);
-        Assert.Equal(900, result.ExpiresIn);
+        Assert.Equal(1800, result.ExpiresIn);
     }
 
     [Fact]

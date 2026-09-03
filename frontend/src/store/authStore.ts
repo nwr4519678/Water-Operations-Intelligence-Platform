@@ -15,18 +15,27 @@ interface AuthState {
   clearAuth: () => void
 }
 
-const DEFAULT_USER: UserSession = {
-  userId: "usr-001",
-  email: "viewer.ops@water.gov.eg",
-  name: "Eng. Mohamed Atef (Chief Operations)",
-  role: "VIEWER",
-  organizationId: "org-eg-telemetry",
+function userFromToken(token: string | null): UserSession | null {
+  if (!token) return null
+  try {
+    const part = token.split(".")[1]
+    if (!part) return null
+    const claims = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")))
+    const email = claims["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] || claims.email
+    const userId = claims["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || claims.sub
+    const role = claims.role
+    const organizationId = claims.organization
+    if (typeof email !== "string" || typeof userId !== "string" || typeof organizationId !== "string") return null
+    return { userId, email, name: email, role: role === "ADMIN" || role === "OPERATOR" ? role : "VIEWER", organizationId }
+  } catch {
+    return null
+  }
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   accessToken: localStorage.getItem("wt_access_token"),
   refreshToken: localStorage.getItem("wt_refresh_token"),
-  currentUser: localStorage.getItem("wt_access_token") ? DEFAULT_USER : null,
+  currentUser: userFromToken(localStorage.getItem("wt_access_token")),
   isAuthenticated: Boolean(localStorage.getItem("wt_access_token")),
 
   setAuth: (accessToken, refreshToken, user) => {

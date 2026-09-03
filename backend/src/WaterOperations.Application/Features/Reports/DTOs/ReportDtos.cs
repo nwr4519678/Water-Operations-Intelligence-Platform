@@ -11,16 +11,21 @@ public sealed record ReportDto(
     DateTime PeriodStartUtc,
     DateTime PeriodEndUtc,
     DateTime CreatedAtUtc,
-    string? FilePath);
+    string? FilePath,
+    string? StationName = null,
+    string? StationCode = null,
+    string? Title = null,
+    long? FileSizeBytes = null);
 
 /// <summary>
-/// Downloadable report artifact details.
+/// Downloadable report artifact — carries the generated file bytes ready for streaming.
 /// </summary>
 public sealed record ReportDownloadDto(
     Guid ReportId,
     string Format,
-    string FilePath,
-    string ContentType);
+    string ContentType,
+    string FileName,
+    byte[] FileContent);
 
 /// <summary>
 /// Scheduled recurring report metadata.

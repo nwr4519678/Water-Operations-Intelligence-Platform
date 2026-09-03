@@ -31,7 +31,7 @@ public sealed class LoginCommandHandler(
         new(
             tokens.Create(user),
             sessions.Create(user),
-            900);
+            1800);
 }
 
 public sealed class LogoutCommandHandler(IRefreshSessionRepository sessions)
@@ -67,6 +67,6 @@ public sealed class RefreshCommandHandler(
             new(
                 tokens.Create(user),
                 sessions.Create(user),
-                900));
+                1800));
     }
 }

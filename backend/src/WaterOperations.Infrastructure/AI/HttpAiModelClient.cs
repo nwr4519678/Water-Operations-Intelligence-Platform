@@ -17,11 +17,14 @@ public sealed partial class HttpAiModelClient(
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly AiModelClientOptions settings = options.Value;
 
-    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "AI Service returned HTTP {StatusCode} for insight request")]
-    private partial void LogHttpWarning(System.Net.HttpStatusCode statusCode);
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "AI Service returned HTTP {StatusCode} for insight request: {ResponseBody}")]
+    private partial void LogHttpWarning(System.Net.HttpStatusCode statusCode, string responseBody);
 
-    [LoggerMessage(EventId = 2, Level = LogLevel.Warning, Message = "Failed to parse AI Service payload output")]
-    private partial void LogJsonParseWarning(Exception exception);
+    [LoggerMessage(EventId = 2, Level = LogLevel.Warning, Message = "Failed to parse AI Service payload output: {ResponseBody}")]
+    private partial void LogJsonParseWarning(Exception exception, string responseBody);
+
+    [LoggerMessage(EventId = 5, Level = LogLevel.Warning, Message = "AI Service returned an incomplete insight response: {ResponseBody}")]
+    private partial void LogIncompleteResponseWarning(string responseBody);
 
     [LoggerMessage(EventId = 3, Level = LogLevel.Error, Message = "AI Service client communication error")]
     private partial void LogCommunicationError(Exception exception);
@@ -53,16 +56,19 @@ public sealed partial class HttpAiModelClient(
             }
 
             using var response = await httpClient.SendAsync(message, cancellationToken);
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
-                LogHttpWarning(response.StatusCode);
+                LogHttpWarning(response.StatusCode, responseBody);
                 RecordFailure();
                 return null;
             }
 
-            var result = await response.Content.ReadFromJsonAsync<AiInsightResponse>(JsonOptions, cancellationToken);
+            var result = JsonSerializer.Deserialize<AiInsightResponse>(responseBody, JsonOptions);
             if (result is null || string.IsNullOrWhiteSpace(result.ModelVersion))
             {
+                LogIncompleteResponseWarning(responseBody);
+                RecordFailure();
                 return null;
             }
 
@@ -73,7 +79,7 @@ public sealed partial class HttpAiModelClient(
         }
         catch (JsonException ex)
         {
-            LogJsonParseWarning(ex);
+            LogJsonParseWarning(ex, "The response could not be decoded as a valid AI insight.");
             RecordFailure();
             return null;
         }
@@ -89,4 +95,5 @@ public sealed partial class HttpAiModelClient(
         settings.CircuitFailureThreshold,
         TimeSpan.FromSeconds(Math.Clamp(settings.CircuitBreakDurationSeconds, 1, 300)),
         DateTimeOffset.UtcNow);
+
 }

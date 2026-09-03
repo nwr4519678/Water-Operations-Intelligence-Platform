@@ -10,19 +10,77 @@ export const apiClient = axios.create({
   timeout: 10000,
 })
 
-// Attach JWT Bearer on every request
-apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = useAuthStore.getState().accessToken
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+const REFRESH_BEFORE_EXPIRY_SECONDS = 120
+let refreshPromise: Promise<string> | null = null
+
+function getTokenExpiry(token: string): number | null {
+  try {
+    const payload = token.split(".")[1]
+    if (!payload) return null
+    const decoded = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")))
+    return typeof decoded.exp === "number" ? decoded.exp : null
+  } catch {
+    return null
   }
+}
+
+async function refreshAccessToken(): Promise<string> {
+  const refreshToken = useAuthStore.getState().refreshToken
+  if (!refreshToken) throw new Error("No refresh session available")
+
+  if (!refreshPromise) {
+    refreshPromise = axios
+      .post(`${BASE_URL}/api/v1/auth/refresh`, { refreshToken })
+      .then((response) => {
+        const { accessToken, refreshToken: nextRefreshToken } = response.data
+        useAuthStore.getState().setAuth(accessToken, nextRefreshToken)
+        return accessToken as string
+      })
+      .catch((error) => {
+        // Only clear auth if the refresh endpoint itself explicitly rejected
+        // the token with 401. Any other error (network, 5xx) keeps the session.
+        if (error.response?.status === 401) {
+          useAuthStore.getState().clearAuth()
+        }
+        throw error
+      })
+      .finally(() => {
+        refreshPromise = null
+      })
+  }
+
+  return refreshPromise
+}
+
+// Attach a valid JWT Bearer on every request. Refresh it shortly before expiry
+// so normal navigation does not have to wait for a 401 response.
+apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+  const token = useAuthStore.getState().accessToken
+  if (!token) return config
+
+  const expiry = getTokenExpiry(token)
+  const shouldRefresh =
+    expiry !== null && expiry - Math.floor(Date.now() / 1000) <= REFRESH_BEFORE_EXPIRY_SECONDS
+
+  if (shouldRefresh && !config.url?.includes("/auth/refresh")) {
+    try {
+      const nextToken = await refreshAccessToken()
+      config.headers.Authorization = `Bearer ${nextToken}`
+      return config
+    } catch {
+      // On any network/server error during refresh, fall back to the
+      // current token and let the request proceed. The user stays logged
+      // in. clearAuth() is only called after a true 401 from the refresh endpoint.
+      config.headers.Authorization = `Bearer ${token}`
+      return config
+    }
+  }
+
+  config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
 // Auto-refresh on 401
-let isRefreshing = false
-let pendingQueue: Array<(token: string) => void> = []
-
 apiClient.interceptors.response.use(
   (res) => res,
   async (error) => {
@@ -33,33 +91,24 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
 
-      if (isRefreshing) {
-        return new Promise((resolve) => {
-          pendingQueue.push((token: string) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`
-            resolve(apiClient(originalRequest))
-          })
-        })
-      }
-
-      isRefreshing = true
-      const refreshToken = useAuthStore.getState().refreshToken
-
       try {
-        const res = await axios.post(`${BASE_URL}/api/v1/auth/refresh`, {
-          refreshToken,
-        })
-        const { accessToken, refreshToken: newRefresh } = res.data
-        useAuthStore.getState().setAuth(accessToken, newRefresh)
-        pendingQueue.forEach((cb) => cb(accessToken))
-        pendingQueue = []
+        const accessToken = await refreshAccessToken()
         originalRequest.headers.Authorization = `Bearer ${accessToken}`
         return apiClient(originalRequest)
-      } catch {
-        useAuthStore.getState().clearAuth()
+      } catch (refreshError: unknown) {
+        // Only sign the user out if the REFRESH endpoint itself returned 401
+        // (i.e. the refresh token is truly revoked/expired on the server).
+        // Network errors, timeouts, or 5xx from the refresh call must NOT
+        // clear the local session.
+        const isRefreshRejected =
+          typeof refreshError === "object" &&
+          refreshError !== null &&
+          "response" in refreshError &&
+          (refreshError as { response?: { status?: number } }).response?.status === 401
+        if (isRefreshRejected) {
+          useAuthStore.getState().clearAuth()
+        }
         return Promise.reject(error)
-      } finally {
-        isRefreshing = false
       }
     }
 

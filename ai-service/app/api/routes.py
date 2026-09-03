@@ -136,10 +136,28 @@ def get_backend_insight(req: BackendInsightRequest) -> BackendInsightResponse:
         z30 = (current_wse - float(np.mean(medium))) / (std30 + 1e-6)
         q25, q75 = np.quantile(values, [0.25, 0.75]) if len(values) > 3 else (current_wse, current_wse)
         bound = 1.5 * (q75 - q25)
+        previous_timestamp = pd.to_datetime(
+            observations[-2].timestampUtc, utc=True
+        ) if len(observations) > 1 and observations[-2].timestampUtc else None
+        current_timestamp = pd.to_datetime(
+            observations[-1].timestampUtc, utc=True
+        ) if observations[-1].timestampUtc else None
+        elapsed_days = 1.0
+        if previous_timestamp is not None and current_timestamp is not None:
+            elapsed_days = max(
+                (current_timestamp - previous_timestamp).total_seconds() / 86400.0,
+                1.0 / 24.0,
+            )
+
+        # The application sends one aggregate point per calendar month. Keep
+        # the model feature in metres/day (the unit used during training),
+        # normalizing the monthly difference by its actual elapsed time.
+        dwse_rate_per_day = (current_wse - prev) / elapsed_days
+
         return {
             "dahiti_id": station_id, "wse": current_wse, "wse_u": current_uncertainty,
             "rolling_zscore_7d": float(z7), "rolling_zscore_30d": float(z30),
-            "dwse_dt": current_wse - prev, "uncertainty_ratio": current_uncertainty / (std30 + 1e-6),
+            "dwse_dt": dwse_rate_per_day, "uncertainty_ratio": current_uncertainty / (std30 + 1e-6),
             "iqr_outlier_flag": int(current_wse < q25 - bound or current_wse > q75 + bound),
         }
 
@@ -153,6 +171,29 @@ def get_backend_insight(req: BackendInsightRequest) -> BackendInsightResponse:
             isFallback=False
         )
     elif insight_type in ["forecast", "water_level", "risk-score"]:
+        timestamps = pd.to_datetime(
+            [observation.timestampUtc for observation in observations], utc=True
+        )
+        median_gap_days = (
+            float(timestamps.to_series().diff().dt.total_seconds().median() / 86_400)
+            if len(timestamps) > 1 else 0.0
+        )
+        if median_gap_days >= 20:
+            monthly_result = prediction_service.predict_monthly_water_level([
+                {"timestampUtc": observation.timestampUtc, "value": observation.value}
+                for observation in observations
+            ])
+            monthly_result["forecast_anchor_utc"] = observations[-1].timestampUtc
+            monthly_result["forecast_horizon_days"] = [
+                round(median_gap_days * (index + 1), 1) for index in range(4)
+            ]
+            return BackendInsightResponse(
+                modelVersion=monthly_result["model_version"],
+                insightType=insight_type,
+                payloadJson=json.dumps(monthly_result),
+                isFallback=False
+            )
+
         wl_input = {
             "dahiti_id": station_id,
             "wse": current_wse,
@@ -171,6 +212,11 @@ def get_backend_insight(req: BackendInsightRequest) -> BackendInsightResponse:
                 "day_of_year": timestamp.dayofyear,
             })
         res = prediction_service.predict_water_level(wl_input)
+        res["forecast_anchor_utc"] = observations[-1].timestampUtc
+        res["forecast_horizon_days"] = [
+            round(median_gap_days * offset, 1)
+            for offset in (1, 7, 14, 30)
+        ] if median_gap_days > 0 else [1, 7, 14, 30]
         return BackendInsightResponse(
             modelVersion=res.get("model_version", "NO_MODEL"),
             insightType=insight_type,
